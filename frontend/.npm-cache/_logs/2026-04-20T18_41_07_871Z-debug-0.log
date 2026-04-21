@@ -1,0 +1,21 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.9.3
+2 info using node@v22.18.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\NAYCOLL\IquitosDelivery\frontEnd\.npmrc
+5 silly config load:file:C:\Users\NAYCOLL\.npmrc
+6 silly config load:file:C:\Users\NAYCOLL\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm exec ng new iquitos-delivery-client --directory client-app --skip-install --defaults --skip-git --routing --style css --ssr false --force
+8 verbose argv "exec" "--yes" "--package" "@angular/cli@21.2.7" "--" "ng" "new" "iquitos-delivery-client" "--directory" "client-app" "--skip-install" "--defaults" "--skip-git" "--routing" "--style" "css" "--ssr" "false" "--force"
+9 verbose logfile logs-max:10 dir:C:\Users\NAYCOLL\IquitosDelivery\frontEnd\.npm-cache\_logs\2026-04-20T18_41_07_871Z-
+10 verbose logfile C:\Users\NAYCOLL\IquitosDelivery\frontEnd\.npm-cache\_logs\2026-04-20T18_41_07_871Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+13 http fetch GET 200 https://registry.npmjs.org/@angular%2fcli 486ms (cache revalidated)
+14 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+15 verbose cwd C:\Users\NAYCOLL\IquitosDelivery\frontEnd
+16 verbose os Windows_NT 10.0.19045
+17 verbose node v22.18.0
+18 verbose npm  v10.9.3
+19 verbose exit 1
+20 verbose code 1
