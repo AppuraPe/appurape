@@ -19,9 +19,11 @@ public class DriverOrdersController : ControllerBase
 
     [HttpGet("available")]
     [ProducesResponseType(typeof(IReadOnlyList<AvailableDriverOrderListItemResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<AvailableDriverOrderListItemResponse>>> GetAvailableOrders(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<AvailableDriverOrderListItemResponse>>> GetAvailableOrders(
+        [FromQuery] DriverAvailableOrderFilterRequest filters,
+        CancellationToken cancellationToken)
     {
-        var response = await _driverOrderService.GetAvailableOrdersAsync(cancellationToken);
+        var response = await _driverOrderService.GetAvailableOrdersAsync(filters, cancellationToken);
         return Ok(response);
     }
 
@@ -43,9 +45,11 @@ public class DriverOrdersController : ControllerBase
 
     [HttpGet("my")]
     [ProducesResponseType(typeof(IReadOnlyList<DriverAssignedOrderListItemResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<DriverAssignedOrderListItemResponse>>> GetMyOrders(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<DriverAssignedOrderListItemResponse>>> GetMyOrders(
+        [FromQuery] DriverAssignedOrderFilterRequest filters,
+        CancellationToken cancellationToken)
     {
-        var response = await _driverOrderService.GetMyAssignedOrdersAsync(cancellationToken);
+        var response = await _driverOrderService.GetMyAssignedOrdersAsync(filters, cancellationToken);
         return Ok(response);
     }
 

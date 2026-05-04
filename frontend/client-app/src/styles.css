@@ -285,6 +285,16 @@ h3 {
   gap: var(--space-4);
 }
 
+.filters-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.9fr);
+}
+
+.filters-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .form-grid.two-col {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
@@ -342,6 +352,56 @@ h3 {
   font-weight: 700;
 }
 
+.filter-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.search-context-banner {
+  gap: var(--space-4);
+}
+
+.search-context-banner__content {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.search-field input[type="search"] {
+  padding-right: 1rem;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-strong);
+  cursor: pointer;
+  font-weight: 800;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.filter-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--brand-600);
+}
+
+.filter-chip.active {
+  background: var(--brand-800);
+  border-color: var(--brand-800);
+  color: #fff;
+}
+
 .message,
 .alert {
   display: grid;
@@ -387,6 +447,17 @@ h3 {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.result-section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.result-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
 .list {
   display: grid;
   gap: var(--space-4);
@@ -416,7 +487,18 @@ h3 {
   gap: var(--space-4);
 }
 
+.food-result-card {
+  display: grid;
+  min-height: 100%;
+  gap: var(--space-4);
+  border-color: rgba(240, 154, 42, 0.34);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.88), rgba(255, 255, 255, 0.96)),
+    #fff;
+}
+
 .restaurant-card-top,
+.food-result-card__top,
 .item-row,
 .order-row {
   display: flex;
@@ -547,9 +629,32 @@ h3 {
   padding: var(--space-4);
 }
 
+.menu-item.match-focus {
+  border-color: rgba(240, 154, 42, 0.6);
+  box-shadow: 0 16px 28px rgba(240, 154, 42, 0.14);
+}
+
 .menu-item.unavailable {
   background: #f8faf8;
   opacity: 0.72;
+}
+
+.highlight-copy {
+  line-height: 1.45;
+}
+
+.text-highlight {
+  display: inline;
+  padding: 0 0.15rem;
+  border-radius: 0.35rem;
+  background: rgba(240, 154, 42, 0.24);
+  color: var(--brand-900);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.match-chip {
+  margin-bottom: 0.65rem;
 }
 
 .price {
@@ -761,9 +866,11 @@ h3 {
   }
 
   .grid.cards,
+  .result-grid,
   .split,
   .meta-grid,
   .stats-grid,
+  .filters-grid,
   .form-grid.two-col {
     grid-template-columns: 1fr;
   }
@@ -804,6 +911,7 @@ h3 {
   }
 
   .restaurant-card-top,
+  .food-result-card__top,
   .item-row,
   .order-row,
   .section-heading {
@@ -862,6 +970,19 @@ h3 {
   .message {
     border-radius: 16px;
     line-height: 1.45;
+  }
+
+  .chip-row {
+    gap: 0.55rem;
+  }
+
+  .filter-chip {
+    min-height: 46px;
+    padding-inline: 0.95rem;
+  }
+
+  .text-highlight {
+    padding-inline: 0.12rem;
   }
 
   .timeline-item {

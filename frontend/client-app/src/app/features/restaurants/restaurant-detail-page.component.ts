@@ -1,11 +1,16 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { debounceTime, distinctUntilChanged, forkJoin, map } from 'rxjs';
 import { CreateOrderRequest, PaymentMethod } from '../../core/models/orders.models';
-import { MenuItemResponse, PublicMenuResponse, RestaurantDetailResponse } from '../../core/models/restaurants.models';
+import {
+  MenuItemResponse,
+  PublicMenuCategoryResponse,
+  PublicMenuResponse,
+  RestaurantDetailResponse,
+} from '../../core/models/restaurants.models';
 import { AuthService } from '../../core/services/auth.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
 import { RestaurantsApiService } from '../../core/services/restaurants-api.service';
@@ -17,6 +22,11 @@ type CartLine = {
   name: string;
   price: number;
   quantity: number;
+};
+
+type HighlightSegment = {
+  text: string;
+  isMatch: boolean;
 };
 
 @Component({
@@ -72,20 +82,90 @@ type CartLine = {
               <a class="button ghost" routerLink="/restaurants">Cambiar restaurante</a>
             </div>
 
-            @if (!menu()?.categories?.length) {
+            @if (isGlobalSearchContext()) {
+              <div class="alert info search-context-banner">
+                <div class="search-context-banner__content">
+                  <span class="badge info">Busqueda global</span>
+                  <strong class="alert-title">Resultados para: {{ menuSearchQuery() }}</strong>
+                  <span>
+                    Entraste desde la busqueda principal y el menu se filtro para ayudarte a ubicar el plato mas rapido.
+                  </span>
+                </div>
+                <div class="button-row">
+                  <a class="button ghost" [routerLink]="['/restaurants']" [queryParams]="{ q: menuSearchQuery() }">
+                    Volver a resultados
+                  </a>
+                  <button class="button subtle" type="button" (click)="clearMenuSearch()">Ver menu completo</button>
+                </div>
+              </div>
+            }
+
+            <section class="app-card filter-panel">
+              <div class="section-heading">
+                <div>
+                  <h2>Buscar en el menu</h2>
+                  <p class="muted">
+                    {{ visibleItemsSummary() }}
+                  </p>
+                </div>
+                <button class="button subtle" type="button" (click)="clearMenuSearch()" [disabled]="!hasActiveMenuSearch()">
+                  Limpiar busqueda
+                </button>
+              </div>
+
+              @if (hasActiveMenuSearch()) {
+                <div class="chip-row">
+                  <span class="filter-chip active">Resultados para: {{ menuSearchQuery() }}</span>
+                  @if (isGlobalSearchContext()) {
+                    <span class="filter-chip">Filtro traido desde busqueda global</span>
+                  }
+                </div>
+              }
+
+              <div class="field search-field">
+                <label for="menuSearch">Buscar platos</label>
+                <input
+                  id="menuSearch"
+                  type="search"
+                  [formControl]="menuSearchControl"
+                  placeholder="Busca comidas o categorias"
+                  autocomplete="off"
+                />
+                <span class="field-hint">
+                  @if (isGlobalSearchContext()) {
+                    Puedes ajustar esta busqueda local sin perder el contexto del restaurante.
+                  } @else {
+                    Busca por nombre del plato, descripcion o categoria.
+                  }
+                </span>
+              </div>
+            </section>
+
+            @if (!visibleMenu()?.categories?.length) {
               <div class="empty-state">
                 <div class="empty-state-icon">M</div>
-                <h2>Este restaurante aun no tiene menu visible</h2>
-                <p class="muted">Cuando publique categorias e items disponibles, apareceran aqui para pedir.</p>
+                <h2>{{ menuEmptyStateTitle() }}</h2>
+                <p class="muted">{{ menuEmptyStateMessage() }}</p>
+                @if (hasActiveMenuSearch()) {
+                  <button class="button" type="button" (click)="clearMenuSearch()">Ver menu completo</button>
+                }
               </div>
             } @else {
               <div class="list">
-                @for (category of menu()!.categories; track category.id) {
+                @for (category of visibleMenu()!.categories; track category.id) {
                   <article class="app-card menu-category">
                     <div class="section-heading">
                       <div>
                         <span class="eyebrow">Categoria</span>
-                        <h2 style="margin-top: 0.65rem;">{{ category.name }}</h2>
+                        <h2 class="highlight-copy" style="margin-top: 0.65rem;">
+                          @for (segment of getHighlightedSegments(category.name); track $index) {
+                            @if (segment.isMatch) {
+                              <span class="text-highlight">{{ segment.text }}</span>
+                            } @else {
+                              <span>{{ segment.text }}</span>
+                            }
+                          }
+                        </h2>
                         <p class="muted">{{ category.items.length }} producto(s)</p>
                       </div>
                     </div>
@@ -98,11 +178,34 @@ type CartLine = {
                     } @else {
                       <div class="list">
                         @for (item of category.items; track item.id) {
-                          <div class="menu-item" [class.unavailable]="!item.isAvailable">
+                          <div
+                            class="menu-item"
+                            [class.unavailable]="!item.isAvailable"
+                            [class.match-focus]="isMatchedSearchItem(item.id)"
+                          >
                             <div class="item-row">
                               <div>
-                                <h3>{{ item.name }}</h3>
-                                <p class="muted" style="margin-top: 0.35rem;">{{ item.description || 'Sin descripcion disponible.' }}</p>
+                                @if (isMatchedSearchItem(item.id)) {
+                                  <span class="badge success match-chip">Coincidencia de tu busqueda</span>
+                                }
+                                <h3 class="highlight-copy">
+                                  @for (segment of getHighlightedSegments(item.name); track $index) {
+                                    @if (segment.isMatch) {
+                                      <span class="text-highlight">{{ segment.text }}</span>
+                                    } @else {
+                                      <span>{{ segment.text }}</span>
+                                    }
+                                  }
+                                </h3>
+                                <p class="muted highlight-copy" style="margin-top: 0.35rem;">
+                                  @for (segment of getHighlightedSegments(item.description || 'Sin descripcion disponible.'); track $index) {
+                                    @if (segment.isMatch) {
+                                      <span class="text-highlight">{{ segment.text }}</span>
+                                    } @else {
+                                      <span>{{ segment.text }}</span>
+                                    }
+                                  }
+                                </p>
                               </div>
                               <div style="text-align: right;">
                                 <div class="price">{{ item.price | currency: 'PEN' : 'symbol' : '1.2-2' }}</div>
@@ -314,8 +417,14 @@ export class RestaurantDetailPageComponent {
   readonly errorMessage = signal('');
   readonly checkoutErrorMessage = signal('');
   readonly recentlyAddedMessage = signal('');
+  readonly menuSearchQuery = signal('');
+  readonly searchSource = signal('');
+  readonly matchedItemId = signal('');
+  readonly matchedCategoryName = signal('');
+  readonly globalContextQuery = signal('');
   readonly hasText = hasText;
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
+  readonly menuSearchControl = new FormControl('', { nonNullable: true });
 
   readonly checkoutForm = this.formBuilder.nonNullable.group({
     deliveryAddress: ['', [Validators.required, Validators.maxLength(300)]],
@@ -333,6 +442,36 @@ export class RestaurantDetailPageComponent {
   readonly subtotal = computed(() =>
     this.cartItems().reduce((total, item) => total + item.price * item.quantity, 0),
   );
+  readonly hasActiveMenuSearch = computed(() => hasText(this.menuSearchQuery()));
+  readonly isGlobalSearchContext = computed(
+    () => this.searchSource() === 'global' && this.hasActiveMenuSearch(),
+  );
+  readonly visibleMenu = computed(() => {
+    const menu = this.menu();
+
+    if (!menu) {
+      return null;
+    }
+
+    const query = this.normalizeMenuMatchValue(this.menuSearchQuery());
+
+    if (!query) {
+      return menu;
+    }
+
+    const categories = menu.categories
+      .map((category) => this.filterCategory(category, query))
+      .filter((category): category is PublicMenuCategoryResponse => category !== null);
+
+    return {
+      ...menu,
+      categories,
+    };
+  });
+  readonly visibleCategoryCount = computed(() => this.visibleMenu()?.categories.length ?? 0);
+  readonly visibleItemCount = computed(
+    () => this.visibleMenu()?.categories.reduce((total, category) => total + category.items.length, 0) ?? 0,
+  );
   readonly submitDisabled = computed(() => this.isSubmittingOrder() || !this.cartItems().length);
   readonly submitButtonLabel = computed(() => {
     if (this.isSubmittingOrder()) {
@@ -344,6 +483,64 @@ export class RestaurantDetailPageComponent {
 
   constructor() {
     const id = this.route.snapshot.paramMap.get('id');
+
+    this.route.queryParamMap
+      .pipe(
+        map((params) => ({
+          menuSearch: params.get('menuSearch')?.trim() ?? '',
+          searchSource: params.get('searchSource')?.trim() ?? '',
+          matchedItemId: params.get('matchedItemId')?.trim() ?? '',
+          matchedCategoryName: params.get('matchedCategoryName')?.trim() ?? '',
+        })),
+        distinctUntilChanged(
+          (previous, current) =>
+            previous.menuSearch === current.menuSearch &&
+            previous.searchSource === current.searchSource &&
+            previous.matchedItemId === current.matchedItemId &&
+            previous.matchedCategoryName === current.matchedCategoryName,
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((params) => {
+        this.menuSearchQuery.set(params.menuSearch);
+        this.searchSource.set(params.searchSource);
+        this.matchedItemId.set(params.matchedItemId);
+        this.matchedCategoryName.set(params.matchedCategoryName);
+        this.globalContextQuery.set(params.searchSource === 'global' ? params.menuSearch : '');
+
+        if (this.menuSearchControl.getRawValue() !== params.menuSearch) {
+          this.menuSearchControl.setValue(params.menuSearch, { emitEvent: false });
+        }
+      });
+
+    this.menuSearchControl.valueChanges
+      .pipe(
+        debounceTime(250),
+        map((value) => value.trim()),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((value) => {
+        this.menuSearchQuery.set(value);
+
+        if (value === this.route.snapshot.queryParamMap.get('menuSearch')?.trim()) {
+          return;
+        }
+
+        const shouldKeepGlobalContext = this.searchSource() === 'global' && this.globalContextQuery() === value;
+
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {
+            menuSearch: value || null,
+            searchSource: value ? this.searchSource() || null : null,
+            matchedItemId: shouldKeepGlobalContext ? this.matchedItemId() || null : null,
+            matchedCategoryName: shouldKeepGlobalContext ? this.matchedCategoryName() || null : null,
+          },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      });
 
     if (!id) {
       this.errorMessage.set('No se encontro el restaurante solicitado.');
@@ -445,6 +642,10 @@ export class RestaurantDetailPageComponent {
     return this.cartState()[menuItemId]?.quantity ?? 0;
   }
 
+  clearMenuSearch(): void {
+    this.menuSearchControl.setValue('');
+  }
+
   submitOrder(): void {
     if (!this.isAuthenticated()) {
       void this.router.navigate(['/login'], {
@@ -518,5 +719,113 @@ export class RestaurantDetailPageComponent {
 
   formatSchedule(openTime: string, closeTime: string): string {
     return `${formatTimeSpan(openTime)} - ${formatTimeSpan(closeTime)}`;
+  }
+
+  visibleItemsSummary(): string {
+    const itemCount = this.visibleItemCount();
+    const categoryCount = this.visibleCategoryCount();
+
+    if (this.hasActiveMenuSearch()) {
+      if (this.isGlobalSearchContext()) {
+        return `${itemCount} producto(s) en ${categoryCount} categoria(s) para "${this.menuSearchQuery()}". Llegaste desde la busqueda global.`;
+      }
+
+      return `${itemCount} producto(s) en ${categoryCount} categoria(s) para "${this.menuSearchQuery()}".`;
+    }
+
+    return 'Filtra el menu por plato, descripcion o categoria sin afectar tu carrito.';
+  }
+
+  menuEmptyStateTitle(): string {
+    return this.hasActiveMenuSearch()
+      ? 'No encontramos platos para esa busqueda'
+      : 'Este restaurante aun no tiene menu visible';
+  }
+
+  menuEmptyStateMessage(): string {
+    if (this.hasActiveMenuSearch()) {
+      if (this.isGlobalSearchContext()) {
+        return 'Este restaurante no tiene coincidencias visibles para esa busqueda. Limpia el filtro local o vuelve a los resultados globales.';
+      }
+
+      return 'Prueba con otro nombre de plato, una descripcion mas corta o una categoria distinta.';
+    }
+
+    return 'Cuando publique categorias e items disponibles, apareceran aqui para pedir.';
+  }
+
+  isMatchedSearchItem(menuItemId: string): boolean {
+    return this.isGlobalSearchContext() && this.matchedItemId() === menuItemId;
+  }
+
+  getHighlightedSegments(value: string | null | undefined): HighlightSegment[] {
+    const text = value ?? '';
+    const query = this.normalizeMenuMatchValue(this.menuSearchQuery());
+
+    if (!text.length) {
+      return [{ text: '', isMatch: false }];
+    }
+
+    if (!query) {
+      return [{ text, isMatch: false }];
+    }
+
+    const source = text.toLocaleLowerCase();
+    const segments: HighlightSegment[] = [];
+    let cursor = 0;
+
+    while (cursor < text.length) {
+      const matchIndex = source.indexOf(query, cursor);
+
+      if (matchIndex === -1) {
+        segments.push({ text: text.slice(cursor), isMatch: false });
+        break;
+      }
+
+      if (matchIndex > cursor) {
+        segments.push({ text: text.slice(cursor, matchIndex), isMatch: false });
+      }
+
+      segments.push({
+        text: text.slice(matchIndex, matchIndex + query.length),
+        isMatch: true,
+      });
+      cursor = matchIndex + query.length;
+    }
+
+    return segments.length ? segments : [{ text, isMatch: false }];
+  }
+
+  private filterCategory(category: PublicMenuCategoryResponse, query: string): PublicMenuCategoryResponse | null {
+    const normalizedQuery = this.normalizeMenuMatchValue(query);
+    const categoryMatches = this.matchesMenuText(category.name, normalizedQuery);
+
+    if (categoryMatches) {
+      return category;
+    }
+
+    const items = category.items.filter(
+      (item) =>
+        this.matchesMenuText(item.name, normalizedQuery) ||
+        this.matchesMenuText(item.description, normalizedQuery) ||
+        this.matchesMenuText(item.categoryName || category.name, normalizedQuery),
+    );
+
+    if (!items.length) {
+      return null;
+    }
+
+    return {
+      ...category,
+      items,
+    };
+  }
+
+  private matchesMenuText(value: string | null | undefined, query: string): boolean {
+    return this.normalizeMenuMatchValue(value).includes(query);
+  }
+
+  private normalizeMenuMatchValue(value: string | null | undefined): string {
+    return value?.trim().toLocaleLowerCase() ?? '';
   }
 }

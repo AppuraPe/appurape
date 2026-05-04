@@ -69,6 +69,11 @@ export interface UpdateMenuCategoryRequest {
   isActive: boolean;
 }
 
+export interface MenuCategoryFilters {
+  q?: string;
+  isActive?: boolean | null;
+}
+
 export interface MenuItemResponse {
   id: string;
   restaurantId: string;
@@ -104,6 +109,13 @@ export interface UpdateMenuItemAvailabilityRequest {
   isAvailable: boolean;
 }
 
+export interface MenuItemFilters {
+  q?: string;
+  categoryId?: string;
+  isActive?: boolean | null;
+  isAvailable?: boolean | null;
+}
+
 export interface RestaurantOrderListItemResponse {
   id: string;
   customerId: string;
@@ -116,4 +128,9 @@ export interface RestaurantOrderListItemResponse {
 
 export interface UpdateRestaurantOrderStatusRequest {
   status: OrderStatus;
+}
+
+export interface RestaurantOrderFilters {
+  q?: string;
+  status?: OrderStatus | string;
 }

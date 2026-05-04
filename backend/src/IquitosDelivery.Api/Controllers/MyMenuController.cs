@@ -19,9 +19,11 @@ public class MyMenuController : ControllerBase
 
     [HttpGet("categories")]
     [ProducesResponseType(typeof(IReadOnlyList<MenuCategoryResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<MenuCategoryResponse>>> GetCategories(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<MenuCategoryResponse>>> GetCategories(
+        [FromQuery] MenuCategoryFilterRequest filters,
+        CancellationToken cancellationToken)
     {
-        var response = await _menuService.GetMyCategoriesAsync(cancellationToken);
+        var response = await _menuService.GetMyCategoriesAsync(filters, cancellationToken);
         return Ok(response);
     }
 
@@ -43,9 +45,11 @@ public class MyMenuController : ControllerBase
 
     [HttpGet("items")]
     [ProducesResponseType(typeof(IReadOnlyList<MenuItemResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<MenuItemResponse>>> GetItems(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<MenuItemResponse>>> GetItems(
+        [FromQuery] MenuItemFilterRequest filters,
+        CancellationToken cancellationToken)
     {
-        var response = await _menuService.GetMyItemsAsync(cancellationToken);
+        var response = await _menuService.GetMyItemsAsync(filters, cancellationToken);
         return Ok(response);
     }
 

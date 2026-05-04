@@ -75,6 +75,10 @@ export class AdminApiService {
   private buildRestaurantParams(filters: AdminRestaurantFilters): HttpParams {
     let params = new HttpParams();
 
+    if (filters.q?.trim()) {
+      params = params.set('q', filters.q.trim());
+    }
+
     if (filters.approvalStatus) {
       params = params.set('approvalStatus', filters.approvalStatus);
     }
@@ -92,6 +96,10 @@ export class AdminApiService {
 
   private buildDriverParams(filters: AdminDriverFilters): HttpParams {
     let params = new HttpParams();
+
+    if (filters.q?.trim()) {
+      params = params.set('q', filters.q.trim());
+    }
 
     if (filters.approvalStatus) {
       params = params.set('approvalStatus', filters.approvalStatus);

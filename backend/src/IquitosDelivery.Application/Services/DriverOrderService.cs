@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Drivers;
 using IquitosDelivery.Application.DTOs.Orders;
 using IquitosDelivery.Application.Exceptions;
@@ -26,12 +27,24 @@ public class DriverOrderService : IDriverOrderService
         _updateDriverOrderStatusValidator = updateDriverOrderStatusValidator;
     }
 
-    public async Task<IReadOnlyList<AvailableDriverOrderListItemResponse>> GetAvailableOrdersAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<AvailableDriverOrderListItemResponse>> GetAvailableOrdersAsync(
+        DriverAvailableOrderFilterRequest filters,
+        CancellationToken cancellationToken = default)
     {
         var driver = await GetCurrentApprovedDriverAsync(cancellationToken);
+        var searchTerm = SearchQuery.Normalize(filters.Q);
+        var query = _dbContext.Orders
+            .Where(x => x.Status == OrderStatus.ReadyForPickup && x.DriverId == null && x.ZoneId == driver.ZoneId);
 
-        return await _dbContext.Orders
-            .Where(x => x.Status == OrderStatus.ReadyForPickup && x.DriverId == null && x.ZoneId == driver.ZoneId)
+        if (searchTerm is not null)
+        {
+            query = query.Where(x =>
+                x.Restaurant.Name.ToLower().Contains(searchTerm) ||
+                x.DeliveryAddress.ToLower().Contains(searchTerm) ||
+                x.Zone.Name.ToLower().Contains(searchTerm));
+        }
+
+        return await query
             .OrderByDescending(x => x.ReadyAtUtc ?? x.CreatedAtUtc)
             .Select(x => new AvailableDriverOrderListItemResponse
             {
@@ -108,12 +121,28 @@ public class DriverOrderService : IDriverOrderService
         return await GetMyOrderByIdAsync(order.Id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<DriverAssignedOrderListItemResponse>> GetMyAssignedOrdersAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<DriverAssignedOrderListItemResponse>> GetMyAssignedOrdersAsync(
+        DriverAssignedOrderFilterRequest filters,
+        CancellationToken cancellationToken = default)
     {
         var driver = await GetCurrentApprovedDriverAsync(cancellationToken);
+        var searchTerm = SearchQuery.Normalize(filters.Q);
+        var query = _dbContext.Orders
+            .Where(x => x.DriverId == driver.Id);
 
-        return await _dbContext.Orders
-            .Where(x => x.DriverId == driver.Id)
+        if (filters.Status.HasValue)
+        {
+            query = query.Where(x => x.Status == filters.Status.Value);
+        }
+
+        if (searchTerm is not null)
+        {
+            query = query.Where(x =>
+                x.Restaurant.Name.ToLower().Contains(searchTerm) ||
+                x.DeliveryAddress.ToLower().Contains(searchTerm));
+        }
+
+        return await query
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => new DriverAssignedOrderListItemResponse
             {

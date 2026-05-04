@@ -12,6 +12,42 @@ export interface RestaurantListItemResponse {
   isOpenNow: boolean;
 }
 
+export interface ZoneListItemResponse {
+  id: string;
+  name: string;
+}
+
+export interface PublicSearchFoodItemResponse {
+  menuItemId: string;
+  restaurantId: string;
+  restaurantName: string;
+  categoryId: string;
+  categoryName: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl?: string | null;
+  zoneId: string;
+  zoneName: string;
+}
+
+export interface PublicSearchRestaurantItemResponse {
+  restaurantId: string;
+  name: string;
+  description: string;
+  zoneId: string;
+  zoneName: string;
+  openTime: string;
+  closeTime: string;
+  logoUrl?: string | null;
+}
+
+export interface PublicSearchResponse {
+  query: string;
+  foods: PublicSearchFoodItemResponse[];
+  restaurants: PublicSearchRestaurantItemResponse[];
+}
+
 export interface RestaurantDetailResponse {
   id: string;
   name: string;

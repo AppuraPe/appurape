@@ -1,4 +1,5 @@
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Menu;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
@@ -36,63 +37,94 @@ public class MenuService : IMenuService
         _updateAvailabilityValidator = updateAvailabilityValidator;
     }
 
-    public async Task<PublicMenuResponse> GetPublicMenuAsync(Guid restaurantId, CancellationToken cancellationToken = default)
+    public async Task<PublicMenuResponse> GetPublicMenuAsync(
+        Guid restaurantId,
+        PublicMenuFilterRequest filters,
+        CancellationToken cancellationToken = default)
     {
+        var searchTerm = SearchQuery.Normalize(filters.Q);
         var restaurant = await _dbContext.Restaurants
-            .Include(x => x.Categories)
-                .ThenInclude(x => x.MenuItems)
-            .FirstOrDefaultAsync(
-                x => x.Id == restaurantId &&
-                     x.ApprovalStatus == ApprovalStatus.Approved &&
-                     x.IsActive,
-                cancellationToken);
+            .Where(x =>
+                x.Id == restaurantId &&
+                x.ApprovalStatus == ApprovalStatus.Approved &&
+                x.IsActive)
+            .Select(x => new PublicMenuResponse
+            {
+                RestaurantId = x.Id,
+                RestaurantName = x.Name,
+                Categories = x.Categories
+                    .Where(c =>
+                        c.IsActive &&
+                        (searchTerm == null ||
+                         c.Name.ToLower().Contains(searchTerm) ||
+                         c.MenuItems.Any(i =>
+                             i.IsActive &&
+                             i.IsAvailable &&
+                             (i.Name.ToLower().Contains(searchTerm) ||
+                              i.Description.ToLower().Contains(searchTerm)))))
+                    .OrderBy(c => c.SortOrder)
+                    .ThenBy(c => c.Name)
+                    .Select(c => new PublicMenuCategoryResponse
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        SortOrder = c.SortOrder,
+                        Items = c.MenuItems
+                            .Where(i =>
+                                i.IsActive &&
+                                i.IsAvailable &&
+                                (searchTerm == null ||
+                                 c.Name.ToLower().Contains(searchTerm) ||
+                                 i.Name.ToLower().Contains(searchTerm) ||
+                                 i.Description.ToLower().Contains(searchTerm)))
+                            .OrderBy(i => i.Name)
+                            .Select(i => new MenuItemResponse
+                            {
+                                Id = i.Id,
+                                RestaurantId = i.RestaurantId,
+                                CategoryId = i.CategoryId,
+                                CategoryName = c.Name,
+                                Name = i.Name,
+                                Description = i.Description,
+                                Price = i.Price,
+                                ImageUrl = i.ImageUrl,
+                                IsAvailable = i.IsAvailable,
+                                IsActive = i.IsActive
+                            })
+                            .ToList()
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (restaurant is null)
         {
             throw new NotFoundException("Restaurant menu is not available.");
         }
 
-        return new PublicMenuResponse
-        {
-            RestaurantId = restaurant.Id,
-            RestaurantName = restaurant.Name,
-            Categories = restaurant.Categories
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.SortOrder)
-                .ThenBy(x => x.Name)
-                .Select(x => new PublicMenuCategoryResponse
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    SortOrder = x.SortOrder,
-                    Items = x.MenuItems
-                        .Where(i => i.IsActive && i.IsAvailable)
-                        .OrderBy(i => i.Name)
-                        .Select(i => new MenuItemResponse
-                        {
-                            Id = i.Id,
-                            RestaurantId = i.RestaurantId,
-                            CategoryId = i.CategoryId,
-                            CategoryName = x.Name,
-                            Name = i.Name,
-                            Description = i.Description,
-                            Price = i.Price,
-                            ImageUrl = i.ImageUrl,
-                            IsAvailable = i.IsAvailable,
-                            IsActive = i.IsActive
-                        })
-                        .ToList()
-                })
-                .ToList()
-        };
+        return restaurant;
     }
 
-    public async Task<IReadOnlyList<MenuCategoryResponse>> GetMyCategoriesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<MenuCategoryResponse>> GetMyCategoriesAsync(
+        MenuCategoryFilterRequest filters,
+        CancellationToken cancellationToken = default)
     {
         var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
+        var searchTerm = SearchQuery.Normalize(filters.Q);
+        var query = _dbContext.MenuCategories
+            .Where(x => x.RestaurantId == restaurant.Id);
 
-        return await _dbContext.MenuCategories
-            .Where(x => x.RestaurantId == restaurant.Id)
+        if (filters.IsActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == filters.IsActive.Value);
+        }
+
+        if (searchTerm is not null)
+        {
+            query = query.Where(x => x.Name.ToLower().Contains(searchTerm));
+        }
+
+        return await query
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => new MenuCategoryResponse
@@ -148,12 +180,39 @@ public class MenuService : IMenuService
         return MapCategory(category);
     }
 
-    public async Task<IReadOnlyList<MenuItemResponse>> GetMyItemsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<MenuItemResponse>> GetMyItemsAsync(
+        MenuItemFilterRequest filters,
+        CancellationToken cancellationToken = default)
     {
         var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
+        var searchTerm = SearchQuery.Normalize(filters.Q);
+        var query = _dbContext.MenuItems
+            .Where(x => x.RestaurantId == restaurant.Id);
 
-        return await _dbContext.MenuItems
-            .Where(x => x.RestaurantId == restaurant.Id)
+        if (filters.CategoryId.HasValue)
+        {
+            query = query.Where(x => x.CategoryId == filters.CategoryId.Value);
+        }
+
+        if (filters.IsActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == filters.IsActive.Value);
+        }
+
+        if (filters.IsAvailable.HasValue)
+        {
+            query = query.Where(x => x.IsAvailable == filters.IsAvailable.Value);
+        }
+
+        if (searchTerm is not null)
+        {
+            query = query.Where(x =>
+                x.Name.ToLower().Contains(searchTerm) ||
+                x.Description.ToLower().Contains(searchTerm) ||
+                x.Category.Name.ToLower().Contains(searchTerm));
+        }
+
+        return await query
             .OrderBy(x => x.Name)
             .Select(x => new MenuItemResponse
             {

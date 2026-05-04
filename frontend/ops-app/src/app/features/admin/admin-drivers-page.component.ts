@@ -3,6 +3,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { debounceTime } from 'rxjs';
 import { AdminDriverListItemResponse } from '../../core/models/admin.models';
 import { AdminApiService } from '../../core/services/admin-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
@@ -33,6 +34,17 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       />
 
       <form class="filters-grid" [formGroup]="filtersForm" (ngSubmit)="loadDrivers()">
+        <div class="field search-field">
+          <label for="driverSearch">Buscar driver</label>
+          <input
+            id="driverSearch"
+            type="search"
+            formControlName="q"
+            placeholder="Nombre, email, phone, placa o zona"
+            autocomplete="off"
+          />
+        </div>
+
         <div class="field">
           <label for="approvalStatus">Aprobacion</label>
           <select id="approvalStatus" formControlName="approvalStatus">
@@ -112,12 +124,17 @@ export class AdminDriversPageComponent {
   readonly errorMessage = signal('');
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
+    q: [''],
     approvalStatus: [''],
     isAvailable: [''],
     userStatus: [''],
   });
 
   constructor() {
+    this.filtersForm.valueChanges.pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.loadDrivers();
+    });
+
     this.loadDrivers();
   }
 
@@ -128,6 +145,7 @@ export class AdminDriversPageComponent {
 
     this.adminApi
       .getDrivers({
+        q: filters.q,
         approvalStatus: filters.approvalStatus || undefined,
         isAvailable: this.toOptionalBoolean(filters.isAvailable),
         userStatus: filters.userStatus || undefined,
@@ -146,11 +164,15 @@ export class AdminDriversPageComponent {
   }
 
   clearFilters(): void {
-    this.filtersForm.reset({
-      approvalStatus: '',
-      isAvailable: '',
-      userStatus: '',
-    });
+    this.filtersForm.reset(
+      {
+        q: '',
+        approvalStatus: '',
+        isAvailable: '',
+        userStatus: '',
+      },
+      { emitEvent: false },
+    );
     this.loadDrivers();
   }
 

@@ -20,9 +20,11 @@ public class RestaurantsController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<RestaurantListItemResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<RestaurantListItemResponse>>> GetRestaurants(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<RestaurantListItemResponse>>> GetRestaurants(
+        [FromQuery] PublicRestaurantFilterRequest filters,
+        CancellationToken cancellationToken)
     {
-        var response = await _restaurantService.GetPublicRestaurantsAsync(cancellationToken);
+        var response = await _restaurantService.GetPublicRestaurantsAsync(filters, cancellationToken);
         return Ok(response);
     }
 
@@ -36,9 +38,12 @@ public class RestaurantsController : ControllerBase
 
     [HttpGet("{id:guid}/menu")]
     [ProducesResponseType(typeof(PublicMenuResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PublicMenuResponse>> GetPublicMenu(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<PublicMenuResponse>> GetPublicMenu(
+        Guid id,
+        [FromQuery] PublicMenuFilterRequest filters,
+        CancellationToken cancellationToken)
     {
-        var response = await _menuService.GetPublicMenuAsync(id, cancellationToken);
+        var response = await _menuService.GetPublicMenuAsync(id, filters, cancellationToken);
         return Ok(response);
     }
 }

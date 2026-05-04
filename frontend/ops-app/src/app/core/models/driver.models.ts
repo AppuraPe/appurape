@@ -50,6 +50,15 @@ export interface UpdateDriverOrderStatusRequest {
   status: OrderStatus;
 }
 
+export interface DriverAvailableOrderFilters {
+  q?: string;
+}
+
+export interface DriverMyOrderFilters {
+  q?: string;
+  status?: OrderStatus | string;
+}
+
 export interface StartDriverRegistrationRequest {
   firstName: string;
   lastName: string;

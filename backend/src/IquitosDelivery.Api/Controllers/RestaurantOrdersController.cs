@@ -19,9 +19,11 @@ public class RestaurantOrdersController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<RestaurantOrderListItemResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<RestaurantOrderListItemResponse>>> GetOrders(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<RestaurantOrderListItemResponse>>> GetOrders(
+        [FromQuery] RestaurantOrderFilterRequest filters,
+        CancellationToken cancellationToken)
     {
-        var response = await _orderService.GetRestaurantOrdersAsync(cancellationToken);
+        var response = await _orderService.GetRestaurantOrdersAsync(filters, cancellationToken);
         return Ok(response);
     }
 

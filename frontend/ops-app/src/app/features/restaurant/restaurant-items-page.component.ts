@@ -2,7 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { debounceTime, forkJoin } from 'rxjs';
 import {
   CreateMenuItemRequest,
   MenuCategoryResponse,
@@ -104,7 +104,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                 Cancelar
               </button>
             }
-            <button class="button ghost" type="button" (click)="loadData()" [disabled]="isLoading() || isSubmitting()">
+            <button class="button ghost" type="button" (click)="reloadData()" [disabled]="isLoading() || isSubmitting()">
               Recargar
             </button>
           </div>
@@ -118,10 +118,56 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           subtitle="Selecciona un producto para editarlo o cambia su disponibilidad."
         />
 
+        <form class="filters-grid" [formGroup]="filtersForm" (ngSubmit)="loadItems()">
+          <div class="field search-field">
+            <label for="itemSearch">Buscar producto</label>
+            <input
+              id="itemSearch"
+              type="search"
+              formControlName="q"
+              placeholder="Nombre, descripcion o categoria"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="field">
+            <label for="itemCategoryFilter">Categoria</label>
+            <select id="itemCategoryFilter" formControlName="categoryId">
+              <option value="">Todas</option>
+              @for (category of categories(); track category.id) {
+                <option [value]="category.id">{{ category.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="itemActiveFilter">Estado</label>
+            <select id="itemActiveFilter" formControlName="isActive">
+              <option value="">Todos</option>
+              <option value="true">Activos</option>
+              <option value="false">Inactivos</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="itemAvailabilityFilter">Disponibilidad</label>
+            <select id="itemAvailabilityFilter" formControlName="isAvailable">
+              <option value="">Todos</option>
+              <option value="true">Disponibles</option>
+              <option value="false">No disponibles</option>
+            </select>
+          </div>
+
+          <div class="page-actions compact">
+            <button class="button" type="submit" [disabled]="isLoading()">Aplicar</button>
+            <button class="button ghost" type="button" (click)="clearFilters()" [disabled]="isLoading()">Limpiar</button>
+          </div>
+        </form>
+
         @if (isLoading()) {
           <div class="message">Cargando productos...</div>
         } @else if (!items().length) {
-          <div class="message">Aun no hay productos registrados en el menu.</div>
+          <div class="message">No hay productos para los filtros seleccionados.</div>
         } @else {
           <div class="list">
             @for (item of items(); track item.id) {
@@ -187,6 +233,13 @@ export class RestaurantItemsPageComponent {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
 
+  readonly filtersForm = this.formBuilder.nonNullable.group({
+    q: [''],
+    categoryId: [''],
+    isActive: [''],
+    isAvailable: [''],
+  });
+
   readonly form = this.formBuilder.nonNullable.group({
     categoryId: ['', [Validators.required]],
     name: ['', [Validators.required]],
@@ -198,16 +251,20 @@ export class RestaurantItemsPageComponent {
   });
 
   constructor() {
-    this.loadData();
+    this.filtersForm.valueChanges.pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.loadItems();
+    });
+
+    this.reloadData();
   }
 
-  loadData(): void {
+  reloadData(): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
     forkJoin({
       categories: this.myMenuApi.getCategories(),
-      items: this.myMenuApi.getItems(),
+      items: this.myMenuApi.getItems(this.buildItemFilters()),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -221,6 +278,38 @@ export class RestaurantItemsPageComponent {
           this.isLoading.set(false);
         },
       });
+  }
+
+  loadItems(): void {
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+
+    this.myMenuApi
+      .getItems(this.buildItemFilters())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          this.items.set([...items].sort((a, b) => a.name.localeCompare(b.name)));
+          this.isLoading.set(false);
+        },
+        error: (error) => {
+          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar los productos.'));
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  clearFilters(): void {
+    this.filtersForm.reset(
+      {
+        q: '',
+        categoryId: '',
+        isActive: '',
+        isAvailable: '',
+      },
+      { emitEvent: false },
+    );
+    this.loadItems();
   }
 
   startEdit(item: MenuItemResponse): void {
@@ -283,7 +372,7 @@ export class RestaurantItemsPageComponent {
             this.successMessage.set('Producto actualizado correctamente.');
             this.isSubmitting.set(false);
             this.cancelEdit();
-            this.loadData();
+            this.loadItems();
           },
           error: (error) => {
             this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar el producto.'));
@@ -310,7 +399,7 @@ export class RestaurantItemsPageComponent {
           this.successMessage.set('Producto creado correctamente.');
           this.isSubmitting.set(false);
           this.cancelEdit();
-          this.loadData();
+          this.loadItems();
         },
         error: (error) => {
           this.errorMessage.set(getErrorMessage(error, 'No se pudo crear el producto.'));
@@ -329,25 +418,39 @@ export class RestaurantItemsPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (updatedItem) => {
-          this.items.update((items) =>
-            items
-              .map((currentItem) => (currentItem.id === updatedItem.id ? updatedItem : currentItem))
-              .sort((a, b) => a.name.localeCompare(b.name)),
-          );
-
-          if (this.editingItem()?.id === updatedItem.id) {
-            this.startEdit(updatedItem);
-          }
-
           this.successMessage.set(
             `Disponibilidad actualizada: ${updatedItem.name} ahora esta ${updatedItem.isAvailable ? 'disponible' : 'no disponible'}.`,
           );
           this.availabilityItemId.set(null);
+          this.loadItems();
         },
         error: (error) => {
           this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar la disponibilidad del producto.'));
           this.availabilityItemId.set(null);
         },
       });
+  }
+
+  private buildItemFilters() {
+    const filters = this.filtersForm.getRawValue();
+
+    return {
+      q: filters.q,
+      categoryId: filters.categoryId || undefined,
+      isActive: this.toOptionalBoolean(filters.isActive),
+      isAvailable: this.toOptionalBoolean(filters.isAvailable),
+    };
+  }
+
+  private toOptionalBoolean(value: string): boolean | null {
+    if (value === 'true') {
+      return true;
+    }
+
+    if (value === 'false') {
+      return false;
+    }
+
+    return null;
   }
 }

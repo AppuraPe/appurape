@@ -1,4 +1,5 @@
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Restaurants;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
@@ -27,10 +28,28 @@ public class RestaurantService : IRestaurantService
         _updateValidator = updateValidator;
     }
 
-    public async Task<IReadOnlyList<RestaurantListItemResponse>> GetPublicRestaurantsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RestaurantListItemResponse>> GetPublicRestaurantsAsync(
+        PublicRestaurantFilterRequest filters,
+        CancellationToken cancellationToken = default)
     {
-        var restaurants = await _dbContext.Restaurants
-            .Where(x => x.ApprovalStatus == ApprovalStatus.Approved && x.IsActive)
+        var searchTerm = SearchQuery.Normalize(filters.Q);
+        var query = _dbContext.Restaurants
+            .Where(x => x.ApprovalStatus == ApprovalStatus.Approved && x.IsActive);
+
+        if (filters.ZoneId.HasValue)
+        {
+            query = query.Where(x => x.ZoneId == filters.ZoneId.Value);
+        }
+
+        if (searchTerm is not null)
+        {
+            query = query.Where(x =>
+                x.Name.ToLower().Contains(searchTerm) ||
+                x.Description.ToLower().Contains(searchTerm) ||
+                x.Zone.Name.ToLower().Contains(searchTerm));
+        }
+
+        var restaurants = await query
             .OrderBy(x => x.Name)
             .Select(x => new RestaurantListItemResponse
             {

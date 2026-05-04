@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime } from 'rxjs';
 import {
   CreateMenuCategoryRequest,
   MenuCategoryResponse,
@@ -80,10 +81,37 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           subtitle="Selecciona una categoria para editarla."
         />
 
+        <form class="filters-grid" [formGroup]="filtersForm" (ngSubmit)="loadCategories()">
+          <div class="field search-field">
+            <label for="categorySearch">Buscar categoria</label>
+            <input
+              id="categorySearch"
+              type="search"
+              formControlName="q"
+              placeholder="Buscar por nombre"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="field">
+            <label for="categoryActiveFilter">Estado</label>
+            <select id="categoryActiveFilter" formControlName="isActive">
+              <option value="">Todas</option>
+              <option value="true">Activas</option>
+              <option value="false">Inactivas</option>
+            </select>
+          </div>
+
+          <div class="page-actions compact">
+            <button class="button" type="submit" [disabled]="isLoading()">Aplicar</button>
+            <button class="button ghost" type="button" (click)="clearFilters()" [disabled]="isLoading()">Limpiar</button>
+          </div>
+        </form>
+
         @if (isLoading()) {
           <div class="message">Cargando categorias...</div>
         } @else if (!categories().length) {
-          <div class="message">Todavia no hay categorias para este restaurante.</div>
+          <div class="message">No hay categorias para los filtros seleccionados.</div>
         } @else {
           <div class="list">
             @for (category of categories(); track category.id) {
@@ -128,6 +156,11 @@ export class RestaurantCategoriesPageComponent {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
 
+  readonly filtersForm = this.formBuilder.nonNullable.group({
+    q: [''],
+    isActive: [''],
+  });
+
   readonly form = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required]],
     sortOrder: [0, [Validators.required, Validators.min(0)]],
@@ -135,15 +168,23 @@ export class RestaurantCategoriesPageComponent {
   });
 
   constructor() {
+    this.filtersForm.valueChanges.pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.loadCategories();
+    });
+
     this.loadCategories();
   }
 
   loadCategories(): void {
+    const filters = this.filtersForm.getRawValue();
     this.isLoading.set(true);
     this.errorMessage.set('');
 
     this.myMenuApi
-      .getCategories()
+      .getCategories({
+        q: filters.q,
+        isActive: this.toOptionalBoolean(filters.isActive),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (categories) => {
@@ -155,6 +196,17 @@ export class RestaurantCategoriesPageComponent {
           this.isLoading.set(false);
         },
       });
+  }
+
+  clearFilters(): void {
+    this.filtersForm.reset(
+      {
+        q: '',
+        isActive: '',
+      },
+      { emitEvent: false },
+    );
+    this.loadCategories();
   }
 
   startEdit(category: MenuCategoryResponse): void {
@@ -236,5 +288,17 @@ export class RestaurantCategoriesPageComponent {
           this.isSubmitting.set(false);
         },
       });
+  }
+
+  private toOptionalBoolean(value: string): boolean | null {
+    if (value === 'true') {
+      return true;
+    }
+
+    if (value === 'false') {
+      return false;
+    }
+
+    return null;
   }
 }

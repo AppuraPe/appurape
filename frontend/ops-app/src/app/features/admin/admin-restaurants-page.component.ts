@@ -3,6 +3,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { debounceTime } from 'rxjs';
 import { AdminRestaurantListItemResponse } from '../../core/models/admin.models';
 import { AdminApiService } from '../../core/services/admin-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
@@ -33,6 +34,17 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       />
 
       <form class="filters-grid" [formGroup]="filtersForm" (ngSubmit)="loadRestaurants()">
+        <div class="field search-field">
+          <label for="restaurantSearch">Buscar restaurante</label>
+          <input
+            id="restaurantSearch"
+            type="search"
+            formControlName="q"
+            placeholder="Nombre, owner, email, zona o direccion"
+            autocomplete="off"
+          />
+        </div>
+
         <div class="field">
           <label for="approvalStatus">Aprobacion</label>
           <select id="approvalStatus" formControlName="approvalStatus">
@@ -113,12 +125,17 @@ export class AdminRestaurantsPageComponent {
   readonly errorMessage = signal('');
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
+    q: [''],
     approvalStatus: [''],
     isActive: [''],
     userStatus: [''],
   });
 
   constructor() {
+    this.filtersForm.valueChanges.pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.loadRestaurants();
+    });
+
     this.loadRestaurants();
   }
 
@@ -129,6 +146,7 @@ export class AdminRestaurantsPageComponent {
 
     this.adminApi
       .getRestaurants({
+        q: filters.q,
         approvalStatus: filters.approvalStatus || undefined,
         isActive: this.toOptionalBoolean(filters.isActive),
         userStatus: filters.userStatus || undefined,
@@ -147,11 +165,15 @@ export class AdminRestaurantsPageComponent {
   }
 
   clearFilters(): void {
-    this.filtersForm.reset({
-      approvalStatus: '',
-      isActive: '',
-      userStatus: '',
-    });
+    this.filtersForm.reset(
+      {
+        q: '',
+        approvalStatus: '',
+        isActive: '',
+        userStatus: '',
+      },
+      { emitEvent: false },
+    );
     this.loadRestaurants();
   }
 

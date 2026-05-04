@@ -1,6 +1,8 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime } from 'rxjs';
 import { AvailableDriverOrderListItemResponse } from '../../core/models/driver.models';
 import { DriverOrdersApiService } from '../../core/services/driver-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
@@ -10,7 +12,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 @Component({
   selector: 'app-driver-available-orders-page',
   standalone: true,
-  imports: [PageHeaderComponent, CurrencyPipe, DatePipe, AppNoticeComponent],
+  imports: [PageHeaderComponent, CurrencyPipe, DatePipe, ReactiveFormsModule, AppNoticeComponent],
   template: `
     <section class="page-card">
       <app-page-header
@@ -27,11 +29,25 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
         <div class="message success">{{ successMessage() }}</div>
       }
 
-      <div class="page-actions">
-        <button class="button ghost" type="button" (click)="loadOrders()" [disabled]="isLoading() || !!actionOrderId()">
-          Recargar
-        </button>
-      </div>
+      <form class="filters-grid" [formGroup]="filtersForm" (ngSubmit)="loadOrders()">
+        <div class="field search-field">
+          <label for="availableOrderSearch">Buscar pedido</label>
+          <input
+            id="availableOrderSearch"
+            type="search"
+            formControlName="q"
+            placeholder="Restaurante, direccion o zona"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="page-actions compact">
+          <button class="button" type="submit" [disabled]="isLoading() || !!actionOrderId()">Aplicar</button>
+          <button class="button ghost" type="button" (click)="clearFilters()" [disabled]="isLoading() || !!actionOrderId()">
+            Limpiar
+          </button>
+        </div>
+      </form>
 
       <app-notice
         tone="info"
@@ -82,6 +98,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
   `,
 })
 export class DriverAvailableOrdersPageComponent {
+  private readonly formBuilder = inject(FormBuilder);
   private readonly driverOrdersApi = inject(DriverOrdersApiService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -91,16 +108,25 @@ export class DriverAvailableOrdersPageComponent {
   readonly successMessage = signal('');
   readonly actionOrderId = signal<string | null>(null);
 
+  readonly filtersForm = this.formBuilder.nonNullable.group({
+    q: [''],
+  });
+
   constructor() {
+    this.filtersForm.valueChanges.pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.loadOrders();
+    });
+
     this.loadOrders();
   }
 
   loadOrders(): void {
+    const filters = this.filtersForm.getRawValue();
     this.isLoading.set(true);
     this.errorMessage.set('');
 
     this.driverOrdersApi
-      .getAvailableOrders()
+      .getAvailableOrders({ q: filters.q })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (orders) => {
@@ -112,6 +138,16 @@ export class DriverAvailableOrdersPageComponent {
           this.isLoading.set(false);
         },
       });
+  }
+
+  clearFilters(): void {
+    this.filtersForm.reset(
+      {
+        q: '',
+      },
+      { emitEvent: false },
+    );
+    this.loadOrders();
   }
 
   takeOrder(order: AvailableDriverOrderListItemResponse): void {

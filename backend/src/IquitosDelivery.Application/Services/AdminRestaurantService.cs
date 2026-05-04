@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Admin;
 using IquitosDelivery.Application.DTOs.Restaurants;
 using IquitosDelivery.Application.Exceptions;
@@ -26,6 +27,7 @@ public class AdminRestaurantService : IAdminRestaurantService
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Restaurants.AsQueryable();
+        var searchTerm = SearchQuery.Normalize(filters.Q);
 
         if (filters.ApprovalStatus.HasValue)
         {
@@ -40,6 +42,16 @@ public class AdminRestaurantService : IAdminRestaurantService
         if (filters.Status.HasValue)
         {
             query = query.Where(x => x.OwnerUser.Status == filters.Status.Value);
+        }
+
+        if (searchTerm is not null)
+        {
+            query = query.Where(x =>
+                x.Name.ToLower().Contains(searchTerm) ||
+                (x.OwnerUser.FirstName + " " + x.OwnerUser.LastName).ToLower().Contains(searchTerm) ||
+                x.OwnerUser.Email.ToLower().Contains(searchTerm) ||
+                x.Zone.Name.ToLower().Contains(searchTerm) ||
+                x.Address.ToLower().Contains(searchTerm));
         }
 
         return await query

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Admin;
 using IquitosDelivery.Application.DTOs.Drivers;
 using IquitosDelivery.Application.Exceptions;
@@ -26,6 +27,7 @@ public class AdminDriverService : IAdminDriverService
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Drivers.AsQueryable();
+        var searchTerm = SearchQuery.Normalize(filters.Q);
 
         if (filters.ApprovalStatus.HasValue)
         {
@@ -40,6 +42,16 @@ public class AdminDriverService : IAdminDriverService
         if (filters.Status.HasValue)
         {
             query = query.Where(x => x.User.Status == filters.Status.Value);
+        }
+
+        if (searchTerm is not null)
+        {
+            query = query.Where(x =>
+                (x.User.FirstName + " " + x.User.LastName).ToLower().Contains(searchTerm) ||
+                x.User.Email.ToLower().Contains(searchTerm) ||
+                x.User.Phone.ToLower().Contains(searchTerm) ||
+                x.Plate.ToLower().Contains(searchTerm) ||
+                x.Zone.Name.ToLower().Contains(searchTerm));
         }
 
         return await query

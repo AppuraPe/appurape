@@ -1,4 +1,5 @@
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Orders;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
@@ -183,12 +184,31 @@ public class OrderService : IOrderService
         return order;
     }
 
-    public async Task<IReadOnlyList<RestaurantOrderListItemResponse>> GetRestaurantOrdersAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RestaurantOrderListItemResponse>> GetRestaurantOrdersAsync(
+        RestaurantOrderFilterRequest filters,
+        CancellationToken cancellationToken = default)
     {
         var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
+        var searchTerm = SearchQuery.Normalize(filters.Q);
+        var orderId = Guid.TryParse(filters.Q?.Trim(), out var parsedOrderId) ? parsedOrderId : (Guid?)null;
+        var query = _dbContext.Orders
+            .Where(x => x.RestaurantId == restaurant.Id);
 
-        return await _dbContext.Orders
-            .Where(x => x.RestaurantId == restaurant.Id)
+        if (filters.Status.HasValue)
+        {
+            query = query.Where(x => x.Status == filters.Status.Value);
+        }
+
+        if (searchTerm is not null)
+        {
+            query = query.Where(x =>
+                (orderId.HasValue && x.Id == orderId.Value) ||
+                (x.Customer.User.FirstName + " " + x.Customer.User.LastName).ToLower().Contains(searchTerm) ||
+                x.Customer.User.Phone.ToLower().Contains(searchTerm) ||
+                x.DeliveryAddress.ToLower().Contains(searchTerm));
+        }
+
+        return await query
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => new RestaurantOrderListItemResponse
             {

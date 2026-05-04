@@ -254,6 +254,10 @@ p {
   background: var(--brand-50);
 }
 
+.search-field {
+  grid-column: 1 / -1;
+}
+
 .field {
   display: grid;
   gap: 0.4rem;

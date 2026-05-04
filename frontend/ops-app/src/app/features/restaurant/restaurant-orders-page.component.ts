@@ -1,6 +1,8 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime } from 'rxjs';
 import { OrderStatus, RestaurantOrderListItemResponse } from '../../core/models/restaurant.models';
 import { RestaurantOrdersApiService } from '../../core/services/restaurant-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
@@ -17,7 +19,7 @@ interface RestaurantOrderAction {
 @Component({
   selector: 'app-restaurant-orders-page',
   standalone: true,
-  imports: [PageHeaderComponent, CurrencyPipe, DatePipe, AppNoticeComponent, StatusBadgeComponent],
+  imports: [PageHeaderComponent, CurrencyPipe, DatePipe, ReactiveFormsModule, AppNoticeComponent, StatusBadgeComponent],
   template: `
     <section class="page-card">
       <app-page-header
@@ -34,11 +36,41 @@ interface RestaurantOrderAction {
         <div class="message success">{{ successMessage() }}</div>
       }
 
-      <div class="page-actions">
-        <button class="button ghost" type="button" (click)="loadOrders()" [disabled]="isLoading() || !!actionOrderId()">
-          Recargar
-        </button>
-      </div>
+      <form class="filters-grid" [formGroup]="filtersForm" (ngSubmit)="loadOrders()">
+        <div class="field search-field">
+          <label for="restaurantOrderSearch">Buscar pedido</label>
+          <input
+            id="restaurantOrderSearch"
+            type="search"
+            formControlName="q"
+            placeholder="Cliente, telefono o direccion"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label for="restaurantOrderStatus">Estado</label>
+          <select id="restaurantOrderStatus" formControlName="status">
+            <option value="">Todos</option>
+            <option value="Pending">Pending</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Preparing">Preparing</option>
+            <option value="ReadyForPickup">ReadyForPickup</option>
+            <option value="Assigned">Assigned</option>
+            <option value="PickedUp">PickedUp</option>
+            <option value="OnTheWay">OnTheWay</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="page-actions compact">
+          <button class="button" type="submit" [disabled]="isLoading() || !!actionOrderId()">Aplicar</button>
+          <button class="button ghost" type="button" (click)="clearFilters()" [disabled]="isLoading() || !!actionOrderId()">
+            Limpiar
+          </button>
+        </div>
+      </form>
 
       <app-notice
         tone="info"
@@ -97,6 +129,7 @@ interface RestaurantOrderAction {
   `,
 })
 export class RestaurantOrdersPageComponent {
+  private readonly formBuilder = inject(FormBuilder);
   private readonly restaurantOrdersApi = inject(RestaurantOrdersApiService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -106,16 +139,29 @@ export class RestaurantOrdersPageComponent {
   readonly successMessage = signal('');
   readonly actionOrderId = signal<string | null>(null);
 
+  readonly filtersForm = this.formBuilder.nonNullable.group({
+    q: [''],
+    status: [''],
+  });
+
   constructor() {
+    this.filtersForm.valueChanges.pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.loadOrders();
+    });
+
     this.loadOrders();
   }
 
   loadOrders(): void {
+    const filters = this.filtersForm.getRawValue();
     this.isLoading.set(true);
     this.errorMessage.set('');
 
     this.restaurantOrdersApi
-      .getOrders()
+      .getOrders({
+        q: filters.q,
+        status: filters.status || undefined,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (orders) => {
@@ -127,6 +173,17 @@ export class RestaurantOrdersPageComponent {
           this.isLoading.set(false);
         },
       });
+  }
+
+  clearFilters(): void {
+    this.filtersForm.reset(
+      {
+        q: '',
+        status: '',
+      },
+      { emitEvent: false },
+    );
+    this.loadOrders();
   }
 
   shortId(id: string): string {

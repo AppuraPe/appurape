@@ -87,12 +87,14 @@ export interface AdminDriverDetailResponse {
 }
 
 export interface AdminRestaurantFilters {
+  q?: string;
   approvalStatus?: string;
   isActive?: boolean | null;
   userStatus?: string;
 }
 
 export interface AdminDriverFilters {
+  q?: string;
   approvalStatus?: string;
   isAvailable?: boolean | null;
   userStatus?: string;

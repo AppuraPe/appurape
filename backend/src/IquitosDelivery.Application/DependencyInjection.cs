@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.IAdminRestaurantService, Services.AdminRestaurantService>();
         services.AddScoped<Interfaces.IAdminDriverService, Services.AdminDriverService>();
         services.AddScoped<Interfaces.IZoneService, Services.ZoneService>();
+        services.AddScoped<Interfaces.ISearchService, Services.SearchService>();
 
         return services;
     }

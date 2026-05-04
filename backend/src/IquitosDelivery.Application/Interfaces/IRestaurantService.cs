@@ -4,7 +4,9 @@ namespace IquitosDelivery.Application.Interfaces;
 
 public interface IRestaurantService
 {
-    Task<IReadOnlyList<RestaurantListItemResponse>> GetPublicRestaurantsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<RestaurantListItemResponse>> GetPublicRestaurantsAsync(
+        PublicRestaurantFilterRequest filters,
+        CancellationToken cancellationToken = default);
 
     Task<RestaurantDetailResponse> GetPublicRestaurantDetailAsync(Guid restaurantId, CancellationToken cancellationToken = default);
 
