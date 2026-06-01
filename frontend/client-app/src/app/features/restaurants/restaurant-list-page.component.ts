@@ -1,8 +1,7 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormBuilder } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 import {
   PublicSearchResponse,
@@ -12,6 +11,13 @@ import {
 import { RestaurantsApiService } from '../../core/services/restaurants-api.service';
 import { ZonesApiService } from '../../core/services/zones-api.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
+import { FoodResultCardComponent } from './components/food-result-card.component';
+import { RestaurantCardComponent, RestaurantCardView } from './components/restaurant-card.component';
+import { RestaurantsFiltersCardComponent } from './components/restaurants-filters-card.component';
+import { RestaurantsHeroSectionComponent } from './components/restaurants-hero-section.component';
+import { RestaurantsPageContainerComponent } from './components/restaurants-page-container.component';
+import { SectionHeaderComponent } from './components/section-header.component';
+import { StateCardComponent } from './components/state-card.component';
 
 type BrowseResultsState = {
   mode: 'browse';
@@ -28,7 +34,15 @@ type RestaurantListViewState = BrowseResultsState | SearchResultsState;
 @Component({
   selector: 'app-restaurant-list-page',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, CurrencyPipe],
+  imports: [
+    RestaurantsPageContainerComponent,
+    RestaurantsHeroSectionComponent,
+    RestaurantsFiltersCardComponent,
+    SectionHeaderComponent,
+    StateCardComponent,
+    RestaurantCardComponent,
+    FoodResultCardComponent,
+  ],
   templateUrl: './restaurant-list-page.component.html',
 })
 export class RestaurantListPageComponent {
@@ -111,6 +125,32 @@ export class RestaurantListPageComponent {
 
   formatSchedule(openTime: string, closeTime: string): string {
     return `${formatTimeSpan(openTime)} - ${formatTimeSpan(closeTime)}`;
+  }
+
+  toRestaurantCardView(restaurant: RestaurantListItemResponse): RestaurantCardView {
+    return {
+      id: restaurant.id,
+      name: restaurant.name,
+      description: restaurant.description,
+      zoneName: restaurant.zoneName,
+      openTime: restaurant.openTime,
+      closeTime: restaurant.closeTime,
+      reference: restaurant.reference,
+      isOpenNow: restaurant.isOpenNow,
+      imageUrl: restaurant.logoUrl,
+    };
+  }
+
+  toRelatedRestaurantCardView(restaurant: PublicSearchResponse['restaurants'][number]): RestaurantCardView {
+    return {
+      id: restaurant.restaurantId,
+      name: restaurant.name,
+      description: restaurant.description,
+      zoneName: restaurant.zoneName,
+      openTime: restaurant.openTime,
+      closeTime: restaurant.closeTime,
+      imageUrl: restaurant.logoUrl,
+    };
   }
 
   emptyStateTitle(): string {
