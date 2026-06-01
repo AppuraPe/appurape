@@ -1,0 +1,59 @@
+<header class="sticky top-0 z-30 border-b border-white/30 bg-white/10 backdrop-blur-md">
+  <div class="mx-auto flex min-h-[70px] w-[min(1160px,calc(100%-1rem))] items-center justify-between gap-3 py-2">
+    <a class="inline-flex items-center gap-3 text-primary-900 no-underline" routerLink="/restaurants" aria-label="Ir a restaurantes AppuraPe">
+      <span class="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-primary-700 to-primary-500 text-lg font-black text-white shadow-lg">A</span>
+      <span class="leading-tight">
+        <strong class="block font-ui text-[1.65rem] font-bold">AppuraPe</strong>
+        <small class="block font-ui text-xs font-semibold text-loreto-carbon/70">Delivery local</small>
+      </span>
+    </a>
+
+    <nav class="rounded-full border border-loreto-crema/80 bg-white/60 p-1" aria-label="Navegacion principal">
+      <a
+        routerLink="/restaurants"
+        routerLinkActive="bg-[#bfd2bb] text-primary-800"
+        class="inline-flex min-h-10 min-w-[180px] items-center justify-center rounded-full px-5 py-2 font-ui font-semibold text-loreto-carbon transition"
+      >
+        Restaurantes
+      </a>
+    </nav>
+
+    <div class="relative">
+      <button
+        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-loreto-crema/80 bg-white/60 text-loreto-carbon transition hover:-translate-y-0.5"
+        type="button"
+        aria-label="Abrir menu de usuario"
+        title="Usuario"
+        aria-haspopup="menu"
+        [attr.aria-expanded]="isUserMenuOpen()"
+        aria-controls="user-menu"
+        (click)="toggleUserMenu()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="h-5 w-5 fill-current">
+          <path d="M12 12a4.75 4.75 0 1 0-4.75-4.75A4.75 4.75 0 0 0 12 12Zm0 2.25c-4.28 0-7.75 2.44-7.75 5.44 0 .56.44 1 1 1h13.5c.56 0 1-.44 1-1 0-3-3.47-5.44-7.75-5.44Z" />
+        </svg>
+      </button>
+
+      @if (isUserMenuOpen()) {
+        <div id="user-menu" role="menu" class="absolute right-0 top-[calc(100%+0.5rem)] z-40 grid min-w-[190px] gap-1 rounded-2xl border border-loreto-crema/90 bg-surface-card/95 p-2 shadow-xl backdrop-blur-md">
+          @if (currentUser()) {
+            <div class="grid gap-0.5 border-b border-loreto-crema/70 px-2 pb-2">
+              <strong class="truncate text-sm text-loreto-carbon">{{ displayName() }}</strong>
+              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-loreto-carbon/70">Sesion activa</span>
+            </div>
+            <button class="min-h-10 rounded-xl px-3 text-center font-ui text-sm font-semibold text-loreto-carbon hover:bg-surface-soft" type="button" role="menuitem" (click)="logoutFromMenu()">
+              Cerrar sesion
+            </button>
+          } @else {
+            <a class="min-h-10 rounded-xl px-3 text-center font-ui text-sm font-semibold text-loreto-carbon hover:bg-surface-soft" routerLink="/login" role="menuitem" (click)="closeUserMenu()">Login</a>
+            <a class="min-h-10 rounded-xl bg-accent-500 px-3 text-center font-ui text-sm font-semibold text-primary-900" routerLink="/register" role="menuitem" (click)="closeUserMenu()">Crear cuenta</a>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</header>
+
+<main class="">
+  <router-outlet />
+</main>
