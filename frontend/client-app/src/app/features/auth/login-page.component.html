@@ -1,0 +1,82 @@
+<section class="relative isolate min-h-[100dvh] overflow-hidden bg-loreto-carbon font-ui">
+  <div class="absolute inset-0 bg-[url('/img/banner1.png')] bg-cover bg-center" aria-hidden="true"></div>
+  <div class="absolute inset-0 bg-loreto-carbon/50" aria-hidden="true"></div>
+  <div
+    class="absolute inset-0 transition-[background] duration-300"
+    [style.background]="'radial-gradient(560px circle at ' + spotlightX() + '% ' + spotlightY() + '%, rgba(217,164,65,0.24), rgba(200,88,61,0.10) 38%, rgba(61,44,34,0.68) 72%)'"
+    aria-hidden="true"
+  ></div>
+  <div class="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/35 to-transparent" aria-hidden="true"></div>
+  <div class="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/40 to-transparent" aria-hidden="true"></div>
+
+  <div class="relative mx-auto grid min-h-[100dvh] w-full max-w-[1180px] items-center gap-6 px-4 py-6 md:px-6 lg:grid-cols-[1.12fr_0.88fr] lg:gap-10 lg:py-10">
+    <article class="order-2 hidden rounded-3xl p-5 text-white lg:order-1 lg:block lg:p-8">
+      <span class="inline-flex rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.1em]">AppuraPe</span>
+      <h1 class="mt-4 max-w-xl font-display text-4xl leading-tight sm:text-5xl text-white">Entra y continúa tu pedido</h1>
+      <p class="mt-3 max-w-xl text-sm text-white/90 sm:text-base">
+        Inicia sesión para crear pedidos, revisar tu historial y seguir el estado de entrega.
+      </p>
+
+      <div class="mt-7 flex flex-wrap gap-3">
+        <span class="login-float-chip inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white/95">Pedidos protegidos</span>
+        <span class="login-float-chip login-float-chip-delay inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white/95">Registro con correo</span>
+        <span class="login-float-chip login-float-chip-delay-2 inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white/95">Entrega local</span>
+      </div>
+    </article>
+
+    <article class="order-1 rounded-3xl border border-loreto-tacacho/30 bg-surface-card p-5 shadow-2xl lg:order-2 lg:p-8">
+      <span class="inline-flex rounded-full bg-loreto-crema px-4 py-1 text-xs font-bold uppercase tracking-[0.09em] text-loreto-cecina">Acceso</span>
+      <h2 class="mt-3 font-display text-4xl leading-tight text-loreto-carbon">Iniciar sesión</h2>
+      <p class="mt-2 text-sm text-loreto-cecina/85">Usa el correo y contraseña de tu cuenta customer.</p>
+
+      <form class="mt-6 space-y-4" [formGroup]="form" (ngSubmit)="submit()">
+        <div class="grid gap-1.5">
+          <label for="email" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="cliente@appurape.pe"
+            class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+          />
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <span class="text-xs text-accent-600">Ingresa un email válido para continuar.</span>
+          }
+        </div>
+
+        <div class="grid gap-1.5">
+          <label for="password" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Contraseña</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="Tu contraseña"
+            class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+          />
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <span class="text-xs text-accent-600">La contraseña es obligatoria.</span>
+          }
+        </div>
+
+        <button
+          class="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-loreto-tacacho via-loreto-chorizo to-loreto-cecina px-5 text-base font-bold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(138,75,42,0.35)] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/70 disabled:cursor-not-allowed disabled:opacity-60"
+          type="submit"
+          [disabled]="isSubmitting()"
+        >
+          {{ isSubmitting() ? 'Ingresando...' : 'Ingresar a AppuraPe' }}
+        </button>
+
+        <div class="rounded-2xl border border-loreto-tacacho/30 bg-surface-soft p-4">
+          <strong class="block text-sm text-loreto-carbon">¿Aún no tienes cuenta?</strong>
+          <p class="mt-1 text-sm text-loreto-cecina/85">Crea una cuenta customer y verifica tu correo en pocos pasos.</p>
+          <a
+            class="mt-3 inline-flex min-h-10 items-center justify-center rounded-full border border-loreto-cecina/45 px-4 text-sm font-semibold text-loreto-cecina transition hover:bg-loreto-crema"
+            routerLink="/register"
+          >
+            Crear cuenta
+          </a>
+        </div>
+      </form>
+    </article>
+  </div>
+</section>

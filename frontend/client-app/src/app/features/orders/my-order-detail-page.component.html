@@ -1,0 +1,258 @@
+<section class="mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-4 pb-10 pt-4 font-ui md:px-6 md:pt-6">
+  @if (errorMessage()) {
+    <section class="rounded-3xl border border-primary-200 bg-primary-50 p-6 text-primary-700 shadow-sm">
+      <h2 class="font-display text-4xl leading-none text-primary-700">No pudimos cargar este pedido</h2>
+      <p class="mt-2 text-sm text-primary-700/90">{{ errorMessage() }}</p>
+      <a
+        class="mt-4 inline-flex items-center justify-center rounded-full border border-primary-200 bg-surface-card px-5 py-2.5 text-sm font-semibold text-loreto-carbon transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30"
+        routerLink="/orders"
+      >
+        Volver a mis pedidos
+      </a>
+    </section>
+  } @else if (isLoading()) {
+    <section class="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+      <article class="h-40 animate-pulse rounded-3xl border border-primary-100 bg-surface-card"></article>
+      <article class="h-40 animate-pulse rounded-3xl border border-primary-100 bg-surface-card"></article>
+    </section>
+    <section class="h-36 animate-pulse rounded-3xl border border-primary-100 bg-surface-card"></section>
+    <section class="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
+      <article class="h-[26rem] animate-pulse rounded-3xl border border-primary-100 bg-surface-card"></article>
+      <article class="h-[26rem] animate-pulse rounded-3xl border border-primary-100 bg-surface-card"></article>
+    </section>
+    <section class="grid gap-4 md:grid-cols-2">
+      <article class="h-44 animate-pulse rounded-3xl border border-primary-100 bg-surface-card"></article>
+      <article class="h-44 animate-pulse rounded-3xl border border-primary-100 bg-surface-card"></article>
+    </section>
+  } @else if (order(); as currentOrder) {
+    <header class="">
+      <article class="rounded-3xl shadow-sm">
+        <a
+          class="inline-flex items-center justify-center gap-2 rounded-full border border-primary-100 bg-white px-5 py-2.5 text-sm font-semibold text-loreto-carbon transition hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-100 mb-4"
+          routerLink="/orders"
+        >
+          <lucide-angular class="h-4 w-4 text-primary-700" [img]="arrowLeftIcon" aria-hidden="true"></lucide-angular>
+          Volver
+        </a>
+        <div class="flex flex-col gap-4 xl:flex-row xl:flex-wrap xl:items-center">
+
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
+                <lucide-angular class="h-5 w-5" [img]="receiptIcon" aria-hidden="true"></lucide-angular>
+              </span>
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-loreto-cecina">Detalle de pedido</p>
+            </div>
+            <div>
+              <h1 class="font-display text-5xl leading-none text-loreto-carbon md:text-6xl xl:text-right">{{ currentOrder.restaurantName }}</h1>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-3 md:grid-cols-3">
+          @for (item of orderIdentity(); track item.label) {
+            <div class="rounded-2xl border border-primary-100 bg-surface-soft/80 p-4 transition duration-200 hover:bg-white">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
+                  <lucide-angular class="h-4 w-4" [img]="item.icon" aria-hidden="true"></lucide-angular>
+                </span>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-loreto-cecina">{{ item.label }}</p>
+              </div>
+              @if (item.label === 'Creado') {
+                <p class="mt-3 text-sm font-semibold text-loreto-carbon">{{ item.value | date: 'medium' }}</p>
+              } @else {
+                <p class="mt-3 break-all text-sm font-semibold text-loreto-carbon">{{ item.value }}</p>
+              }
+            </div>
+          }
+        </div>
+      </article>
+    </header>
+
+    <section class="rounded-3xl border border-primary-100 bg-surface-card p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-loreto">
+      <div class="flex flex-col gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
+              <lucide-angular class="h-5 w-5" [img]="deliveryIcon" aria-hidden="true"></lucide-angular>
+            </span>
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-loreto-cecina">Direccion de entrega</p>
+          </div>
+          <h2 class="mt-3 font-display text-4xl leading-none text-loreto-carbon md:text-5xl">{{ currentOrder.deliveryAddress }}</h2>
+        </div>
+
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-2xl bg-surface-soft p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-loreto-cecina">Referencia</p>
+            <p class="mt-2 text-sm text-loreto-carbon">{{ currentOrder.deliveryReference || 'Sin referencia' }}</p>
+          </div>
+          <div class="rounded-2xl bg-surface-soft p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-loreto-cecina">Metodo de pago</p>
+            <p class="mt-2 text-sm text-loreto-carbon">{{ currentOrder.paymentMethod }}</p>
+          </div>
+          <div class="rounded-2xl bg-surface-soft p-4 xl:col-span-2">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-loreto-cecina">Notas</p>
+            <p class="mt-2 text-sm text-loreto-carbon">{{ currentOrder.notes || 'Sin notas adicionales' }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
+      <article class="rounded-3xl border border-primary-100 bg-surface-card p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-loreto">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-loreto-cecina">Lista de productos</p>
+            <h2 class="mt-3 font-display text-4xl leading-none text-loreto-carbon md:text-5xl">Productos</h2>
+            <p class="mt-2 text-sm text-loreto-cecina">Items incluidos en este pedido.</p>
+          </div>
+          <span class="inline-flex rounded-full bg-surface-soft px-3 py-1 text-xs font-semibold text-loreto-carbon">
+            {{ currentOrder.items.length }} item(s)
+          </span>
+        </div>
+
+        @if (!currentOrder.items.length) {
+          <div class="mt-5 rounded-2xl border border-dashed border-primary-100 bg-surface-soft p-6 text-center">
+            <h3 class="font-display text-3xl leading-none text-loreto-carbon">No hay items visibles</h3>
+            <p class="mt-2 text-sm text-loreto-cecina">El pedido no tiene productos asociados para mostrar.</p>
+          </div>
+        } @else {
+          <div class="mt-5 space-y-4">
+            @for (item of currentOrder.items; track item.productName + item.quantity) {
+              <article class="overflow-hidden rounded-3xl border border-primary-100 bg-surface-soft transition duration-200 hover:-translate-y-1 hover:bg-white hover:shadow-loreto">
+                <div class="grid gap-0 md:grid-cols-[9rem_1fr]">
+                  <div class="h-40 md:h-full">
+                    <img
+                      [src]="productImageUrl(item.imageUrl)"
+                      [attr.srcset]="productImageSrcSet(item.imageUrl)"
+                      sizes="(max-width: 767px) 100vw, 9rem"
+                      [alt]="'Imagen de ' + item.productName"
+                      class="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div class="flex flex-col justify-between gap-4 p-4">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
+                          <lucide-angular class="h-4 w-4" [img]="ticketIcon" aria-hidden="true"></lucide-angular>
+                        </span>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-loreto-cecina">Producto confirmado</p>
+                      </div>
+                      <h3 class="font-display text-3xl leading-none text-loreto-carbon">{{ item.productName }}</h3>
+                      <p class="mt-2 text-sm text-loreto-cecina">
+                        Cantidad: {{ item.quantity }} · Unitario: {{ item.unitPrice | currency: 'PEN' : 'symbol' : '1.2-2' }}
+                      </p>
+                    </div>
+                    <p class="font-display text-3xl leading-none text-primary-700">
+                      {{ item.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </article>
+
+      <article class="rounded-3xl border border-primary-100 bg-surface-card p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-loreto">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
+                <lucide-angular class="h-5 w-5" [img]="timelineIcon" aria-hidden="true"></lucide-angular>
+              </span>
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-loreto-cecina">Tracking dinamico</p>
+            </div>
+            <h2 class="mt-3 font-display text-4xl leading-none text-loreto-carbon md:text-5xl">Seguimiento</h2>
+            <p class="mt-2 text-sm text-loreto-cecina">Consulta el estado actual o revisa el historial completo del pedido.</p>
+          </div>
+          <button
+            class="inline-flex h-11 items-center justify-center rounded-full border border-primary-100 bg-white px-5 text-sm font-semibold text-loreto-carbon transition hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-100"
+            type="button"
+            (click)="toggleTrackingMode()"
+          >
+            {{ trackingButtonLabel() }}
+          </button>
+        </div>
+
+        @if (trackingMode() === 'current') {
+          <div class="mt-6 flex h-full flex-col gap-5">
+            <div class="overflow-hidden rounded-3xl border border-primary-100 bg-surface-soft">
+              <img
+                [src]="activeTrackingState().gifUrl"
+                [alt]="'Animacion de estado ' + activeTrackingState().label"
+                class="h-64 w-full object-cover md:h-72"
+              />
+            </div>
+
+            <div class="rounded-2xl bg-primary-50 p-4">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
+                  <lucide-angular class="h-4 w-4" [img]="trackingStateIcon(activeTrackingState().key)" aria-hidden="true"></lucide-angular>
+                </span>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-loreto-cecina">Estado actual</p>
+              </div>
+              <h3 class="mt-2 font-display text-4xl leading-none text-loreto-carbon">{{ activeTrackingState().label }}</h3>
+              <p class="mt-3 text-sm leading-6 text-loreto-cecina">{{ activeTrackingState().description }}</p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                @for (chip of trackingProgressChips(); track chip.key) {
+                  <span
+                    class="inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] transition"
+                    [class]="chip.isCurrent ? 'border-primary-600 bg-primary-600 text-white shadow-sm shadow-primary-600/20' : chip.isActive ? 'border-primary-200 bg-white text-primary-700' : 'border-primary-100 bg-surface-soft text-loreto-cecina/80'"
+                  >
+                    {{ chip.label }}
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+        } @else {
+          <ol class="mt-6 space-y-4">
+            @for (step of timelineSteps(); track step.key; let isLast = $last) {
+              <li class="flex gap-3">
+                <div class="flex flex-col items-center">
+                  <span
+                    class="mt-1 h-4 w-4 rounded-full border-2"
+                    [class]="step.timestamp ? 'border-primary-600 bg-primary-500' : 'border-primary-100 bg-surface-soft'"
+                  ></span>
+                  @if (!isLast) {
+                    <span class="mt-1 h-full w-px bg-primary-100"></span>
+                  }
+                </div>
+                <div class="pb-2">
+                  <p class="text-sm font-semibold uppercase tracking-[0.14em] text-loreto-cecina">{{ step.label }}</p>
+                  <p class="mt-1 text-sm text-loreto-carbon">
+                    {{ step.timestamp ? (step.timestamp | date: 'medium') : 'Aun sin registrar' }}
+                  </p>
+                </div>
+              </li>
+            }
+          </ol>
+        }
+      </article>
+    </section>
+
+    <section>
+      <article class="rounded-3xl border border-primary-100 bg-surface-card p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-loreto">
+        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-loreto-cecina">Total del pago</p>
+        <p class="mt-4 font-display text-5xl leading-none text-primary-700 md:text-6xl">
+          {{ currentOrder.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
+        </p>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+          <div class="rounded-2xl bg-surface-soft p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-loreto-cecina">Subtotal</p>
+            <p class="mt-2 text-base font-semibold text-loreto-carbon">
+              {{ currentOrder.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}
+            </p>
+          </div>
+          <div class="rounded-2xl bg-surface-soft p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-loreto-cecina">Delivery</p>
+            <p class="mt-2 text-base font-semibold text-loreto-carbon">
+              {{ currentOrder.deliveryFee | currency: 'PEN' : 'symbol' : '1.2-2' }}
+            </p>
+          </div>
+        </div>
+      </article>
+    </section>
+  }
+</section>

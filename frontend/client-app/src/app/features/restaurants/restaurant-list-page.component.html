@@ -19,10 +19,6 @@
     />
   </section>
 
-  @if (errorMessage()) {
-    <app-state-card title="No pudimos actualizar la busqueda" [message]="errorMessage()" containerClass="border-[#ffd2cc] bg-[#faece9] text-[#9e3b32]" />
-  }
-
   @if (isLoading()) {
     <app-state-card [containerClass]="'border-[#ddcfb4] bg-white/95 text-[#7a6658] shadow-sm'">
       <span class="inline-flex rounded-full bg-[#dbe9d5] px-3 py-1 text-xs font-bold uppercase tracking-[0.06em] text-[#214d2b]">
@@ -52,7 +48,20 @@
         } @else {
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             @for (food of foods(); track food.menuItemId) {
-              <app-food-result-card [food]="food" [appliedQuery]="appliedQuery()" />
+              <app-menu-card
+                [title]="food.name"
+                [subtitle]="food.restaurantName"
+                [description]="food.description || 'Disponible para pedir en AppuraPe.'"
+                [imageUrl]="food.imageUrl"
+                [leftChip]="food.categoryName || ''"
+                [rightChip]="food.zoneName || ''"
+                [rightChipTone]="'muted'"
+                [priceLabel]="'' + (food.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                [actionLabel]="'' + (food.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                [actionMode]="'link'"
+                [actionRoute]="['/restaurants', food.restaurantId]"
+                [actionQueryParams]="{ menuSearch: appliedQuery(), searchSource: 'global', matchedItemId: food.menuItemId, matchedCategoryName: food.categoryName || null }"
+              />
             }
           </div>
         }
@@ -66,7 +75,17 @@
         } @else {
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             @for (restaurant of relatedRestaurants(); track restaurant.restaurantId) {
-              <app-restaurant-card [restaurant]="toRelatedRestaurantCardView(restaurant)" [detailRoute]="['/restaurants', restaurant.restaurantId]" />
+              <app-menu-card
+                [title]="restaurant.name"
+                [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
+                [description]="restaurant.description || 'Disponible para pedir en AppuraPe.'"
+                [imageUrl]="restaurant.logoUrl"
+                [leftChip]="restaurant.zoneName || ''"
+                [rightChip]="''"
+                [actionLabel]="'Ver menu'"
+                [actionMode]="'link'"
+                [actionRoute]="['/restaurants', restaurant.restaurantId]"
+              />
             }
           </div>
         }
@@ -85,7 +104,18 @@
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       @for (restaurant of restaurants(); track restaurant.id) {
-        <app-restaurant-card [restaurant]="toRestaurantCardView(restaurant)" [showReference]="true" [detailRoute]="['/restaurants', restaurant.id]" />
+        <app-menu-card
+          [title]="restaurant.name"
+          [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
+          [description]="restaurant.description || 'Disponible para pedir en AppuraPe.'"
+          [imageUrl]="restaurant.logoUrl"
+          [leftChip]="restaurant.zoneName || ''"
+          [rightChip]="restaurant.isOpenNow ? 'Abierto' : 'Cerrado'"
+          [rightChipTone]="restaurant.isOpenNow ? 'success' : 'warning'"
+          [actionLabel]="'Ver menu'"
+          [actionMode]="'link'"
+          [actionRoute]="['/restaurants', restaurant.id]"
+        />
       }
     </div>
   }

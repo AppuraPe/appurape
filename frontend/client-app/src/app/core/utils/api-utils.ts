@@ -8,7 +8,8 @@ type ApiValidationError = {
 
 type ApiErrorPayload = {
   message?: unknown;
-  errors?: ApiValidationError[];
+  errors?: ApiValidationError[] | Record<string, unknown> | string;
+  error?: unknown;
 };
 
 export function buildApiUrl(path: string): string {
@@ -35,12 +36,28 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
         return payload.message;
       }
 
-      const firstValidationError = payload.errors?.find(
-        (validationError) => typeof validationError.error === 'string' && validationError.error.trim(),
-      );
+      if (Array.isArray(payload.errors)) {
+        const firstValidationError = payload.errors.find(
+          (validationError) => typeof validationError.error === 'string' && validationError.error.trim(),
+        );
 
-      if (typeof firstValidationError?.error === 'string') {
-        return firstValidationError.error;
+        if (typeof firstValidationError?.error === 'string' && firstValidationError.error.trim()) {
+          return firstValidationError.error;
+        }
+      } else if (typeof payload.errors === 'string' && payload.errors.trim()) {
+        return payload.errors;
+      } else if (payload.errors && typeof payload.errors === 'object') {
+        const objectErrors = Object.values(payload.errors)
+          .flatMap((value) => (Array.isArray(value) ? value : [value]))
+          .find((value) => typeof value === 'string' && value.trim());
+
+        if (typeof objectErrors === 'string' && objectErrors.trim()) {
+          return objectErrors;
+        }
+      }
+
+      if (typeof payload.error === 'string' && payload.error.trim()) {
+        return payload.error;
       }
     }
 

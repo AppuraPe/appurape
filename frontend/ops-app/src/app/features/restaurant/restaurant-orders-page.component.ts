@@ -6,6 +6,7 @@ import { debounceTime } from 'rxjs';
 import { OrderStatus, RestaurantOrderListItemResponse } from '../../core/models/restaurant.models';
 import { RestaurantOrdersApiService } from '../../core/services/restaurant-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { toOrderStatusValue } from '../../core/utils/order-status.utils';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -218,7 +219,7 @@ export class RestaurantOrdersPageComponent {
     this.successMessage.set('');
 
     this.restaurantOrdersApi
-      .updateOrderStatus(order.id, { status: action.status })
+      .updateOrderStatus(order.id, { status: toOrderStatusValue(action.status) })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

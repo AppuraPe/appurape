@@ -9,12 +9,12 @@ import { RestaurantListPageComponent } from './features/restaurants/restaurant-l
 import { ClientLayoutComponent } from './layout/client-layout.component';
 
 export const routes: Routes = [
+  { path: 'login', component: LoginPageComponent },
   {
     path: '',
     component: ClientLayoutComponent,
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'restaurants' },
-      { path: 'login', component: LoginPageComponent },
       { path: 'register', component: RegisterPageComponent },
       { path: 'restaurants', component: RestaurantListPageComponent },
       { path: 'restaurants/:id', component: RestaurantDetailPageComponent },

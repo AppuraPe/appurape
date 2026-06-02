@@ -49,4 +49,26 @@
   .font-ui {
     font-family: "Poppins", "Segoe UI", sans-serif;
   }
+
+  .login-float-chip {
+    animation: login-float 5.8s ease-in-out infinite;
+  }
+
+  .login-float-chip-delay {
+    animation-delay: 1.1s;
+  }
+
+  .login-float-chip-delay-2 {
+    animation-delay: 2.1s;
+  }
+}
+
+@keyframes login-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }

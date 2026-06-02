@@ -1,8 +1,9 @@
-import { CurrencyPipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { CurrencyPipe, DOCUMENT } from '@angular/common';
+import { AfterViewInit, Component, DestroyRef, OnDestroy, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { LucideAngularModule, ShoppingCart, Trash2 } from 'lucide-angular';
 import { debounceTime, distinctUntilChanged, forkJoin, map } from 'rxjs';
 import { CreateOrderRequest, PaymentMethod } from '../../core/models/orders.models';
 import {
@@ -12,9 +13,12 @@ import {
   RestaurantDetailResponse,
 } from '../../core/models/restaurants.models';
 import { AuthService } from '../../core/services/auth.service';
+import { CheckoutDrawerUiService } from '../../core/services/checkout-drawer-ui.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
 import { RestaurantsApiService } from '../../core/services/restaurants-api.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
+import { MenuCardComponent } from './components/menu-card.component';
 
 type CartLine = {
   menuItemId: string;
@@ -28,18 +32,36 @@ type HighlightSegment = {
   isMatch: boolean;
 };
 
+type FlyAnimationState = {
+  x: number;
+  y: number;
+  toX: number;
+  toY: number;
+  active: boolean;
+};
+
 @Component({
   selector: 'app-restaurant-detail-page',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, ReactiveFormsModule],
+  imports: [RouterLink, CurrencyPipe, ReactiveFormsModule, LucideAngularModule, MenuCardComponent],
   templateUrl: './restaurant-detail-page.component.html',
 })
-export class RestaurantDetailPageComponent {
+export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
+  private static readonly FLY_ANIMATION_DURATION_MS = 650;
+  private static readonly PAYMENT_METHOD_TO_ENUM: Record<PaymentMethod, number> = {
+    Cash: 0,
+    Yape: 1,
+    Plin: 2,
+    Card: 3,
+  };
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
   private readonly formBuilder = inject(FormBuilder);
   private readonly restaurantsApi = inject(RestaurantsApiService);
   private readonly ordersApi = inject(OrdersApiService);
+  private readonly checkoutDrawerUi = inject(CheckoutDrawerUiService);
+  private readonly notificationService = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -58,10 +80,17 @@ export class RestaurantDetailPageComponent {
   readonly matchedCategoryName = signal('');
   readonly globalContextQuery = signal('');
   readonly selectedCategoryId = signal<'all' | string>('all');
-  readonly isCheckoutDrawerOpen = signal(false);
+  readonly isCheckoutDrawerOpen = this.checkoutDrawerUi.isOpen;
+  readonly trashIcon = Trash2;
+  readonly shoppingCartIcon = ShoppingCart;
   readonly hasText = hasText;
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
   readonly menuSearchControl = new FormControl('', { nonNullable: true });
+  readonly activeFlyAnimation = signal<FlyAnimationState | null>(null);
+  readonly animatingAddByItemId = signal<Record<string, boolean>>({});
+  @ViewChild('checkoutDrawerTemplate', { static: true })
+  private checkoutDrawerTemplate?: TemplateRef<unknown>;
+  private flyAnimationTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   readonly checkoutForm = this.formBuilder.nonNullable.group({
     deliveryAddress: ['', [Validators.required, Validators.maxLength(300)]],
@@ -201,7 +230,9 @@ export class RestaurantDetailPageComponent {
       });
 
     if (!id) {
-      this.errorMessage.set('No se encontro el restaurante solicitado.');
+      const message = 'No se encontro el restaurante solicitado.';
+      this.errorMessage.set(message);
+      this.notificationService.error(message);
       this.isLoading.set(false);
       return;
     }
@@ -218,10 +249,30 @@ export class RestaurantDetailPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getApiErrorMessage(error, 'Revisa tu conexion o vuelve al listado para intentarlo otra vez.'));
+          const message = getApiErrorMessage(error, 'Revisa tu conexion o vuelve al listado para intentarlo otra vez.');
+          this.errorMessage.set(message);
+          this.notificationService.error(message);
           this.isLoading.set(false);
         },
       });
+  }
+
+  ngAfterViewInit(): void {
+    if (!this.checkoutDrawerTemplate) {
+      return;
+    }
+
+    this.checkoutDrawerUi.register(this.checkoutDrawerTemplate, this);
+  }
+
+  ngOnDestroy(): void {
+    if (this.flyAnimationTimeoutId !== null) {
+      clearTimeout(this.flyAnimationTimeoutId);
+      this.flyAnimationTimeoutId = null;
+    }
+
+    this.activeFlyAnimation.set(null);
+    this.checkoutDrawerUi.unregister();
   }
 
   addItem(item: MenuItemResponse): void {
@@ -231,6 +282,7 @@ export class RestaurantDetailPageComponent {
 
     this.checkoutErrorMessage.set('');
     this.recentlyAddedMessage.set(`${item.name} se agrego a tu pedido.`);
+    this.notificationService.success(`${item.name} se agrego a tu pedido.`);
     this.cartState.update((currentState) => {
       const currentLine = currentState[item.id];
       const quantity = currentLine ? currentLine.quantity + 1 : 1;
@@ -304,6 +356,71 @@ export class RestaurantDetailPageComponent {
     this.menuSearchControl.setValue('');
   }
 
+  addItemWithAnimation(item: MenuItemResponse, event: MouseEvent): void {
+    if (!item.isAvailable || this.isAnimatingAddFor(item.id)) {
+      return;
+    }
+
+    this.setAnimatingAdd(item.id, true);
+    this.addItem(item);
+
+    const sourceButton = event.currentTarget as HTMLElement | null;
+    if (!sourceButton) {
+      this.finishAddAnimation(item.id);
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const targetButton = this.getVisibleCheckoutTarget();
+
+        if (!targetButton) {
+          this.finishAddAnimation(item.id);
+          return;
+        }
+
+        const sourceRect = sourceButton.getBoundingClientRect();
+        const targetRect = targetButton.getBoundingClientRect();
+        const startX = sourceRect.left + sourceRect.width / 2;
+        const startY = sourceRect.top + sourceRect.height / 2;
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+
+        this.activeFlyAnimation.set({
+          x: startX,
+          y: startY,
+          toX: endX,
+          toY: endY,
+          active: false,
+        });
+
+        requestAnimationFrame(() => {
+          const animation = this.activeFlyAnimation();
+
+          if (!animation) {
+            this.finishAddAnimation(item.id);
+            return;
+          }
+
+          this.activeFlyAnimation.set({ ...animation, active: true });
+        });
+
+        if (this.flyAnimationTimeoutId !== null) {
+          clearTimeout(this.flyAnimationTimeoutId);
+        }
+
+        this.flyAnimationTimeoutId = setTimeout(() => {
+          this.flyAnimationTimeoutId = null;
+          this.finishAddAnimation(item.id);
+        }, RestaurantDetailPageComponent.FLY_ANIMATION_DURATION_MS);
+      });
+    });
+  }
+
+  isAnimatingAddFor(menuItemId: string): boolean {
+    return this.animatingAddByItemId()[menuItemId] ?? false;
+  }
+
   selectCategory(categoryId: 'all' | string): void {
     this.selectedCategoryId.set(categoryId);
   }
@@ -313,15 +430,16 @@ export class RestaurantDetailPageComponent {
   }
 
   openCheckoutDrawer(): void {
-    this.isCheckoutDrawerOpen.set(true);
+    this.checkoutDrawerUi.open();
   }
 
   closeCheckoutDrawer(): void {
-    this.isCheckoutDrawerOpen.set(false);
+    this.checkoutDrawerUi.close();
   }
 
   submitOrder(): void {
     if (!this.isAuthenticated()) {
+      this.notificationService.info('Inicia sesion para continuar con tu pedido.');
       void this.router.navigate(['/login'], {
         queryParams: { returnUrl: this.router.url },
       });
@@ -329,31 +447,39 @@ export class RestaurantDetailPageComponent {
     }
 
     if (!this.cartItems().length) {
-      this.checkoutErrorMessage.set('Agrega al menos un producto antes de crear el pedido.');
+      const message = 'Agrega al menos un producto antes de crear el pedido.';
+      this.checkoutErrorMessage.set(message);
+      this.notificationService.warning(message);
       return;
     }
 
     if (this.checkoutForm.invalid) {
       this.checkoutForm.markAllAsTouched();
-      this.checkoutErrorMessage.set('Completa direccion, referencia y metodo de pago para continuar.');
+      const message = 'Completa direccion, referencia y metodo de pago para continuar.';
+      this.checkoutErrorMessage.set(message);
+      this.notificationService.warning(message);
       return;
     }
 
     const restaurant = this.restaurant();
 
     if (!restaurant?.zoneId) {
-      this.checkoutErrorMessage.set('No encontramos la zona del restaurante para crear el pedido.');
+      const message = 'No encontramos la zona del restaurante para crear el pedido.';
+      this.checkoutErrorMessage.set(message);
+      this.notificationService.error(message);
       return;
     }
 
     const formValue = this.checkoutForm.getRawValue();
+    const paymentMethod = RestaurantDetailPageComponent.PAYMENT_METHOD_TO_ENUM[formValue.paymentMethod];
+
     const payload: CreateOrderRequest = {
       restaurantId: restaurant.id,
       zoneId: restaurant.zoneId,
       deliveryAddress: formValue.deliveryAddress.trim(),
       deliveryReference: formValue.deliveryReference.trim(),
       notes: formValue.notes.trim() || undefined,
-      paymentMethod: formValue.paymentMethod,
+      paymentMethod,
       items: this.cartItems().map((item) => ({
         menuItemId: item.menuItemId,
         quantity: item.quantity,
@@ -376,13 +502,16 @@ export class RestaurantDetailPageComponent {
             notes: '',
             paymentMethod: 'Cash',
           });
+          this.notificationService.success('Pedido creado correctamente.');
           void this.router.navigate(['/orders', order.id], {
             queryParams: { created: '1' },
           });
         },
         error: (error) => {
           this.isSubmittingOrder.set(false);
-          this.checkoutErrorMessage.set(getApiErrorMessage(error, 'Intenta nuevamente o revisa los datos del pedido.'));
+          const message = getApiErrorMessage(error, 'Intenta nuevamente o revisa los datos del pedido.');
+          this.checkoutErrorMessage.set(message);
+          this.notificationService.error(message);
         },
       });
   }
@@ -501,6 +630,44 @@ export class RestaurantDetailPageComponent {
 
   private normalizeMenuMatchValue(value: string | null | undefined): string {
     return value?.trim().toLocaleLowerCase() ?? '';
+  }
+
+  private setAnimatingAdd(menuItemId: string, isAnimating: boolean): void {
+    this.animatingAddByItemId.update((current) => {
+      if (isAnimating) {
+        return { ...current, [menuItemId]: true };
+      }
+
+      if (!current[menuItemId]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[menuItemId];
+      return next;
+    });
+  }
+
+  private finishAddAnimation(menuItemId: string): void {
+    this.activeFlyAnimation.set(null);
+    this.setAnimatingAdd(menuItemId, false);
+    this.openCheckoutDrawer();
+  }
+
+  private getVisibleCheckoutTarget(): HTMLElement | null {
+    const targets = Array.from(this.document.querySelectorAll<HTMLElement>('[data-checkout-target]'));
+
+    if (!targets.length) {
+      return null;
+    }
+
+    const visibleTarget =
+      targets.find((target) => {
+        const rect = target.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+      }) ?? targets[0];
+
+    return visibleTarget;
   }
 }
 

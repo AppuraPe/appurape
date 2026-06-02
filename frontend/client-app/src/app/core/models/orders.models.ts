@@ -1,5 +1,6 @@
 export interface OrderItemDetailResponse {
   productName: string;
+  imageUrl?: string | null;
   unitPrice: number;
   quantity: number;
   subtotal: number;
@@ -39,7 +40,7 @@ export interface CustomerOrderDetailResponse {
 
 export type CreateOrderResponse = CustomerOrderDetailResponse;
 
-export type PaymentMethod = 'Cash' | 'Card' | 'Yape' | 'Plin' | string;
+export type PaymentMethod = 'Cash' | 'Card' | 'Yape' | 'Plin';
 
 export interface CreateOrderItemRequest {
   menuItemId: string;
@@ -52,6 +53,6 @@ export interface CreateOrderRequest {
   deliveryAddress: string;
   deliveryReference: string;
   notes?: string;
-  paymentMethod: PaymentMethod;
+  paymentMethod: number;
   items: CreateOrderItemRequest[];
 }
