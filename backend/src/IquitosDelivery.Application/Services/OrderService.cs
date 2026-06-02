@@ -168,6 +168,7 @@ public class OrderService : IOrderService
                     .Select(i => new OrderItemDetailResponse
                     {
                         ProductName = i.ProductName,
+                        ImageUrl = i.MenuItem.ImageUrl,
                         UnitPrice = i.UnitPrice,
                         Quantity = i.Quantity,
                         Subtotal = i.Subtotal
@@ -253,6 +254,7 @@ public class OrderService : IOrderService
                     .Select(i => new OrderItemDetailResponse
                     {
                         ProductName = i.ProductName,
+                        ImageUrl = i.MenuItem.ImageUrl,
                         UnitPrice = i.UnitPrice,
                         Quantity = i.Quantity,
                         Subtotal = i.Subtotal

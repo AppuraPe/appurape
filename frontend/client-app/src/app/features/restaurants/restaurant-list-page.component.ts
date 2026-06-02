@@ -1,3 +1,4 @@
+import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
@@ -10,9 +11,9 @@ import {
 } from '../../core/models/restaurants.models';
 import { RestaurantsApiService } from '../../core/services/restaurants-api.service';
 import { ZonesApiService } from '../../core/services/zones-api.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
-import { FoodResultCardComponent } from './components/food-result-card.component';
-import { RestaurantCardComponent, RestaurantCardView } from './components/restaurant-card.component';
+import { MenuCardComponent } from './components/menu-card.component';
 import { RestaurantsFiltersCardComponent } from './components/restaurants-filters-card.component';
 import { RestaurantsHeroSectionComponent } from './components/restaurants-hero-section.component';
 import { RestaurantsPageContainerComponent } from './components/restaurants-page-container.component';
@@ -40,8 +41,8 @@ type RestaurantListViewState = BrowseResultsState | SearchResultsState;
     RestaurantsFiltersCardComponent,
     SectionHeaderComponent,
     StateCardComponent,
-    RestaurantCardComponent,
-    FoodResultCardComponent,
+    MenuCardComponent,
+    CurrencyPipe,
   ],
   templateUrl: './restaurant-list-page.component.html',
 })
@@ -50,6 +51,7 @@ export class RestaurantListPageComponent {
   private readonly router = inject(Router);
   private readonly restaurantsApi = inject(RestaurantsApiService);
   private readonly zonesApi = inject(ZonesApiService);
+  private readonly notificationService = inject(NotificationService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private latestRequestId = 0;
@@ -125,32 +127,6 @@ export class RestaurantListPageComponent {
 
   formatSchedule(openTime: string, closeTime: string): string {
     return `${formatTimeSpan(openTime)} - ${formatTimeSpan(closeTime)}`;
-  }
-
-  toRestaurantCardView(restaurant: RestaurantListItemResponse): RestaurantCardView {
-    return {
-      id: restaurant.id,
-      name: restaurant.name,
-      description: restaurant.description,
-      zoneName: restaurant.zoneName,
-      openTime: restaurant.openTime,
-      closeTime: restaurant.closeTime,
-      reference: restaurant.reference,
-      isOpenNow: restaurant.isOpenNow,
-      imageUrl: restaurant.logoUrl,
-    };
-  }
-
-  toRelatedRestaurantCardView(restaurant: PublicSearchResponse['restaurants'][number]): RestaurantCardView {
-    return {
-      id: restaurant.restaurantId,
-      name: restaurant.name,
-      description: restaurant.description,
-      zoneName: restaurant.zoneName,
-      openTime: restaurant.openTime,
-      closeTime: restaurant.closeTime,
-      imageUrl: restaurant.logoUrl,
-    };
   }
 
   emptyStateTitle(): string {
@@ -230,7 +206,9 @@ export class RestaurantListPageComponent {
                   }),
                 ),
                 catchError((error) => {
-                  this.errorMessage.set(getApiErrorMessage(error, 'Revisa tu conexion o intenta nuevamente.'));
+                  const message = getApiErrorMessage(error, 'Revisa tu conexion o intenta nuevamente.');
+                  this.errorMessage.set(message);
+                  this.notificationService.error(message);
                   return of<RestaurantListViewState>({
                     mode: 'search',
                     searchResults: this.emptySearchResults(filters.q),
@@ -245,7 +223,9 @@ export class RestaurantListPageComponent {
                   }),
                 ),
                 catchError((error) => {
-                  this.errorMessage.set(getApiErrorMessage(error, 'Revisa tu conexion o intenta nuevamente.'));
+                  const message = getApiErrorMessage(error, 'Revisa tu conexion o intenta nuevamente.');
+                  this.errorMessage.set(message);
+                  this.notificationService.error(message);
                   return of<RestaurantListViewState>({
                     mode: 'browse',
                     restaurants: [],
@@ -315,9 +295,9 @@ export class RestaurantListPageComponent {
           this.isLoadingZones.set(false);
         },
         error: (error) => {
-          this.zonesErrorMessage.set(
-            getApiErrorMessage(error, 'No pudimos cargar las zonas, pero puedes buscar por comida o restaurante.'),
-          );
+          const message = getApiErrorMessage(error, 'No pudimos cargar las zonas, pero puedes buscar por comida o restaurante.');
+          this.zonesErrorMessage.set(message);
+          this.notificationService.warning(message);
           this.isLoadingZones.set(false);
         },
       });

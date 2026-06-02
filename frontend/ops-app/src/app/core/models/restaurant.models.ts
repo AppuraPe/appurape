@@ -127,7 +127,7 @@ export interface RestaurantOrderListItemResponse {
 }
 
 export interface UpdateRestaurantOrderStatusRequest {
-  status: OrderStatus;
+  status: number;
 }
 
 export interface RestaurantOrderFilters {

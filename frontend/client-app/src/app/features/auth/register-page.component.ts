@@ -9,6 +9,7 @@ import {
   VerifyCustomerRegistrationCodeRequest,
 } from '../../core/models/auth.models';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { getApiErrorMessage } from '../../core/utils/api-utils';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
@@ -69,20 +70,6 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
           <span class="status-pill" [class.active-step]="currentStep() === 'verify'">2. Codigo</span>
           <span class="status-pill" [class.active-step]="currentStep() === 'complete'">3. Contrasena</span>
         </div>
-
-        @if (successMessage()) {
-          <div class="alert success" style="margin-top: 1rem;">
-            <strong class="alert-title">Avance completado</strong>
-            <span>{{ successMessage() }}</span>
-          </div>
-        }
-
-        @if (errorMessage()) {
-          <div class="alert error" style="margin-top: 1rem;">
-            <strong class="alert-title">Necesitamos revisar esto</strong>
-            <span>{{ errorMessage() }}</span>
-          </div>
-        }
 
         @if (currentStep() === 'start') {
           <form class="form-grid" style="margin-top: 1rem;" [formGroup]="startForm" (ngSubmit)="submitStart()">
@@ -222,12 +209,11 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
 export class RegisterPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly currentStep = signal<RegisterStep>('start');
-  readonly errorMessage = signal('');
-  readonly successMessage = signal('');
   readonly expiresInMinutes = signal<number | null>(null);
   readonly isSubmittingStart = signal(false);
   readonly isSubmittingVerify = signal(false);
@@ -290,7 +276,7 @@ export class RegisterPageComponent {
             email: response.email,
           });
           this.verifiedCode.set('');
-          this.successMessage.set(response.message || 'Te enviamos un codigo a tu correo.');
+          this.notificationService.success(response.message || 'Te enviamos un codigo a tu correo.');
           this.persistFlowState({
             step: 'verify',
             firstName: payload.firstName,
@@ -304,7 +290,7 @@ export class RegisterPageComponent {
         },
         error: (error) => {
           this.isSubmittingStart.set(false);
-          this.errorMessage.set(getApiErrorMessage(error, 'No se pudo iniciar el registro.'));
+          this.notificationService.error(getApiErrorMessage(error, 'No se pudo iniciar el registro.'));
         },
       });
   }
@@ -331,13 +317,13 @@ export class RegisterPageComponent {
           this.isSubmittingVerify.set(false);
 
           if (!response.isVerified) {
-            this.errorMessage.set('No se pudo verificar el codigo.');
+            this.notificationService.error('No se pudo verificar el codigo.');
             return;
           }
 
           this.currentStep.set('complete');
           this.verifiedCode.set(payload.code);
-          this.successMessage.set(response.message || 'Codigo verificado.');
+          this.notificationService.success(response.message || 'Codigo verificado.');
           this.persistFlowState({
             ...this.getFlowState(),
             step: 'complete',
@@ -348,7 +334,7 @@ export class RegisterPageComponent {
         },
         error: (error) => {
           this.isSubmittingVerify.set(false);
-          this.errorMessage.set(getApiErrorMessage(error, 'No se pudo verificar el codigo.'));
+          this.notificationService.error(getApiErrorMessage(error, 'No se pudo verificar el codigo.'));
         },
       });
   }
@@ -357,7 +343,7 @@ export class RegisterPageComponent {
     const email = this.verifyForm.getRawValue().email.trim();
 
     if (!email) {
-      this.errorMessage.set('No se encontro el email del registro.');
+      this.notificationService.error('No se encontro el email del registro.');
       return;
     }
 
@@ -372,7 +358,7 @@ export class RegisterPageComponent {
         next: (response) => {
           this.isResendingCode.set(false);
           this.expiresInMinutes.set(response.expiresInMinutes);
-          this.successMessage.set(response.message || 'Te enviamos un nuevo codigo a tu correo.');
+          this.notificationService.success(response.message || 'Te enviamos un nuevo codigo a tu correo.');
           this.persistFlowState({
             ...this.getFlowState(),
             step: 'verify',
@@ -384,7 +370,7 @@ export class RegisterPageComponent {
         },
         error: (error) => {
           this.isResendingCode.set(false);
-          this.errorMessage.set(getApiErrorMessage(error, 'No se pudo reenviar el codigo.'));
+          this.notificationService.error(getApiErrorMessage(error, 'No se pudo reenviar el codigo.'));
         },
       });
   }
@@ -399,7 +385,7 @@ export class RegisterPageComponent {
     const code = this.verifiedCode().trim();
 
     if (!email || !code) {
-      this.errorMessage.set('Debes verificar el codigo antes de completar el registro.');
+      this.notificationService.warning('Debes verificar el codigo antes de completar el registro.');
       this.goToVerify();
       return;
     }
@@ -420,12 +406,12 @@ export class RegisterPageComponent {
         next: () => {
           this.isSubmittingComplete.set(false);
           this.clearPersistedFlowState();
-          this.successMessage.set('Cuenta creada correctamente.');
+          this.notificationService.success('Cuenta creada correctamente.');
           void this.router.navigateByUrl('/restaurants');
         },
         error: (error) => {
           this.isSubmittingComplete.set(false);
-          this.errorMessage.set(getApiErrorMessage(error, 'No se pudo completar el registro.'));
+          this.notificationService.error(getApiErrorMessage(error, 'No se pudo completar el registro.'));
         },
       });
   }
@@ -541,7 +527,6 @@ export class RegisterPageComponent {
   }
 
   private clearMessages(): void {
-    this.errorMessage.set('');
-    this.successMessage.set('');
+    // No-op: notifications are handled globally with sonner toasts.
   }
 }

@@ -47,7 +47,7 @@ export interface PendingDriverResponse {
 }
 
 export interface UpdateDriverOrderStatusRequest {
-  status: OrderStatus;
+  status: number;
 }
 
 export interface DriverAvailableOrderFilters {

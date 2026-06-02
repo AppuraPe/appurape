@@ -7,6 +7,7 @@ import { DriverAssignedOrderListItemResponse } from '../../core/models/driver.mo
 import { OrderStatus } from '../../core/models/restaurant.models';
 import { DriverOrdersApiService } from '../../core/services/driver-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { toOrderStatusValue } from '../../core/utils/order-status.utils';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -209,7 +210,7 @@ export class DriverMyOrdersPageComponent {
     this.successMessage.set('');
 
     this.driverOrdersApi
-      .updateMyOrderStatus(order.id, { status: action.status })
+      .updateMyOrderStatus(order.id, { status: toOrderStatusValue(action.status) })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

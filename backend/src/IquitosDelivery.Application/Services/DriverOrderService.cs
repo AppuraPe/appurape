@@ -302,6 +302,7 @@ public class DriverOrderService : IDriverOrderService
                 .Select(i => new OrderItemDetailResponse
                 {
                     ProductName = i.ProductName,
+                    ImageUrl = i.MenuItem.ImageUrl,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
                     Subtotal = i.Subtotal
