@@ -10,12 +10,12 @@ import { ClientLayoutComponent } from './layout/client-layout.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginPageComponent },
+  { path: 'register', component: RegisterPageComponent },
   {
     path: '',
     component: ClientLayoutComponent,
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'restaurants' },
-      { path: 'register', component: RegisterPageComponent },
       { path: 'restaurants', component: RestaurantListPageComponent },
       { path: 'restaurants/:id', component: RestaurantDetailPageComponent },
       { path: 'orders', component: MyOrdersPageComponent, canActivate: [authGuard] },

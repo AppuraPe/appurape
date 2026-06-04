@@ -1,4 +1,15 @@
 <section class="relative isolate min-h-[100dvh] overflow-hidden bg-loreto-carbon font-ui">
+  <button
+    type="button"
+    class="absolute left-4 top-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/12 text-white backdrop-blur-md transition hover:-translate-y-0.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chicha/70 md:left-6 md:top-6"
+    aria-label="Volver"
+    (click)="goBack()"
+  >
+    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 fill-none stroke-current stroke-[2.2]">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+
   <div class="absolute inset-0 bg-[url('/img/banner1.png')] bg-cover bg-center" aria-hidden="true"></div>
   <div class="absolute inset-0 bg-loreto-carbon/50" aria-hidden="true"></div>
   <div

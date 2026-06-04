@@ -1,4 +1,5 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Location, NgClass } from '@angular/common';
+import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,7 +12,6 @@ import {
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { getApiErrorMessage } from '../../core/utils/api-utils';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 type RegisterStep = 'start' | 'verify' | 'complete';
 
@@ -42,175 +42,15 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, PageHeaderComponent],
-  template: `
-    <section class="page-shell">
-      <div class="split" style="align-items: start;">
-        <div class="hero-card">
-          <app-page-header
-            eyebrow="Cuenta customer"
-            title="Crea tu cuenta AppuraPe con verificacion por correo"
-            subtitle="Primero registramos tus datos, luego validamos un codigo de 6 digitos y finalmente creas tu contrasena."
-          />
-          <div class="hero-actions">
-            <span class="badge success">Correo verificado</span>
-            <span class="badge">Sin login social</span>
-          </div>
-        </div>
-
-        <div class="app-card elevated">
-        <app-page-header
-          eyebrow="Registro"
-          title="Crear cuenta en AppuraPe"
-          subtitle="Registra tus datos, verifica tu correo y crea tu contrasena."
-        />
-
-        <div class="status-steps">
-          <span class="status-pill" [class.active-step]="currentStep() === 'start'">1. Datos</span>
-          <span class="status-pill" [class.active-step]="currentStep() === 'verify'">2. Codigo</span>
-          <span class="status-pill" [class.active-step]="currentStep() === 'complete'">3. Contrasena</span>
-        </div>
-
-        @if (currentStep() === 'start') {
-          <form class="form-grid" style="margin-top: 1rem;" [formGroup]="startForm" (ngSubmit)="submitStart()">
-            <div class="form-grid two-col">
-              <div class="field">
-                <label for="firstName">Nombres</label>
-                <input id="firstName" type="text" formControlName="firstName" />
-                @if (startForm.controls.firstName.invalid && startForm.controls.firstName.touched) {
-                  <span class="field-error">Los nombres son obligatorios.</span>
-                }
-              </div>
-
-              <div class="field">
-                <label for="lastName">Apellidos</label>
-                <input id="lastName" type="text" formControlName="lastName" />
-                @if (startForm.controls.lastName.invalid && startForm.controls.lastName.touched) {
-                  <span class="field-error">Los apellidos son obligatorios.</span>
-                }
-              </div>
-            </div>
-
-            <div class="form-grid two-col">
-              <div class="field">
-                <label for="phone">Telefono</label>
-                <input id="phone" type="tel" formControlName="phone" />
-                @if (startForm.controls.phone.invalid && startForm.controls.phone.touched) {
-                  <span class="field-error">El telefono es obligatorio.</span>
-                }
-              </div>
-
-              <div class="field">
-                <label for="email">Email</label>
-                <input id="email" type="email" formControlName="email" />
-                @if (startForm.controls.email.invalid && startForm.controls.email.touched) {
-                  <span class="field-error">Ingresa un email valido.</span>
-                }
-              </div>
-            </div>
-
-            <div class="button-row">
-              <button class="button primary-action" type="submit" [disabled]="isSubmittingStart()">
-                {{ isSubmittingStart() ? 'Enviando...' : 'Enviar codigo' }}
-              </button>
-              <a class="button ghost" routerLink="/login">Ya tengo cuenta</a>
-            </div>
-          </form>
-        }
-
-        @if (currentStep() === 'verify') {
-          <form class="form-grid" style="margin-top: 1rem;" [formGroup]="verifyForm" (ngSubmit)="submitVerify()">
-            <div class="field">
-              <label for="verifyEmail">Email</label>
-              <input id="verifyEmail" type="email" formControlName="email" readonly />
-            </div>
-
-            <div class="field">
-              <label for="code">Codigo de verificacion</label>
-              <input id="code" type="text" formControlName="code" placeholder="123456" maxlength="6" />
-              @if (verifyForm.controls.code.invalid && verifyForm.controls.code.touched) {
-                <span class="field-error">Ingresa un codigo de 6 digitos.</span>
-              }
-            </div>
-
-            @if (expiresInMinutes()) {
-              <div class="alert info">
-                <strong class="alert-title">Revisa tu correo</strong>
-                <span>Te enviamos un codigo. Expira en {{ expiresInMinutes() }} minutos.</span>
-              </div>
-            }
-
-            <div class="button-row">
-              <button class="button primary-action" type="submit" [disabled]="isSubmittingVerify()">
-                {{ isSubmittingVerify() ? 'Verificando...' : 'Verificar codigo' }}
-              </button>
-              <button class="button ghost" type="button" (click)="resendCode()" [disabled]="isResendingCode()">
-                {{ isResendingCode() ? 'Reenviando...' : 'Reenviar codigo' }}
-              </button>
-              <button class="button secondary" type="button" (click)="goToStart()">Editar datos</button>
-            </div>
-          </form>
-        }
-
-        @if (currentStep() === 'complete') {
-          <form class="form-grid" style="margin-top: 1rem;" [formGroup]="completeForm" (ngSubmit)="submitComplete()">
-            <div class="field">
-              <label for="completeEmail">Email</label>
-              <input id="completeEmail" type="email" formControlName="email" readonly />
-            </div>
-
-            <div class="field">
-              <label for="password">Contrasena</label>
-              <input id="password" type="password" formControlName="password" />
-              @if (completeForm.controls.password.invalid && completeForm.controls.password.touched) {
-                <span class="field-error">La contrasena debe tener al menos 6 caracteres.</span>
-              }
-            </div>
-
-            <div class="field">
-              <label for="confirmPassword">Confirmar contrasena</label>
-              <input id="confirmPassword" type="password" formControlName="confirmPassword" />
-              @if (completeForm.hasError('passwordMismatch') && completeForm.controls.confirmPassword.touched) {
-                <span class="field-error">Las contrasenas no coinciden.</span>
-              }
-            </div>
-
-            <div class="alert success">
-              <strong class="alert-title">Codigo verificado</strong>
-              <span>Ahora crea tu contrasena para activar la cuenta.</span>
-            </div>
-
-            <div class="button-row">
-              <button class="button primary-action" type="submit" [disabled]="isSubmittingComplete()">
-                {{ isSubmittingComplete() ? 'Creando cuenta...' : 'Completar registro' }}
-              </button>
-              <button class="button ghost" type="button" (click)="goToVerify()">Volver al codigo</button>
-              <a class="button secondary" routerLink="/login">Ir a login</a>
-            </div>
-          </form>
-        }
-        </div>
-      </div>
-    </section>
-  `,
-  styles: `
-    .status-steps {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .active-step {
-      background: var(--brand-700);
-      color: #fff;
-    }
-  `,
+  imports: [ReactiveFormsModule, RouterLink, NgClass],
+  templateUrl: './register-page.component.html',
 })
 export class RegisterPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly currentStep = signal<RegisterStep>('start');
@@ -220,6 +60,18 @@ export class RegisterPageComponent {
   readonly isResendingCode = signal(false);
   readonly isSubmittingComplete = signal(false);
   readonly verifiedCode = signal('');
+  readonly spotlightX = signal(50);
+  readonly spotlightY = signal(40);
+  readonly currentStepIndex = computed(() => {
+    switch (this.currentStep()) {
+      case 'verify':
+        return 2;
+      case 'complete':
+        return 3;
+      default:
+        return 1;
+    }
+  });
 
   readonly startForm = this.formBuilder.nonNullable.group({
     firstName: ['', [Validators.required]],
@@ -244,6 +96,26 @@ export class RegisterPageComponent {
 
   constructor() {
     this.restoreFlowState();
+  }
+
+  goBack(): void {
+    if (window.history.length > 1) {
+      this.location.back();
+      return;
+    }
+
+    void this.router.navigateByUrl('/restaurants');
+  }
+
+  @HostListener('window:mousemove', ['$event'])
+  onMouseMove(event: MouseEvent): void {
+    const width = window.innerWidth || 1;
+    const height = window.innerHeight || 1;
+    const x = Math.min(88, Math.max(12, (event.clientX / width) * 100));
+    const y = Math.min(84, Math.max(16, (event.clientY / height) * 100));
+
+    this.spotlightX.set(Number(x.toFixed(2)));
+    this.spotlightY.set(Number(y.toFixed(2)));
   }
 
   submitStart(): void {

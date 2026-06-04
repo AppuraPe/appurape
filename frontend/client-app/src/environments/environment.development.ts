@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
   appName: 'AppuraPe',
-  apiBaseUrl: '',
+  apiBaseUrl: 'https://appurape-mvp.onrender.com',
 };
