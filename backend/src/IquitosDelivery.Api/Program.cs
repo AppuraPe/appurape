@@ -85,6 +85,13 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/health", async (AppDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
+    return canConnect
+        ? Results.Ok(new { status = "ok", database = "connected" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+});
 
 try
 {
