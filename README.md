@@ -165,6 +165,24 @@ En Windows, si PowerShell bloquea `npm.ps1`, se puede usar `npm.cmd`:
 npm.cmd run build
 ```
 
+## Despliegue en Render
+
+El repo incluye un blueprint para backend en `render.yaml`.
+
+- Servicio: `appurape-api`
+- Ruta de health check: `/health`
+- Dockerfile: `backend/Dockerfile`
+- Ambiente por defecto: `Development` para modo dev en la nube
+
+Variables que Render pedira o que debes revisar:
+
+- `ConnectionStrings__DefaultConnection`
+- `Jwt__Key`
+- `Email__Provider=Logging`
+- `Storage__Supabase__ServiceKey`
+
+Si quieres publicar también el frontend en Render después, lo dejamos como `Static Site` separado.
+
 ## Configuracion de correo
 
 AppuraPe soporta tres modos de correo:
@@ -189,6 +207,9 @@ No se deben subir credenciales reales al repositorio. Usa User Secrets o variabl
 - credenciales SMTP
 - credenciales Mailtrap
 - claves JWT de ambientes reales
+- credenciales de Supabase Storage
+- URL pública del bucket para el frontend
+- cadena de conexión de Supabase para Development y Testing
 
 Ejemplo con User Secrets:
 
@@ -200,12 +221,27 @@ dotnet user-secrets set "Email:SmtpPassword" "your-mailtrap-password" --project 
 dotnet user-secrets set "Email:FromName" "AppuraPe Testing" --project .\src\IquitosDelivery.Api\IquitosDelivery.Api.csproj
 ```
 
+Guia de Supabase Storage:
+
+- `docs/supabase-storage.md`
+
+Referencia local por si quieres volver a una BD local:
+
+```text
+# Host=localhost;Port=5432;Database=iquitos_delivery_db;Username=postgres;Password=postgres
+```
+
 Ejemplo con variables de entorno:
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT="Testing"
 $env:Email__SmtpUser="your-mailtrap-user"
 $env:Email__SmtpPassword="your-mailtrap-password"
+$env:Storage__Provider="Supabase"
+$env:Storage__Supabase__Url="https://<your-project>.supabase.co"
+$env:Storage__Supabase__ServiceKey="<your-service-role-key>"
+$env:Storage__Supabase__Bucket="appurape"
+$env:Storage__PublicBaseUrl="https://<your-project>.supabase.co/storage/v1/object/public/appurape"
 ```
 
 ## Estructura del repositorio

@@ -17,8 +17,11 @@ public static class DependencyInjection
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
+        var connectionString =
+            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException(
+                "Connection string 'DefaultConnection' was not found. Set ConnectionStrings__DefaultConnection in the hosting environment.");
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(connectionString));

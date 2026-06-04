@@ -5,6 +5,7 @@ using IquitosDelivery.Application;
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Infrastructure;
 using IquitosDelivery.Infrastructure.Persistence;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,6 +19,16 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DefaultCors", policy =>
+    {
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowAnyOrigin();
+    });
+});
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -74,6 +85,10 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 if (!app.Environment.IsProduction())
 {
@@ -82,6 +97,7 @@ if (!app.Environment.IsProduction())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("DefaultCors");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

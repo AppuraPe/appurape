@@ -1,0 +1,45 @@
+services:
+  - type: web
+    runtime: docker
+    name: appurape-api
+    rootDir: backend
+    dockerContext: backend
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Jwt__Key
+        sync: false
+      - key: Jwt__Issuer
+        value: AppuraPe.Api
+      - key: Jwt__Audience
+        value: AppuraPe.Client
+      - key: Email__Provider
+        value: Logging
+      - key: Email__FromName
+        value: AppuraPe Testing
+      - key: Email__FromAddress
+        value: no-reply@iquitosdelivery.local
+      - key: Email__SmtpHost
+        value: ""
+      - key: Email__SmtpPort
+        value: "587"
+      - key: Email__SmtpUser
+        value: ""
+      - key: Email__SmtpPassword
+        value: ""
+      - key: Email__UseSsl
+        value: "true"
+      - key: Storage__Provider
+        value: Supabase
+      - key: Storage__Supabase__Url
+        value: https://sxfyeqvuxcblmngvezim.supabase.co
+      - key: Storage__Supabase__ServiceKey
+        sync: false
+      - key: Storage__Supabase__Bucket
+        value: appurape
+      - key: Storage__PublicBaseUrl
+        value: https://sxfyeqvuxcblmngvezim.supabase.co/storage/v1/object/public/appurape
