@@ -178,8 +178,7 @@ Variables que Render pedira o que debes revisar:
 
 - `ConnectionStrings__DefaultConnection`
 - `Jwt__Key`
-- `Email__SmtpUser`
-- `Email__SmtpPassword`
+- `Email__Provider=Logging`
 - `Storage__Supabase__ServiceKey`
 
 Si quieres publicar también el frontend en Render después, lo dejamos como `Static Site` separado.

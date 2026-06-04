@@ -36,6 +36,7 @@ En `backend/src/IquitosDelivery.Api/appsettings.Development.json`, `User Secrets
 - `Storage:Supabase:ServiceKey`
 - `Storage:Supabase:Bucket = appurape`
 - `Storage:PublicBaseUrl`
+- `Email:Provider = Logging` en Render
 - `frontend/client-app/src/environments/environment.ts` -> `storagePublicBaseUrl`
 - `backend/src/IquitosDelivery.Api/appsettings.Development.json`
 - `backend/src/IquitosDelivery.Api/appsettings.Testing.json`
@@ -67,6 +68,7 @@ dotnet ef database update --project .\backend\src\IquitosDelivery.Infrastructure
 ```
 
 En esta rama ya quedó configurado para apuntar a Supabase en `Development` y `Testing`.
+Render usa `Logging` para correo, así el código de verificación queda en logs y no depende de SMTP.
 
 ## Validación rápida
 

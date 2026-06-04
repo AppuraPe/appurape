@@ -18,19 +18,19 @@ services:
       - key: Jwt__Audience
         value: AppuraPe.Client
       - key: Email__Provider
-        value: Mailtrap
+        value: Logging
       - key: Email__FromName
         value: AppuraPe Testing
       - key: Email__FromAddress
-        value: sandbox@demomailtrap.com
+        value: no-reply@iquitosdelivery.local
       - key: Email__SmtpHost
-        value: sandbox.smtp.mailtrap.io
+        value: ""
       - key: Email__SmtpPort
-        value: "2525"
+        value: "587"
       - key: Email__SmtpUser
-        sync: false
+        value: ""
       - key: Email__SmtpPassword
-        sync: false
+        value: ""
       - key: Email__UseSsl
         value: "true"
       - key: Storage__Provider
