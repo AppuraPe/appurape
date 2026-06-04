@@ -1,0 +1,287 @@
+<section class="relative isolate min-h-[100dvh] overflow-hidden bg-loreto-carbon font-ui">
+  <button
+    type="button"
+    class="absolute left-4 top-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/12 text-white backdrop-blur-md transition hover:-translate-y-0.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chicha/70 md:left-6 md:top-6"
+    aria-label="Volver"
+    (click)="goBack()"
+  >
+    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 fill-none stroke-current stroke-[2.2]">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+
+  <div class="absolute inset-0 bg-[url('/img/banner1.png')] bg-cover bg-center" aria-hidden="true"></div>
+  <div class="absolute inset-0 bg-loreto-carbon/55" aria-hidden="true"></div>
+  <div
+    class="absolute inset-0 transition-[background] duration-300"
+    [style.background]="'radial-gradient(560px circle at ' + spotlightX() + '% ' + spotlightY() + '%, rgba(217,164,65,0.24), rgba(200,88,61,0.10) 38%, rgba(61,44,34,0.68) 72%)'"
+    aria-hidden="true"
+  ></div>
+  <div class="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/35 to-transparent" aria-hidden="true"></div>
+  <div class="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/40 to-transparent" aria-hidden="true"></div>
+
+  <div class="relative mx-auto grid min-h-[100dvh] w-full max-w-[1180px] items-center gap-6 px-4 py-6 md:px-6 lg:grid-cols-[1.12fr_0.88fr] lg:gap-10 lg:py-10">
+    <article class="order-2 hidden rounded-3xl p-5 text-white lg:order-1 lg:block lg:p-8">
+      <span class="inline-flex rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.1em]">AppuraPe</span>
+      <h1 class="mt-4 max-w-xl font-display text-4xl leading-tight text-white sm:text-5xl">Crea tu cuenta y sigue tus pedidos</h1>
+      <p class="mt-3 max-w-xl text-sm text-white/90 sm:text-base">
+        Registra tus datos, verifica tu correo y activa tu cuenta customer en pocos pasos.
+      </p>
+
+      <div class="mt-7 flex flex-wrap gap-3">
+        <span class="login-float-chip inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white/95">Correo verificado</span>
+        <span class="login-float-chip login-float-chip-delay inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white/95">Paso a paso</span>
+        <span class="login-float-chip login-float-chip-delay-2 inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-sm font-semibold text-white/95">Entrega local</span>
+      </div>
+    </article>
+
+    <article class="order-1 rounded-3xl border border-loreto-tacacho/30 bg-surface-card p-5 shadow-2xl lg:order-2 lg:p-8">
+      <span class="inline-flex rounded-full bg-loreto-crema px-4 py-1 text-xs font-bold uppercase tracking-[0.09em] text-loreto-cecina">Registro</span>
+      <h2 class="mt-3 font-display text-4xl leading-tight text-loreto-carbon">Crear cuenta</h2>
+      <p class="mt-2 text-sm text-loreto-cecina/85">Registra tus datos, verifica tu correo y crea tu contrasena.</p>
+
+      <div class="mt-6 rounded-2xl border border-loreto-tacacho/25 bg-surface-soft p-4">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <strong class="block text-sm text-loreto-carbon">Progreso</strong>
+            <p class="mt-0.5 text-xs text-loreto-cecina/80">Sigue el flujo de verificacion</p>
+          </div>
+          <span class="rounded-full bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina">
+            Paso {{ currentStepIndex() }} de 3
+          </span>
+        </div>
+        <div class="mt-4 h-2 overflow-hidden rounded-full bg-loreto-crema/70">
+          <div
+            class="h-full rounded-full bg-gradient-to-r from-loreto-tacacho via-loreto-chorizo to-loreto-cecina transition-all duration-300"
+            [style.width.%]="(currentStepIndex() / 3) * 100"
+          ></div>
+        </div>
+        <div class="mt-4 grid grid-cols-3 gap-2">
+          <span class="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-300" [ngClass]="currentStep() === 'start' ? 'bg-loreto-crema text-primary-700 shadow-sm' : 'bg-white/80 text-loreto-carbon'">1. Datos</span>
+          <span class="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-300" [ngClass]="currentStep() === 'verify' ? 'bg-loreto-crema text-primary-700 shadow-sm' : 'bg-white/80 text-loreto-carbon'">2. Codigo</span>
+          <span class="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-xs font-bold uppercase tracking-[0.08em] transition-all duration-300" [ngClass]="currentStep() === 'complete' ? 'bg-loreto-crema text-primary-700 shadow-sm' : 'bg-white/80 text-loreto-carbon'">3. Contrasena</span>
+        </div>
+      </div>
+
+      <div class="mt-6 register-step-panel">
+        @if (currentStep() === 'start') {
+          <form class="space-y-4" [formGroup]="startForm" (ngSubmit)="submitStart()">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="grid gap-1.5">
+                <label for="firstName" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Nombres</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  formControlName="firstName"
+                  placeholder="Juan"
+                  class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+                />
+                @if (startForm.controls.firstName.invalid && startForm.controls.firstName.touched) {
+                  <span class="text-xs text-accent-600">Los nombres son obligatorios.</span>
+                }
+              </div>
+
+              <div class="grid gap-1.5">
+                <label for="lastName" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Apellidos</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  formControlName="lastName"
+                  placeholder="Mamanpe"
+                  class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+                />
+                @if (startForm.controls.lastName.invalid && startForm.controls.lastName.touched) {
+                  <span class="text-xs text-accent-600">Los apellidos son obligatorios.</span>
+                }
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="grid gap-1.5">
+                <label for="phone" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Telefono</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  formControlName="phone"
+                  placeholder="999 999 999"
+                  class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+                />
+                @if (startForm.controls.phone.invalid && startForm.controls.phone.touched) {
+                  <span class="text-xs text-accent-600">El telefono es obligatorio.</span>
+                }
+              </div>
+
+              <div class="grid gap-1.5">
+                <label for="email" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  formControlName="email"
+                  placeholder="cliente@appurape.pe"
+                  class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+                />
+                @if (startForm.controls.email.invalid && startForm.controls.email.touched) {
+                  <span class="text-xs text-accent-600">Ingresa un email valido.</span>
+                }
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3 pt-1 sm:flex-row">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-gradient-to-r from-loreto-tacacho via-loreto-chorizo to-loreto-cecina px-5 text-base font-bold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(138,75,42,0.35)] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/70 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.99]"
+                type="submit"
+                [disabled]="isSubmittingStart()"
+              >
+                {{ isSubmittingStart() ? 'Enviando...' : 'Enviar codigo' }}
+              </button>
+              <a
+                class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-cecina/40 px-5 text-base font-bold text-loreto-cecina transition hover:-translate-y-0.5 hover:bg-loreto-crema focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/30"
+                routerLink="/login"
+              >
+                Ya tengo cuenta
+              </a>
+            </div>
+          </form>
+        }
+
+        @if (currentStep() === 'verify') {
+          <form class="space-y-4" [formGroup]="verifyForm" (ngSubmit)="submitVerify()">
+            <div class="rounded-2xl border border-loreto-tacacho/25 bg-surface-soft p-4">
+              <strong class="block text-sm text-loreto-carbon">Verificacion pendiente</strong>
+              <p class="mt-1 text-sm text-loreto-cecina/85">Te enviamos un codigo de 6 digitos a tu correo.</p>
+            </div>
+
+            <div class="grid gap-1.5">
+              <label for="verifyEmail" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Email</label>
+              <input
+                id="verifyEmail"
+                type="email"
+                formControlName="email"
+                readonly
+                class="min-h-11 rounded-xl border border-loreto-tacacho/25 bg-white/80 px-3 text-sm text-loreto-carbon outline-none"
+              />
+            </div>
+
+            <div class="grid gap-1.5">
+              <label for="code" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Codigo de verificacion</label>
+              <input
+                id="code"
+                type="text"
+                formControlName="code"
+                placeholder="123456"
+                maxlength="6"
+                class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+              />
+              @if (verifyForm.controls.code.invalid && verifyForm.controls.code.touched) {
+                <span class="text-xs text-accent-600">Ingresa un codigo de 6 digitos.</span>
+              }
+            </div>
+
+            @if (expiresInMinutes()) {
+              <div class="rounded-2xl border border-loreto-rio/30 bg-loreto-rio/10 p-4">
+                <strong class="block text-sm text-loreto-carbon">Revisa tu correo</strong>
+                <span class="mt-1 block text-sm text-loreto-carbon/80">Tu codigo expira en {{ expiresInMinutes() }} minutos.</span>
+              </div>
+            }
+
+            <div class="flex flex-col gap-3 pt-1 sm:flex-row">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-gradient-to-r from-loreto-tacacho via-loreto-chorizo to-loreto-cecina px-5 text-base font-bold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(138,75,42,0.35)] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/70 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.99]"
+                type="submit"
+                [disabled]="isSubmittingVerify()"
+              >
+                {{ isSubmittingVerify() ? 'Verificando...' : 'Verificar codigo' }}
+              </button>
+              <button
+                class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-cecina/40 px-5 text-base font-bold text-loreto-cecina transition hover:-translate-y-0.5 hover:bg-loreto-crema focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/30 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                (click)="resendCode()"
+                [disabled]="isResendingCode()"
+              >
+                {{ isResendingCode() ? 'Reenviando...' : 'Reenviar codigo' }}
+              </button>
+              <button
+                class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-tacacho/30 px-5 text-base font-bold text-loreto-carbon transition hover:-translate-y-0.5 hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/25"
+                type="button"
+                (click)="goToStart()"
+              >
+                Editar datos
+              </button>
+            </div>
+          </form>
+        }
+
+        @if (currentStep() === 'complete') {
+          <form class="space-y-4" [formGroup]="completeForm" (ngSubmit)="submitComplete()">
+            <div class="rounded-2xl border border-loreto-tacacho/25 bg-surface-soft p-4">
+              <strong class="block text-sm text-loreto-carbon">Codigo verificado</strong>
+              <p class="mt-1 text-sm text-loreto-cecina/85">Ahora crea tu contrasena para activar la cuenta.</p>
+            </div>
+
+            <div class="grid gap-1.5">
+              <label for="completeEmail" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Email</label>
+              <input
+                id="completeEmail"
+                type="email"
+                formControlName="email"
+                readonly
+                class="min-h-11 rounded-xl border border-loreto-tacacho/25 bg-white/80 px-3 text-sm text-loreto-carbon outline-none"
+              />
+            </div>
+
+            <div class="grid gap-1.5">
+              <label for="password" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Contrasena</label>
+              <input
+                id="password"
+                type="password"
+                formControlName="password"
+                placeholder="Tu contrasena"
+                class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+              />
+              @if (completeForm.controls.password.invalid && completeForm.controls.password.touched) {
+                <span class="text-xs text-accent-600">La contrasena debe tener al menos 6 caracteres.</span>
+              }
+            </div>
+
+            <div class="grid gap-1.5">
+              <label for="confirmPassword" class="text-xs font-bold uppercase tracking-[0.08em] text-loreto-cecina/85">Confirmar contrasena</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                formControlName="confirmPassword"
+                placeholder="Repite tu contrasena"
+                class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
+              />
+              @if (completeForm.hasError('passwordMismatch') && completeForm.controls.confirmPassword.touched) {
+                <span class="text-xs text-accent-600">Las contrasenas no coinciden.</span>
+              }
+            </div>
+
+            <div class="flex flex-col gap-3 pt-1 sm:flex-row">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-gradient-to-r from-loreto-tacacho via-loreto-chorizo to-loreto-cecina px-5 text-base font-bold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(138,75,42,0.35)] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/70 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.99]"
+                type="submit"
+                [disabled]="isSubmittingComplete()"
+              >
+                {{ isSubmittingComplete() ? 'Creando cuenta...' : 'Completar registro' }}
+              </button>
+              <button
+                class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-cecina/40 px-5 text-base font-bold text-loreto-cecina transition hover:-translate-y-0.5 hover:bg-loreto-crema focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/30"
+                type="button"
+                (click)="goToVerify()"
+              >
+                Volver al codigo
+              </button>
+              <a
+                class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-tacacho/30 px-5 text-base font-bold text-loreto-carbon transition hover:-translate-y-0.5 hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/25"
+                routerLink="/login"
+              >
+                Ir a login
+              </a>
+            </div>
+          </form>
+        }
+      </div>
+    </article>
+  </div>
+</section>

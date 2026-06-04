@@ -8,8 +8,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
   standalone: true,
   imports: [RouterLink, PageHeaderComponent],
   template: `
-    <section class="page-shell main-stack">
-      <div class="hero-card">
+    <section>
+      <div>
         <app-page-header
           eyebrow="AppuraPe Cliente"
           title="Pide comida local sin perderte en el proceso"
