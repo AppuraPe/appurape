@@ -21,6 +21,14 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 
     private static string ResolveConnectionString()
     {
+        var environmentConnectionString =
+            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+
+        if (!string.IsNullOrWhiteSpace(environmentConnectionString))
+        {
+            return environmentConnectionString;
+        }
+
         var currentDirectory = Directory.GetCurrentDirectory();
         var apiAppSettingsPath = Path.GetFullPath(Path.Combine(currentDirectory, "..", "IquitosDelivery.Api", "appsettings.json"));
 

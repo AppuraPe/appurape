@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import {
   PublicSearchResponse,
   RestaurantListItemResponse,
@@ -98,6 +99,7 @@ export class RestaurantListPageComponent {
 
     return `${foodsLabel} y ${restaurantsLabel} relacionados encontrados.`;
   });
+  readonly heroBackgroundImageUrl = this.buildHeroBackgroundImageUrl();
 
   constructor() {
     this.loadZones();
@@ -313,5 +315,15 @@ export class RestaurantListPageComponent {
 
   private normalizeFilterValue(value: string | null | undefined): string {
     return value?.trim() ?? '';
+  }
+
+  private buildHeroBackgroundImageUrl(): string {
+    const baseUrl = environment.storagePublicBaseUrl.trim();
+
+    if (!baseUrl) {
+      return '/img/banner1.png';
+    }
+
+    return `${baseUrl.replace(/\/$/, '')}/2026/banner1.png`;
   }
 }
