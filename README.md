@@ -165,6 +165,25 @@ En Windows, si PowerShell bloquea `npm.ps1`, se puede usar `npm.cmd`:
 npm.cmd run build
 ```
 
+## Despliegue en Render
+
+El repo incluye un blueprint para backend en `render.yaml`.
+
+- Servicio: `appurape-api`
+- Ruta de health check: `/health`
+- Dockerfile: `backend/Dockerfile`
+- Ambiente por defecto: `Development` para modo dev en la nube
+
+Variables que Render pedira o que debes revisar:
+
+- `ConnectionStrings__DefaultConnection`
+- `Jwt__Key`
+- `Email__SmtpUser`
+- `Email__SmtpPassword`
+- `Storage__Supabase__ServiceKey`
+
+Si quieres publicar también el frontend en Render después, lo dejamos como `Static Site` separado.
+
 ## Configuracion de correo
 
 AppuraPe soporta tres modos de correo:
