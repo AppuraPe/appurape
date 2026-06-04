@@ -19,20 +19,6 @@ services:
         value: AppuraPe.Client
       - key: Email__Provider
         value: Logging
-      - key: Email__FromName
-        value: AppuraPe Testing
-      - key: Email__FromAddress
-        value: no-reply@iquitosdelivery.local
-      - key: Email__SmtpHost
-        value: ""
-      - key: Email__SmtpPort
-        value: "587"
-      - key: Email__SmtpUser
-        value: ""
-      - key: Email__SmtpPassword
-        value: ""
-      - key: Email__UseSsl
-        value: "true"
       - key: Storage__Provider
         value: Supabase
       - key: Storage__Supabase__Url
