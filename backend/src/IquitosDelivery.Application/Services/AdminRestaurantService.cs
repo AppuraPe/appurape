@@ -13,6 +13,8 @@ namespace IquitosDelivery.Application.Services;
 
 public class AdminRestaurantService : IAdminRestaurantService
 {
+    private const string LegacyRestaurantBusinessTypeCode = "Restaurant";
+    private const string LegacyRestaurantBusinessTypeName = "Restaurant";
     private readonly IAppDbContext _dbContext;
     private readonly IValidator<UpdateAdminEntityStatusRequest> _statusValidator;
 
@@ -66,6 +68,9 @@ public class AdminRestaurantService : IAdminRestaurantService
                 Address = x.Address,
                 ZoneId = x.ZoneId,
                 ZoneName = x.Zone.Name,
+                BusinessTypeId = x.BusinessTypeId,
+                BusinessTypeCode = x.BusinessType != null ? x.BusinessType.Code : LegacyRestaurantBusinessTypeCode,
+                BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : LegacyRestaurantBusinessTypeName,
                 ApprovalStatus = x.ApprovalStatus.ToString(),
                 IsActive = x.IsActive,
                 UserStatus = x.OwnerUser.Status.ToString(),
@@ -232,6 +237,9 @@ public class AdminRestaurantService : IAdminRestaurantService
             Reference = x.Reference,
             ZoneId = x.ZoneId,
             ZoneName = x.Zone.Name,
+            BusinessTypeId = x.BusinessTypeId,
+            BusinessTypeCode = x.BusinessType != null ? x.BusinessType.Code : LegacyRestaurantBusinessTypeCode,
+            BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : LegacyRestaurantBusinessTypeName,
             ApprovalStatus = x.ApprovalStatus.ToString(),
             IsActive = x.IsActive,
             UserStatus = x.OwnerUser.Status.ToString(),

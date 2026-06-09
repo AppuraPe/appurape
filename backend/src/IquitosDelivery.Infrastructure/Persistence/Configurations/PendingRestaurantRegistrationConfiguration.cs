@@ -34,6 +34,12 @@ public class PendingRestaurantRegistrationConfiguration : IEntityTypeConfigurati
         builder.Property(x => x.ZoneId).IsRequired();
         builder.Property(x => x.OpenTime).IsRequired();
         builder.Property(x => x.CloseTime).IsRequired();
+        builder.Property(x => x.LogoUrl).HasMaxLength(500);
+
+        builder.HasOne(x => x.BusinessType)
+            .WithMany(x => x.PendingRestaurantRegistrations)
+            .HasForeignKey(x => x.BusinessTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => new { x.Email, x.IsCompleted });

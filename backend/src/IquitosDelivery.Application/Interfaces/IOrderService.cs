@@ -10,6 +10,8 @@ public interface IOrderService
 
     Task<CustomerOrderDetailResponse> GetMyOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
 
+    Task<CustomerOrderDetailResponse> RateDriverAsync(Guid orderId, RateDriverRequest request, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<RestaurantOrderListItemResponse>> GetRestaurantOrdersAsync(
         RestaurantOrderFilterRequest filters,
         CancellationToken cancellationToken = default);

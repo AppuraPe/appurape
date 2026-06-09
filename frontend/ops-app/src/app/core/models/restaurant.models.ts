@@ -17,6 +17,9 @@ export interface MyRestaurantResponse {
   reference: string;
   zoneId: string;
   zoneName: string;
+  businessTypeId?: string | null;
+  businessTypeCode?: string | null;
+  businessTypeName?: string | null;
   openTime: string;
   closeTime: string;
   logoUrl?: string | null;
@@ -46,6 +49,7 @@ export interface StartRestaurantRegistrationRequest {
   address: string;
   reference: string;
   zoneId: string;
+  businessTypeId?: string | null;
   openTime: string;
   closeTime: string;
 }
@@ -83,6 +87,11 @@ export interface MenuItemResponse {
   description: string;
   price: number;
   imageUrl?: string | null;
+  sku?: string | null;
+  unitLabel?: string | null;
+  trackStock: boolean;
+  stockQuantity?: number | null;
+  hasStock: boolean;
   isAvailable: boolean;
   isActive: boolean;
 }
@@ -93,6 +102,10 @@ export interface CreateMenuItemRequest {
   description: string;
   price: number;
   imageUrl?: string | null;
+  sku?: string | null;
+  unitLabel?: string | null;
+  trackStock?: boolean;
+  stockQuantity?: number | null;
 }
 
 export interface UpdateMenuItemRequest {
@@ -101,6 +114,10 @@ export interface UpdateMenuItemRequest {
   description: string;
   price: number;
   imageUrl?: string | null;
+  sku?: string | null;
+  unitLabel?: string | null;
+  trackStock?: boolean;
+  stockQuantity?: number | null;
   isAvailable: boolean;
   isActive: boolean;
 }
@@ -121,8 +138,12 @@ export interface RestaurantOrderListItemResponse {
   customerId: string;
   customerName: string;
   status: OrderStatus | string;
+  businessNetAmount: number;
+  platformRevenueAmount: number;
   total: number;
   paymentMethod: string;
+  assignedCourierUserId?: string | null;
+  assignedCourierType?: string | null;
   createdAtUtc: string;
 }
 

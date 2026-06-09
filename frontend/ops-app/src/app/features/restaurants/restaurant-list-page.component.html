@@ -1,0 +1,120 @@
+<app-restaurants-hero-section
+  [title]="'Explora restaurantes sin perder tiempo'"
+  [subtitle]="isSearchMode() ? searchSummary() : browseSummary()"
+  [primaryChipLabel]="'Buscar'"
+  [secondaryChipLabel]="'Filtrar'"
+  [backgroundImageUrl]="heroBackgroundImageUrl"
+  [overlayStrength]="'soft'"
+/>
+<app-restaurants-page-container>
+  <section class="relative pb-2 md:pb-4">
+    <app-restaurants-filters-card
+      [form]="searchForm"
+      [zones]="zones()"
+      [isSearchMode]="isSearchMode()"
+      [isLoadingZones]="isLoadingZones()"
+      [hasActiveFilters]="hasActiveFilters()"
+      [zonesErrorMessage]="zonesErrorMessage()"
+      (clearFilters)="clearFilters()"
+    />
+  </section>
+
+  @if (isLoading()) {
+    <app-state-card [containerClass]="'border-[#ead8d2] bg-white/95 text-text-muted'">
+      <span class="inline-flex rounded-full bg-primary-100 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-primary-700">
+        {{ isSearchMode() ? 'Buscando' : 'Cargando' }}
+      </span>
+      <div class="mt-4 h-3 w-2/5 animate-pulse rounded-full bg-[#f3e2de]"></div>
+      <div class="mt-3 h-3 w-3/5 animate-pulse rounded-full bg-[#f3e2de]"></div>
+      <div class="mt-3 h-3 w-full animate-pulse rounded-full bg-[#f3e2de]"></div>
+    </app-state-card>
+  } @else if (isSearchMode()) {
+    @if (!foods().length && !relatedRestaurants().length) {
+      <app-state-card
+        title="Sin resultados"
+        [message]="searchEmptyMessage()"
+        containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted"
+      >
+        <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearSearch()">Quitar búsqueda</button>
+      </app-state-card>
+    } @else {
+      <app-section-header [title]="'Resultados para ' + appliedQuery()" [subtitle]="searchSummary()" badge="Busqueda" badgeClass="bg-primary-100 text-primary-700" />
+
+      <section class="space-y-4">
+        <app-section-header title="Comidas" [subtitle]="'Platos relacionados con tu búsqueda.'" [badge]="'' + foods().length" badgeClass="bg-[#ffe6e3] text-primary-700" />
+
+        @if (!foods().length) {
+          <app-state-card title="Sin comidas" message="No encontramos platos visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+        } @else {
+          <div class="grid gap-4 md:grid-cols-2">
+            @for (food of foods(); track food.menuItemId) {
+              <app-menu-card
+                [title]="food.name"
+                [subtitle]="food.restaurantName"
+                [description]="food.categoryName || ''"
+                [imageUrl]="food.imageUrl"
+                [leftChip]="food.zoneName || ''"
+                [rightChip]="food.categoryName || ''"
+                [rightChipTone]="'muted'"
+                [priceLabel]="'' + (food.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                [actionLabel]="'Ver restaurante'"
+                [actionMode]="'link'"
+                [actionRoute]="['/restaurants', food.restaurantId]"
+                [actionQueryParams]="{ menuSearch: appliedQuery(), searchSource: 'global', matchedItemId: food.menuItemId, matchedCategoryName: food.categoryName || null }"
+              />
+            }
+          </div>
+        }
+      </section>
+
+      <section class="space-y-4">
+        <app-section-header title="Restaurantes" [subtitle]="'Locales que coinciden con tu búsqueda.'" [badge]="'' + relatedRestaurants().length" badgeClass="bg-[#e8eef7] text-[#23456a]" />
+
+        @if (!relatedRestaurants().length) {
+          <app-state-card title="Sin restaurantes" message="No encontramos restaurantes visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+        } @else {
+          <div class="grid gap-4 md:grid-cols-2">
+            @for (restaurant of relatedRestaurants(); track restaurant.restaurantId) {
+              <app-menu-card
+                [title]="restaurant.name"
+                [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
+                [description]="'Disponible para explorar su menú y pedir desde la app.'"
+                [imageUrl]="restaurant.logoUrl"
+                [leftChip]="restaurant.zoneName || ''"
+                [rightChip]="''"
+                [actionLabel]="'Ver menú'"
+                [actionMode]="'link'"
+                [actionRoute]="['/restaurants', restaurant.restaurantId]"
+              />
+            }
+          </div>
+        }
+      </section>
+    }
+  } @else if (!restaurants().length && !errorMessage()) {
+    <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted">
+      @if (hasActiveFilters()) {
+        <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearFilters()">Quitar filtros</button>
+      }
+    </app-state-card>
+  } @else {
+    <app-section-header title="Restaurantes" [subtitle]="browseSummary()" [badge]="hasZoneFilter() ? 'Zona' : ''" badgeClass="bg-[#e8eef7] text-[#23456a]" />
+
+    <div class="grid gap-4 md:grid-cols-2">
+      @for (restaurant of restaurants(); track restaurant.id) {
+        <app-menu-card
+          [title]="restaurant.name"
+          [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
+          [description]="'Explora el menú y arma tu pedido sin salir del flujo móvil.'"
+          [imageUrl]="restaurant.logoUrl"
+          [leftChip]="restaurant.zoneName || ''"
+          [rightChip]="restaurant.isOpenNow ? 'Abierto' : 'Cerrado'"
+          [rightChipTone]="restaurant.isOpenNow ? 'success' : 'warning'"
+          [actionLabel]="'Ver menú'"
+          [actionMode]="'link'"
+          [actionRoute]="['/restaurants', restaurant.id]"
+        />
+      }
+    </div>
+  }
+</app-restaurants-page-container>

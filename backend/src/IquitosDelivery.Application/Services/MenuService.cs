@@ -60,6 +60,7 @@ public class MenuService : IMenuService
                          c.MenuItems.Any(i =>
                              i.IsActive &&
                              i.IsAvailable &&
+                             (!i.TrackStock || !i.StockQuantity.HasValue || i.StockQuantity.Value > 0) &&
                              (i.Name.ToLower().Contains(searchTerm) ||
                               i.Description.ToLower().Contains(searchTerm)))))
                     .OrderBy(c => c.SortOrder)
@@ -73,6 +74,7 @@ public class MenuService : IMenuService
                             .Where(i =>
                                 i.IsActive &&
                                 i.IsAvailable &&
+                                (!i.TrackStock || !i.StockQuantity.HasValue || i.StockQuantity.Value > 0) &&
                                 (searchTerm == null ||
                                  c.Name.ToLower().Contains(searchTerm) ||
                                  i.Name.ToLower().Contains(searchTerm) ||
@@ -88,7 +90,12 @@ public class MenuService : IMenuService
                                 Description = i.Description,
                                 Price = i.Price,
                                 ImageUrl = i.ImageUrl,
-                                IsAvailable = i.IsAvailable,
+                                Sku = i.Sku,
+                                UnitLabel = i.UnitLabel,
+                                TrackStock = i.TrackStock,
+                                StockQuantity = i.StockQuantity,
+                                HasStock = !i.TrackStock || !i.StockQuantity.HasValue || i.StockQuantity.Value > 0,
+                                IsAvailable = i.IsAvailable && (!i.TrackStock || !i.StockQuantity.HasValue || i.StockQuantity.Value > 0),
                                 IsActive = i.IsActive
                             })
                             .ToList()
@@ -224,6 +231,11 @@ public class MenuService : IMenuService
                 Description = x.Description,
                 Price = x.Price,
                 ImageUrl = x.ImageUrl,
+                Sku = x.Sku,
+                UnitLabel = x.UnitLabel,
+                TrackStock = x.TrackStock,
+                StockQuantity = x.StockQuantity,
+                HasStock = !x.TrackStock || !x.StockQuantity.HasValue || x.StockQuantity.Value > 0,
                 IsAvailable = x.IsAvailable,
                 IsActive = x.IsActive
             })
@@ -246,7 +258,11 @@ public class MenuService : IMenuService
             Description = request.Description.Trim(),
             Price = request.Price,
             ImageUrl = NormalizeImageUrl(request.ImageUrl),
-            IsAvailable = true,
+            Sku = NormalizeOptionalValue(request.Sku),
+            UnitLabel = NormalizeOptionalValue(request.UnitLabel),
+            TrackStock = request.TrackStock,
+            StockQuantity = NormalizeStockQuantity(request.TrackStock, request.StockQuantity),
+            IsAvailable = !request.TrackStock || !request.StockQuantity.HasValue || request.StockQuantity.Value > 0,
             IsActive = true
         };
 
@@ -269,7 +285,11 @@ public class MenuService : IMenuService
         item.Description = request.Description.Trim();
         item.Price = request.Price;
         item.ImageUrl = NormalizeImageUrl(request.ImageUrl);
-        item.IsAvailable = request.IsAvailable;
+        item.Sku = NormalizeOptionalValue(request.Sku);
+        item.UnitLabel = NormalizeOptionalValue(request.UnitLabel);
+        item.TrackStock = request.TrackStock;
+        item.StockQuantity = NormalizeStockQuantity(request.TrackStock, request.StockQuantity);
+        item.IsAvailable = request.IsAvailable && HasStock(item.TrackStock, item.StockQuantity);
         item.IsActive = request.IsActive;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -284,7 +304,7 @@ public class MenuService : IMenuService
         var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
         var item = await GetOwnedItemAsync(restaurant.Id, itemId, cancellationToken);
 
-        item.IsAvailable = request.IsAvailable;
+        item.IsAvailable = request.IsAvailable && HasStock(item.TrackStock, item.StockQuantity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return await MapItemAsync(item.Id, cancellationToken);
@@ -358,6 +378,11 @@ public class MenuService : IMenuService
                 Description = x.Description,
                 Price = x.Price,
                 ImageUrl = x.ImageUrl,
+                Sku = x.Sku,
+                UnitLabel = x.UnitLabel,
+                TrackStock = x.TrackStock,
+                StockQuantity = x.StockQuantity,
+                HasStock = !x.TrackStock || !x.StockQuantity.HasValue || x.StockQuantity.Value > 0,
                 IsAvailable = x.IsAvailable,
                 IsActive = x.IsActive
             })
@@ -379,5 +404,20 @@ public class MenuService : IMenuService
     private static string? NormalizeImageUrl(string? imageUrl)
     {
         return string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+    }
+
+    private static string? NormalizeOptionalValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static int? NormalizeStockQuantity(bool trackStock, int? stockQuantity)
+    {
+        return trackStock ? stockQuantity ?? 0 : null;
+    }
+
+    private static bool HasStock(bool trackStock, int? stockQuantity)
+    {
+        return !trackStock || !stockQuantity.HasValue || stockQuantity.Value > 0;
     }
 }

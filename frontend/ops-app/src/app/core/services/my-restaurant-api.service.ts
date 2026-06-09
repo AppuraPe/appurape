@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { MyRestaurantResponse, UpdateMyRestaurantRequest } from '../models/restaurant.models';
+import { MyRestaurantResponse } from '../models/restaurant.models';
 
 @Injectable({ providedIn: 'root' })
 export class MyRestaurantApiService {
@@ -13,7 +13,7 @@ export class MyRestaurantApiService {
     return this.http.get<MyRestaurantResponse>(this.baseUrl);
   }
 
-  updateMyRestaurant(request: UpdateMyRestaurantRequest): Observable<MyRestaurantResponse> {
+  updateMyRestaurant(request: FormData): Observable<MyRestaurantResponse> {
     return this.http.put<MyRestaurantResponse>(this.baseUrl, request);
   }
 }

@@ -14,17 +14,20 @@ public class OrderService : IOrderService
     private readonly IAppDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<CreateOrderRequest> _createOrderValidator;
+    private readonly IValidator<RateDriverRequest> _rateDriverValidator;
     private readonly IValidator<UpdateOrderStatusRequest> _updateOrderStatusValidator;
 
     public OrderService(
         IAppDbContext dbContext,
         ICurrentUserService currentUserService,
         IValidator<CreateOrderRequest> createOrderValidator,
+        IValidator<RateDriverRequest> rateDriverValidator,
         IValidator<UpdateOrderStatusRequest> updateOrderStatusValidator)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _createOrderValidator = createOrderValidator;
+        _rateDriverValidator = rateDriverValidator;
         _updateOrderStatusValidator = updateOrderStatusValidator;
     }
 
@@ -93,6 +96,16 @@ public class OrderService : IOrderService
         foreach (var requestItem in request.Items)
         {
             var menuItem = menuItems.First(x => x.Id == requestItem.MenuItemId);
+
+            if (menuItem.TrackStock)
+            {
+                var availableStock = menuItem.StockQuantity ?? 0;
+                if (availableStock < requestItem.Quantity)
+                {
+                    throw new AppException($"Product '{menuItem.Name}' does not have enough stock.");
+                }
+            }
+
             var itemSubtotal = menuItem.Price * requestItem.Quantity;
 
             order.Items.Add(new OrderItem
@@ -105,13 +118,34 @@ public class OrderService : IOrderService
                 Quantity = requestItem.Quantity,
                 Subtotal = itemSubtotal
             });
+
+            if (menuItem.TrackStock)
+            {
+                menuItem.StockQuantity = (menuItem.StockQuantity ?? 0) - requestItem.Quantity;
+                if (menuItem.StockQuantity <= 0)
+                {
+                    menuItem.StockQuantity = 0;
+                    menuItem.IsAvailable = false;
+                }
+            }
         }
 
         order.Subtotal = order.Items.Sum(x => x.Subtotal);
-        order.DeliveryFee = zone.DeliveryFee;
-        order.Total = order.Subtotal + order.DeliveryFee;
+        var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommercialOrder, cancellationToken);
+        var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(order.Subtotal, zone.DeliveryFee, commissionRules);
+        order.BusinessCommissionAmount = financialBreakdown.BusinessCommissionAmount;
+        order.BusinessNetAmount = financialBreakdown.BusinessNetAmount;
+        order.DeliveryFee = financialBreakdown.DeliveryFee;
+        order.DeliveryPlatformCommissionAmount = financialBreakdown.DeliveryPlatformCommissionAmount;
+        order.CourierEarningAmount = financialBreakdown.CourierEarningAmount;
+        order.ServiceFeeAmount = financialBreakdown.ServiceFeeAmount;
+        order.DiscountAmount = financialBreakdown.DiscountAmount;
+        order.PlatformRevenueAmount = financialBreakdown.PlatformRevenueAmount;
+        order.Total = financialBreakdown.Total;
+        order.PricingSnapshotJson = FinancialCalculator.SerializeCommercialSnapshot(financialBreakdown, commissionRules);
 
         _dbContext.Add(order);
+        CreateOrderFinancialMovements(order, restaurant.OwnerUserId);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return await GetMyOrderByIdAsync(order.Id, cancellationToken);
@@ -131,9 +165,18 @@ public class OrderService : IOrderService
                 RestaurantName = x.Restaurant.Name,
                 Status = x.Status.ToString(),
                 Subtotal = x.Subtotal,
+                BusinessCommissionAmount = x.BusinessCommissionAmount,
+                BusinessNetAmount = x.BusinessNetAmount,
                 DeliveryFee = x.DeliveryFee,
+                DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
+                CourierEarningAmount = x.CourierEarningAmount,
+                ServiceFeeAmount = x.ServiceFeeAmount,
+                DiscountAmount = x.DiscountAmount,
+                PlatformRevenueAmount = x.PlatformRevenueAmount,
                 Total = x.Total,
                 PaymentMethod = x.PaymentMethod.ToString(),
+                AssignedCourierUserId = x.AssignedCourierUserId,
+                AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
                 CreatedAtUtc = x.CreatedAtUtc
             })
             .ToListAsync(cancellationToken);
@@ -156,13 +199,24 @@ public class OrderService : IOrderService
                 Notes = x.Notes,
                 PaymentMethod = x.PaymentMethod.ToString(),
                 Subtotal = x.Subtotal,
+                BusinessCommissionAmount = x.BusinessCommissionAmount,
+                BusinessNetAmount = x.BusinessNetAmount,
                 DeliveryFee = x.DeliveryFee,
+                DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
+                CourierEarningAmount = x.CourierEarningAmount,
+                ServiceFeeAmount = x.ServiceFeeAmount,
+                DiscountAmount = x.DiscountAmount,
+                PlatformRevenueAmount = x.PlatformRevenueAmount,
                 Total = x.Total,
                 CreatedAtUtc = x.CreatedAtUtc,
                 AcceptedAtUtc = x.AcceptedAtUtc,
                 ReadyAtUtc = x.ReadyAtUtc,
                 PickedUpAtUtc = x.PickedUpAtUtc,
                 DeliveredAtUtc = x.DeliveredAtUtc,
+                AssignedCourierUserId = x.AssignedCourierUserId,
+                AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
+                DriverRating = x.DriverRating,
+                DriverFeedback = x.DriverFeedback,
                 Items = x.Items
                     .OrderBy(i => i.ProductName)
                     .Select(i => new OrderItemDetailResponse
@@ -183,6 +237,34 @@ public class OrderService : IOrderService
         }
 
         return order;
+    }
+
+    public async Task<CustomerOrderDetailResponse> RateDriverAsync(Guid orderId, RateDriverRequest request, CancellationToken cancellationToken = default)
+    {
+        await _rateDriverValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        var customer = await GetCurrentCustomerAsync(cancellationToken);
+        var order = await _dbContext.Orders
+            .FirstOrDefaultAsync(x => x.Id == orderId && x.CustomerId == customer.Id, cancellationToken);
+
+        if (order is null)
+        {
+            throw new NotFoundException("Order was not found.");
+        }
+
+        if (order.Status != OrderStatus.Delivered || order.DriverId is null)
+        {
+            throw new AppException("You can only rate a delivered order with a driver assigned.");
+        }
+
+        order.DriverRating = request.Rating;
+        order.DriverFeedback = NormalizeNotes(request.Comment);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await RefreshDriverTrustMetricsAsync(order.DriverId.Value, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetMyOrderByIdAsync(order.Id, cancellationToken);
     }
 
     public async Task<IReadOnlyList<RestaurantOrderListItemResponse>> GetRestaurantOrdersAsync(
@@ -217,8 +299,12 @@ public class OrderService : IOrderService
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.User.FirstName + " " + x.Customer.User.LastName,
                 Status = x.Status.ToString(),
+                BusinessNetAmount = x.BusinessNetAmount,
+                PlatformRevenueAmount = x.PlatformRevenueAmount,
                 Total = x.Total,
                 PaymentMethod = x.PaymentMethod.ToString(),
+                AssignedCourierUserId = x.AssignedCourierUserId,
+                AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
                 CreatedAtUtc = x.CreatedAtUtc
             })
             .ToListAsync(cancellationToken);
@@ -242,13 +328,22 @@ public class OrderService : IOrderService
                 Notes = x.Notes,
                 PaymentMethod = x.PaymentMethod.ToString(),
                 Subtotal = x.Subtotal,
+                BusinessCommissionAmount = x.BusinessCommissionAmount,
+                BusinessNetAmount = x.BusinessNetAmount,
                 DeliveryFee = x.DeliveryFee,
+                DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
+                CourierEarningAmount = x.CourierEarningAmount,
+                ServiceFeeAmount = x.ServiceFeeAmount,
+                DiscountAmount = x.DiscountAmount,
+                PlatformRevenueAmount = x.PlatformRevenueAmount,
                 Total = x.Total,
                 CreatedAtUtc = x.CreatedAtUtc,
                 AcceptedAtUtc = x.AcceptedAtUtc,
                 ReadyAtUtc = x.ReadyAtUtc,
                 PickedUpAtUtc = x.PickedUpAtUtc,
                 DeliveredAtUtc = x.DeliveredAtUtc,
+                AssignedCourierUserId = x.AssignedCourierUserId,
+                AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
                 Items = x.Items
                     .OrderBy(i => i.ProductName)
                     .Select(i => new OrderItemDetailResponse
@@ -358,5 +453,78 @@ public class OrderService : IOrderService
     private static string? NormalizeNotes(string? notes)
     {
         return string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+    }
+
+    private async Task<List<CommissionRule>> GetActiveCommissionRulesAsync(CommissionRuleScope scope, CancellationToken cancellationToken)
+    {
+        var utcNow = DateTime.UtcNow;
+
+        return await _dbContext.CommissionRules
+            .Where(x =>
+                x.Scope == scope &&
+                x.IsEnabled &&
+                (!x.EffectiveFromUtc.HasValue || x.EffectiveFromUtc.Value <= utcNow) &&
+                (!x.EffectiveToUtc.HasValue || x.EffectiveToUtc.Value >= utcNow))
+            .OrderBy(x => x.Priority)
+            .ThenBy(x => x.Code)
+            .ToListAsync(cancellationToken);
+    }
+
+    private void CreateOrderFinancialMovements(Order order, Guid restaurantOwnerUserId)
+    {
+        var occurredAtUtc = DateTime.UtcNow;
+        var orderReference = $"ORDER-{order.Id:N}";
+
+        AddOrderMovement(order, restaurantOwnerUserId, FinancialMovementType.BusinessNetAmount, order.BusinessNetAmount, "Net amount payable to the business for the order.", occurredAtUtc, orderReference);
+        AddOrderMovement(order, null, FinancialMovementType.BusinessCommission, order.BusinessCommissionAmount, "Platform commission charged on the business sale.", occurredAtUtc, orderReference);
+        AddOrderMovement(order, null, FinancialMovementType.DeliveryPlatformCommission, order.DeliveryPlatformCommissionAmount, "Platform commission retained from the delivery fee.", occurredAtUtc, orderReference);
+        AddOrderMovement(order, null, FinancialMovementType.CourierEarning, order.CourierEarningAmount, "Courier earning reserved for the delivery.", occurredAtUtc, orderReference);
+        AddOrderMovement(order, null, FinancialMovementType.ServiceFee, order.ServiceFeeAmount, "Service fee charged to the customer.", occurredAtUtc, orderReference);
+    }
+
+    private void AddOrderMovement(
+        Order order,
+        Guid? userId,
+        FinancialMovementType type,
+        decimal amount,
+        string description,
+        DateTime occurredAtUtc,
+        string orderReference)
+    {
+        if (amount <= 0m)
+        {
+            return;
+        }
+
+        _dbContext.Add(new FinancialMovement
+        {
+            Id = Guid.NewGuid(),
+            OrderId = order.Id,
+            RestaurantId = order.RestaurantId,
+            UserId = userId,
+            Type = type,
+            Status = FinancialMovementStatus.Pending,
+            Amount = amount,
+            OccurredAtUtc = occurredAtUtc,
+            Reference = orderReference,
+            Description = description
+        });
+    }
+
+    private async Task RefreshDriverTrustMetricsAsync(Guid driverId, CancellationToken cancellationToken)
+    {
+        var driver = await _dbContext.Drivers.FirstOrDefaultAsync(x => x.Id == driverId, cancellationToken);
+
+        if (driver is null)
+        {
+            throw new NotFoundException("Driver was not found.");
+        }
+
+        var averageRating = await _dbContext.Orders
+            .Where(x => x.DriverId == driverId && x.Status == OrderStatus.Delivered && x.DriverRating.HasValue)
+            .AverageAsync(x => (decimal?)x.DriverRating, cancellationToken);
+
+        driver.TrustScore = DriverTrustCalculator.CalculateScore(driver.CompletedDeliveriesCount, averageRating);
+        driver.TrustLevel = DriverTrustCalculator.CalculateLevel(driver.TrustScore);
     }
 }

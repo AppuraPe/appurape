@@ -2,6 +2,7 @@ using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Infrastructure.Email;
 using IquitosDelivery.Infrastructure.Persistence;
 using IquitosDelivery.Infrastructure.Security;
+using IquitosDelivery.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,9 +45,33 @@ public static class DependencyInjection
                 UseSsl = useSsl
             });
         });
+        services.AddSingleton<IOptions<StorageSettings>>(_ =>
+        {
+            var storageSection = configuration.GetSection("Storage");
+
+            return Options.Create(new StorageSettings
+            {
+                Provider = storageSection["Provider"] ?? string.Empty,
+                PublicBaseUrl = storageSection["PublicBaseUrl"] ?? string.Empty,
+                Supabase = new SupabaseStorageSettings
+                {
+                    Url = storageSection.GetSection("Supabase")["Url"] ?? string.Empty,
+                    ServiceKey = storageSection.GetSection("Supabase")["ServiceKey"] ?? string.Empty,
+                    Bucket = storageSection.GetSection("Supabase")["Bucket"] ?? "appurape"
+                }
+            });
+        });
+        services.AddSingleton<IOptions<GoogleAuthSettings>>(_ =>
+            Options.Create(new GoogleAuthSettings
+            {
+                AllowedClientIds = configuration
+                    .GetSection("GoogleAuth:AllowedClientIds")
+                    .Get<string[]>() ?? []
+            }));
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
         services.AddScoped<IEmailSender>(provider =>
         {
             var emailSettings = provider.GetRequiredService<IOptions<EmailSettings>>().Value;
@@ -63,6 +88,14 @@ public static class DependencyInjection
         });
         services.AddScoped<LoggingEmailSender>();
         services.AddScoped<SmtpEmailSender>();
+        services.AddHttpClient<IFileStorageService, SupabaseFileStorageService>((provider, client) =>
+        {
+            var storageSettings = provider.GetRequiredService<IOptions<StorageSettings>>().Value;
+            if (!string.IsNullOrWhiteSpace(storageSettings.Supabase.Url))
+            {
+                client.BaseAddress = new Uri(storageSettings.Supabase.Url.TrimEnd('/'));
+            }
+        });
 
         return services;
     }

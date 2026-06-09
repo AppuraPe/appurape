@@ -14,7 +14,7 @@ AppuraPe se plantea como un monolito modular con backend en ASP.NET Core Web API
 
 ## Frontend
 
-Se reservan dos aplicaciones Angular:
+La SPA activa es `ops-app`, que unifica la experiencia publica, operativa y administrativa.
 
-- `client-app`: experiencia para clientes.
-- `ops-app`: experiencia operativa y administrativa.
+- `ops-app`: frontend oficial.
+- `shared`: utilidades y base compartida entre features.

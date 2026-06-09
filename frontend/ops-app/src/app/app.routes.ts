@@ -1,41 +1,86 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
-import { AdminDashboardPageComponent } from './features/admin/admin-dashboard-page.component';
-import { AdminDriverDetailPageComponent } from './features/admin/admin-driver-detail-page.component';
-import { AdminDriversPageComponent } from './features/admin/admin-drivers-page.component';
-import { AdminPendingDriversPageComponent } from './features/admin/admin-pending-drivers-page.component';
-import { AdminPendingRestaurantsPageComponent } from './features/admin/admin-pending-restaurants-page.component';
-import { AdminRestaurantDetailPageComponent } from './features/admin/admin-restaurant-detail-page.component';
-import { AdminRestaurantsPageComponent } from './features/admin/admin-restaurants-page.component';
-import { DriverRegistrationCompletePageComponent } from './features/auth/driver-registration-complete-page.component';
-import { DriverRegistrationStartPageComponent } from './features/auth/driver-registration-start-page.component';
-import { DriverRegistrationVerifyPageComponent } from './features/auth/driver-registration-verify-page.component';
-import { LoginPageComponent } from './features/auth/login-page.component';
-import { RestaurantRegistrationCompletePageComponent } from './features/auth/restaurant-registration-complete-page.component';
-import { RestaurantRegistrationStartPageComponent } from './features/auth/restaurant-registration-start-page.component';
-import { RestaurantRegistrationVerifyPageComponent } from './features/auth/restaurant-registration-verify-page.component';
-import { DriverAvailableOrdersPageComponent } from './features/driver/driver-available-orders-page.component';
-import { DriverDashboardPageComponent } from './features/driver/driver-dashboard-page.component';
-import { DriverMyOrdersPageComponent } from './features/driver/driver-my-orders-page.component';
-import { RestaurantCategoriesPageComponent } from './features/restaurant/restaurant-categories-page.component';
-import { RestaurantDashboardPageComponent } from './features/restaurant/restaurant-dashboard-page.component';
-import { RestaurantItemsPageComponent } from './features/restaurant/restaurant-items-page.component';
-import { RestaurantOrdersPageComponent } from './features/restaurant/restaurant-orders-page.component';
-import { RestaurantProfilePageComponent } from './features/restaurant/restaurant-profile-page.component';
-import { OpsLayoutComponent } from './layout/ops-layout.component';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginPageComponent },
-  { path: 'register/restaurant', component: RestaurantRegistrationStartPageComponent },
-  { path: 'register/restaurant/verify', component: RestaurantRegistrationVerifyPageComponent },
-  { path: 'register/restaurant/complete', component: RestaurantRegistrationCompletePageComponent },
-  { path: 'register/driver', component: DriverRegistrationStartPageComponent },
-  { path: 'register/driver/verify', component: DriverRegistrationVerifyPageComponent },
-  { path: 'register/driver/complete', component: DriverRegistrationCompletePageComponent },
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login-page.component').then((m) => m.LoginPageComponent),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./features/auth/forgot-password-page.component').then((m) => m.ForgotPasswordPageComponent),
+  },
   {
     path: '',
-    component: OpsLayoutComponent,
+    loadComponent: () => import('./layout/public-layout.component').then((m) => m.PublicLayoutComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'restaurants' },
+      {
+        path: 'register',
+        loadComponent: () => import('./features/auth/register-page.component').then((m) => m.RegisterPageComponent),
+      },
+      {
+        path: 'restaurants',
+        loadComponent: () => import('./features/restaurants/restaurant-list-page.component').then((m) => m.RestaurantListPageComponent),
+      },
+      {
+        path: 'restaurants/:id',
+        loadComponent: () => import('./features/restaurants/restaurant-detail-page.component').then((m) => m.RestaurantDetailPageComponent),
+      },
+      {
+        path: 'community',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/community/community-hub-page.component').then((m) => m.CommunityHubPageComponent),
+      },
+      {
+        path: 'community/requests/:id',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/community/community-request-detail-page.component').then((m) => m.CommunityRequestDetailPageComponent),
+      },
+      {
+        path: 'orders',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/orders/my-orders-page.component').then((m) => m.MyOrdersPageComponent),
+      },
+      {
+        path: 'orders/:id',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/orders/my-order-detail-page.component').then((m) => m.MyOrderDetailPageComponent),
+      },
+    ],
+  },
+  {
+    path: 'register/restaurant',
+    loadComponent: () => import('./features/auth/restaurant-registration-start-page.component').then((m) => m.RestaurantRegistrationStartPageComponent),
+  },
+  {
+    path: 'register/restaurant/verify',
+    loadComponent: () => import('./features/auth/restaurant-registration-verify-page.component').then((m) => m.RestaurantRegistrationVerifyPageComponent),
+  },
+  {
+    path: 'register/restaurant/complete',
+    loadComponent: () => import('./features/auth/restaurant-registration-complete-page.component').then((m) => m.RestaurantRegistrationCompletePageComponent),
+  },
+  {
+    path: 'register/driver',
+    loadComponent: () => import('./features/auth/driver-registration-start-page.component').then((m) => m.DriverRegistrationStartPageComponent),
+  },
+  {
+    path: 'register/driver/verify',
+    loadComponent: () => import('./features/auth/driver-registration-verify-page.component').then((m) => m.DriverRegistrationVerifyPageComponent),
+  },
+  {
+    path: 'register/driver/complete',
+    loadComponent: () => import('./features/auth/driver-registration-complete-page.component').then((m) => m.DriverRegistrationCompletePageComponent),
+  },
+  {
+    path: 'unauthorized',
+    loadComponent: () => import('./features/system/unauthorized-page.component').then((m) => m.UnauthorizedPageComponent),
+  },
+  {
+    path: '',
+    loadComponent: () => import('./layout/ops-layout.component').then((m) => m.OpsLayoutComponent),
     canActivate: [authGuard],
     children: [
       {
@@ -44,11 +89,26 @@ export const routes: Routes = [
         data: { roles: ['Restaurant'] },
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          { path: 'dashboard', component: RestaurantDashboardPageComponent },
-          { path: 'profile', component: RestaurantProfilePageComponent },
-          { path: 'menu/categories', component: RestaurantCategoriesPageComponent },
-          { path: 'menu/items', component: RestaurantItemsPageComponent },
-          { path: 'orders', component: RestaurantOrdersPageComponent },
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./features/restaurant/restaurant-dashboard-page.component').then((m) => m.RestaurantDashboardPageComponent),
+          },
+          {
+            path: 'profile',
+            loadComponent: () => import('./features/restaurant/restaurant-profile-page.component').then((m) => m.RestaurantProfilePageComponent),
+          },
+          {
+            path: 'menu/categories',
+            loadComponent: () => import('./features/restaurant/restaurant-categories-page.component').then((m) => m.RestaurantCategoriesPageComponent),
+          },
+          {
+            path: 'menu/items',
+            loadComponent: () => import('./features/restaurant/restaurant-items-page.component').then((m) => m.RestaurantItemsPageComponent),
+          },
+          {
+            path: 'orders',
+            loadComponent: () => import('./features/restaurant/restaurant-orders-page.component').then((m) => m.RestaurantOrdersPageComponent),
+          },
         ],
       },
       {
@@ -57,9 +117,18 @@ export const routes: Routes = [
         data: { roles: ['Driver'] },
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          { path: 'dashboard', component: DriverDashboardPageComponent },
-          { path: 'orders/available', component: DriverAvailableOrdersPageComponent },
-          { path: 'orders/my', component: DriverMyOrdersPageComponent },
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./features/driver/driver-dashboard-page.component').then((m) => m.DriverDashboardPageComponent),
+          },
+          {
+            path: 'orders/available',
+            loadComponent: () => import('./features/driver/driver-available-orders-page.component').then((m) => m.DriverAvailableOrdersPageComponent),
+          },
+          {
+            path: 'orders/my',
+            loadComponent: () => import('./features/driver/driver-my-orders-page.component').then((m) => m.DriverMyOrdersPageComponent),
+          },
         ],
       },
       {
@@ -68,16 +137,44 @@ export const routes: Routes = [
         data: { roles: ['Admin'] },
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          { path: 'dashboard', component: AdminDashboardPageComponent },
-          { path: 'restaurants/pending', component: AdminPendingRestaurantsPageComponent },
-          { path: 'restaurants', component: AdminRestaurantsPageComponent },
-          { path: 'restaurants/:id', component: AdminRestaurantDetailPageComponent },
-          { path: 'drivers/pending', component: AdminPendingDriversPageComponent },
-          { path: 'drivers', component: AdminDriversPageComponent },
-          { path: 'drivers/:id', component: AdminDriverDetailPageComponent },
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./features/admin/admin-dashboard-page.component').then((m) => m.AdminDashboardPageComponent),
+          },
+          {
+            path: 'community',
+            loadComponent: () => import('./features/admin/admin-community-dashboard-page.component').then((m) => m.AdminCommunityDashboardPageComponent),
+          },
+          {
+            path: 'restaurants/pending',
+            loadComponent: () => import('./features/admin/admin-pending-restaurants-page.component').then((m) => m.AdminPendingRestaurantsPageComponent),
+          },
+          {
+            path: 'restaurants',
+            loadComponent: () => import('./features/admin/admin-restaurants-page.component').then((m) => m.AdminRestaurantsPageComponent),
+          },
+          {
+            path: 'restaurants/:id',
+            loadComponent: () => import('./features/admin/admin-restaurant-detail-page.component').then((m) => m.AdminRestaurantDetailPageComponent),
+          },
+          {
+            path: 'drivers/pending',
+            loadComponent: () => import('./features/admin/admin-pending-drivers-page.component').then((m) => m.AdminPendingDriversPageComponent),
+          },
+          {
+            path: 'drivers',
+            loadComponent: () => import('./features/admin/admin-drivers-page.component').then((m) => m.AdminDriversPageComponent),
+          },
+          {
+            path: 'drivers/:id',
+            loadComponent: () => import('./features/admin/admin-driver-detail-page.component').then((m) => m.AdminDriverDetailPageComponent),
+          },
         ],
       },
     ],
   },
-  { path: '**', redirectTo: 'login' },
+  {
+    path: '**',
+    loadComponent: () => import('./features/system/not-found-page.component').then((m) => m.NotFoundPageComponent),
+  },
 ];

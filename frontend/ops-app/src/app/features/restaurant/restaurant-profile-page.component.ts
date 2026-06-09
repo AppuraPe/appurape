@@ -1,122 +1,212 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MyRestaurantResponse, UpdateMyRestaurantRequest } from '../../core/models/restaurant.models';
+import {
+  Clock3,
+  ImagePlus,
+  LucideAngularModule,
+  MapPin,
+  RefreshCw,
+  ShieldCheck,
+  Store,
+} from 'lucide-angular';
+import { MyRestaurantResponse } from '../../core/models/restaurant.models';
 import { MyRestaurantApiService } from '../../core/services/my-restaurant-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { validateImageFile } from '../../core/utils/file-upload.utils';
+import { AppButtonComponent } from '../../shared/components/app-button.component';
+import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
-import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 
 @Component({
   selector: 'app-restaurant-profile-page',
   standalone: true,
-  imports: [PageHeaderComponent, ReactiveFormsModule, AppNoticeComponent, StatusBadgeComponent],
+  imports: [
+    PageHeaderComponent,
+    ReactiveFormsModule,
+    LucideAngularModule,
+    AppNoticeComponent,
+    AppButtonComponent,
+    AppMetricCardComponent,
+    AppSurfaceCardComponent,
+  ],
   template: `
-    <section class="page-card">
-      <app-page-header
-        eyebrow="Restaurant"
-        title="Perfil del restaurante"
-        subtitle="Vista real del perfil con actualizacion basica por PUT."
-      />
+    <section class="grid gap-6">
+      <app-surface-card variant="page">
+        <app-page-header
+          eyebrow="AppuraPe Restaurant"
+          title="Perfil del restaurante"
+          subtitle="Actualiza la cara publica del negocio con una interfaz mas clara y moderna."
+        />
 
-      @if (errorMessage()) {
-        <div class="message error">{{ errorMessage() }}</div>
-      }
-
-      @if (successMessage()) {
-        <div class="message success">{{ successMessage() }}</div>
-      }
-
-      @if (isLoading()) {
-        <div class="message">Cargando perfil...</div>
-      } @else if (restaurant()) {
-        @if (restaurant()!.approvalStatus === 'Pending') {
-          <app-notice
-            tone="warning"
-            title="Pendiente de aprobacion"
-            message="Tu restaurante aun no aparece al publico porque sigue pendiente de aprobacion administrativa."
-          />
+        @if (errorMessage()) {
+          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {{ errorMessage() }}
+          </div>
         }
 
-        @if (restaurant()!.approvalStatus === 'Approved' && restaurant()!.isActive) {
-          <app-notice
-            tone="success"
-            title="Visible para operar"
-            message="Tu restaurante esta aprobado y activo. Mantener perfil, horario y menu actualizados ayuda a evitar pedidos incorrectos."
-          />
+        @if (successMessage()) {
+          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+            {{ successMessage() }}
+          </div>
         }
 
-        @if (!restaurant()!.isActive || restaurant()!.approvalStatus === 'Rejected') {
-          <app-notice
-            tone="danger"
-            title="No disponible al publico"
-            message="Tu restaurante no puede recibir pedidos mientras este inactivo, rechazado o suspendido."
-          />
-        }
+        @if (isLoading()) {
+          <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
+            Cargando perfil...
+          </div>
+        } @else if (restaurant()) {
+          @if (restaurant()!.approvalStatus === 'Pending') {
+            <app-notice
+              tone="warning"
+              title="Pendiente de aprobacion"
+              message="Tu restaurante aun no aparece al publico porque sigue pendiente de aprobacion administrativa."
+            />
+          }
 
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="muted">Zona</span>
-            <strong>{{ restaurant()!.zoneName }}</strong>
+          @if (restaurant()!.approvalStatus === 'Approved' && restaurant()!.isActive) {
+            <app-notice
+              tone="success"
+              title="Visible para operar"
+              message="Tu restaurante esta aprobado y activo. Mantener perfil, horario y menu actualizados ayuda a evitar pedidos incorrectos."
+            />
+          }
+
+          @if (!restaurant()!.isActive || restaurant()!.approvalStatus === 'Rejected') {
+            <app-notice
+              tone="danger"
+              title="No disponible al publico"
+              message="Tu restaurante no puede recibir pedidos mientras este inactivo, rechazado o suspendido."
+            />
+          }
+
+          <div class="stats-grid">
+            <app-metric-card label="Zona" [value]="restaurant()!.zoneName" helper="Cobertura operativa actual" />
+            <app-metric-card label="Estado" [value]="restaurant()!.isActive ? 'Activo' : 'Inactivo'" helper="Visibilidad operativa" />
+            <app-metric-card label="Aprobacion" [value]="restaurant()!.approvalStatus" helper="Control administrativo" />
           </div>
-          <div class="stat-card">
-            <span class="muted">Estado</span>
-            <strong><app-status-badge [status]="restaurant()!.isActive" [label]="restaurant()!.isActive ? 'Activo' : 'Inactivo'" /></strong>
-          </div>
-          <div class="stat-card">
-            <span class="muted">Aprobacion</span>
-            <strong><app-status-badge [status]="restaurant()!.approvalStatus" /></strong>
-          </div>
+        }
+      </app-surface-card>
+
+      @if (restaurant()) {
+        <div class="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+          <app-surface-card variant="page">
+            <div class="grid gap-5">
+              <div class="flex items-start gap-4">
+                <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary-700 text-white shadow-lg shadow-primary-700/20">
+                  <lucide-angular class="h-6 w-6" [img]="storeIcon" aria-hidden="true"></lucide-angular>
+                </div>
+                <div class="grid gap-1">
+                  <h2 class="mb-0 text-2xl font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant()!.name }}</h2>
+                  <p class="text-sm text-text-muted">{{ restaurant()!.description }}</p>
+                </div>
+              </div>
+
+              @if (logoPreviewUrl()) {
+                <div class="overflow-hidden rounded-[24px] border border-[#eddad4] bg-surface-soft">
+                  <img class="block h-64 w-full object-cover" [src]="logoPreviewUrl()" alt="Logo del restaurante" />
+                </div>
+              } @else {
+                <div class="grid min-h-56 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
+                  El logo del restaurante aparecera aqui.
+                </div>
+              }
+
+              <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
+                  <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
+                  Identidad visual
+                </div>
+                <p class="mt-3 text-sm leading-6 text-text-muted">
+                  Un logo claro y una descripcion precisa hacen que el negocio inspire mas confianza cuando el cliente lo encuentra por primera vez.
+                </p>
+              </div>
+            </div>
+          </app-surface-card>
+
+          <app-surface-card variant="page">
+            <form class="grid gap-4" [formGroup]="form" (ngSubmit)="save()">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-loreto-carbon">Nombre</span>
+                  <input id="name" type="text" formControlName="name" />
+                </label>
+
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-loreto-carbon">Logo</span>
+                  <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
+                  @if (logoFileName()) {
+                    <small class="text-sm text-text-muted">Archivo seleccionado: {{ logoFileName() }}</small>
+                  }
+                  <small class="text-sm text-text-muted">PNG, JPG o WEBP. Maximo 5 MB.</small>
+                </label>
+
+                <label class="grid gap-2 sm:col-span-2">
+                  <span class="text-sm font-semibold text-loreto-carbon">Direccion</span>
+                  <input id="address" type="text" formControlName="address" />
+                </label>
+
+                <label class="grid gap-2 sm:col-span-2">
+                  <span class="text-sm font-semibold text-loreto-carbon">Referencia</span>
+                  <input id="reference" type="text" formControlName="reference" />
+                </label>
+
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-loreto-carbon">Hora apertura</span>
+                  <input id="openTime" type="time" formControlName="openTime" />
+                </label>
+
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-loreto-carbon">Hora cierre</span>
+                  <input id="closeTime" type="time" formControlName="closeTime" />
+                </label>
+              </div>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-loreto-carbon">Descripcion</span>
+                <textarea id="description" rows="4" formControlName="description"></textarea>
+              </label>
+
+              <input type="hidden" formControlName="logoUrl" />
+
+              <div class="grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
+                    <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
+                    Zona
+                  </div>
+                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.zoneName }}</p>
+                </div>
+                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
+                    <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
+                    Aprobacion
+                  </div>
+                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.approvalStatus }}</p>
+                </div>
+                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
+                    <lucide-angular class="h-4 w-4" [img]="clockIcon" aria-hidden="true"></lucide-angular>
+                    Horario
+                  </div>
+                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.openTime }} - {{ restaurant()!.closeTime }}</p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <app-button size="lg" type="submit" [disabled]="isSaving()">
+                  {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
+                </app-button>
+                <app-button variant="ghost" size="lg" type="button" [disabled]="isSaving()" (click)="loadProfile()">
+                  <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
+                  Recargar
+                </app-button>
+              </div>
+            </form>
+          </app-surface-card>
         </div>
-
-        <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-          <div class="form-grid two-col">
-            <div class="field">
-              <label for="name">Nombre</label>
-              <input id="name" type="text" formControlName="name" />
-            </div>
-
-            <div class="field">
-              <label for="logoUrl">Logo URL</label>
-              <input id="logoUrl" type="text" formControlName="logoUrl" />
-            </div>
-
-            <div class="field">
-              <label for="address">Direccion</label>
-              <input id="address" type="text" formControlName="address" />
-            </div>
-
-            <div class="field">
-              <label for="reference">Referencia</label>
-              <input id="reference" type="text" formControlName="reference" />
-            </div>
-
-            <div class="field">
-              <label for="openTime">Hora apertura</label>
-              <input id="openTime" type="time" formControlName="openTime" />
-            </div>
-
-            <div class="field">
-              <label for="closeTime">Hora cierre</label>
-              <input id="closeTime" type="time" formControlName="closeTime" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="description">Descripcion</label>
-            <textarea id="description" rows="4" formControlName="description"></textarea>
-          </div>
-
-          <div class="page-actions">
-            <button class="button primary-action" type="submit" [disabled]="isSaving()">
-              {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
-            </button>
-            <button class="button ghost" type="button" (click)="loadProfile()" [disabled]="isSaving()">
-              Recargar
-            </button>
-          </div>
-        </form>
       }
     </section>
   `,
@@ -126,11 +216,23 @@ export class RestaurantProfilePageComponent {
   private readonly myRestaurantApi = inject(MyRestaurantApiService);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly storeIcon = Store;
+  readonly imagePlusIcon = ImagePlus;
+  readonly mapPinIcon = MapPin;
+  readonly shieldCheckIcon = ShieldCheck;
+  readonly clockIcon = Clock3;
+  readonly refreshIcon = RefreshCw;
+
   readonly restaurant = signal<MyRestaurantResponse | null>(null);
   readonly isLoading = signal(true);
   readonly isSaving = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
+  readonly logoPreviewUrl = signal<string | null>(null);
+  readonly logoFileName = signal('');
+
+  private logoFile: File | null = null;
+  private logoObjectUrl: string | null = null;
 
   readonly form = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required]],
@@ -143,12 +245,24 @@ export class RestaurantProfilePageComponent {
   });
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.logoObjectUrl) {
+        URL.revokeObjectURL(this.logoObjectUrl);
+      }
+    });
+
     this.loadProfile();
   }
 
   loadProfile(): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
+    this.logoFile = null;
+    this.logoFileName.set('');
+    if (this.logoObjectUrl) {
+      URL.revokeObjectURL(this.logoObjectUrl);
+      this.logoObjectUrl = null;
+    }
 
     this.myRestaurantApi
       .getMyRestaurant()
@@ -165,6 +279,7 @@ export class RestaurantProfilePageComponent {
             closeTime: this.toTimeInputValue(restaurant.closeTime),
             logoUrl: restaurant.logoUrl ?? '',
           });
+          this.logoPreviewUrl.set(restaurant.logoUrl ?? null);
           this.isLoading.set(false);
         },
         error: (error) => {
@@ -172,6 +287,29 @@ export class RestaurantProfilePageComponent {
           this.isLoading.set(false);
         },
       });
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+
+    if (!file) {
+      this.clearLogoSelection();
+      return;
+    }
+
+    const fileError = validateImageFile(file, 'El logo');
+    if (fileError) {
+      this.errorMessage.set(fileError);
+      input.value = '';
+      this.clearLogoSelection();
+      return;
+    }
+
+    this.errorMessage.set('');
+    this.logoFile = file;
+    this.logoFileName.set(file.name);
+    this.replaceLogoPreview(file);
   }
 
   save(): void {
@@ -187,29 +325,39 @@ export class RestaurantProfilePageComponent {
     }
 
     const raw = this.form.getRawValue();
-    const request: UpdateMyRestaurantRequest = {
-      name: raw.name.trim(),
-      description: raw.description.trim(),
-      address: raw.address.trim(),
-      reference: raw.reference.trim(),
-      zoneId: restaurant.zoneId,
-      openTime: this.toApiTimeValue(raw.openTime),
-      closeTime: this.toApiTimeValue(raw.closeTime),
-      logoUrl: raw.logoUrl.trim() || null,
-    };
+    const formData = new FormData();
+    formData.append('Name', raw.name.trim());
+    formData.append('Description', raw.description.trim());
+    formData.append('Address', raw.address.trim());
+    formData.append('Reference', raw.reference.trim());
+    formData.append('ZoneId', restaurant.zoneId);
+    formData.append('OpenTime', this.toApiTimeValue(raw.openTime));
+    formData.append('CloseTime', this.toApiTimeValue(raw.closeTime));
+    formData.append('LogoUrl', raw.logoUrl.trim());
+
+    if (this.logoFile) {
+      formData.append('LogoFile', this.logoFile, this.logoFile.name);
+    }
 
     this.isSaving.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
 
     this.myRestaurantApi
-      .updateMyRestaurant(request)
+      .updateMyRestaurant(formData)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (updatedRestaurant) => {
           this.restaurant.set(updatedRestaurant);
           this.successMessage.set('Perfil actualizado correctamente.');
           this.isSaving.set(false);
+          this.logoFile = null;
+          this.logoFileName.set('');
+          if (this.logoObjectUrl) {
+            URL.revokeObjectURL(this.logoObjectUrl);
+            this.logoObjectUrl = null;
+          }
+          this.logoPreviewUrl.set(updatedRestaurant.logoUrl ?? null);
           this.form.patchValue({
             openTime: this.toTimeInputValue(updatedRestaurant.openTime),
             closeTime: this.toTimeInputValue(updatedRestaurant.closeTime),
@@ -221,6 +369,26 @@ export class RestaurantProfilePageComponent {
           this.isSaving.set(false);
         },
       });
+  }
+
+  private replaceLogoPreview(file: File): void {
+    if (this.logoObjectUrl) {
+      URL.revokeObjectURL(this.logoObjectUrl);
+    }
+
+    this.logoObjectUrl = URL.createObjectURL(file);
+    this.logoPreviewUrl.set(this.logoObjectUrl);
+  }
+
+  private clearLogoSelection(): void {
+    this.logoFile = null;
+    this.logoFileName.set('');
+    if (this.logoObjectUrl) {
+      URL.revokeObjectURL(this.logoObjectUrl);
+      this.logoObjectUrl = null;
+    }
+
+    this.logoPreviewUrl.set(this.restaurant()?.logoUrl ?? null);
   }
 
   private toTimeInputValue(value: string | null | undefined): string {

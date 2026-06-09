@@ -15,6 +15,8 @@ public class User : BaseEntity
 
     public string PasswordHash { get; set; } = string.Empty;
 
+    public string? GoogleSubject { get; set; }
+
     public UserRole Role { get; set; }
 
     public UserStatus Status { get; set; }
@@ -22,6 +24,10 @@ public class User : BaseEntity
     public CustomerProfile? CustomerProfile { get; set; }
 
     public DriverProfile? DriverProfile { get; set; }
+
+    public CollaboratorProfile? CollaboratorProfile { get; set; }
+
+    public CommunityCollaborator? CommunityCollaborator { get; set; }
 
     public ICollection<Restaurant> OwnedRestaurants { get; set; } = new List<Restaurant>();
 }

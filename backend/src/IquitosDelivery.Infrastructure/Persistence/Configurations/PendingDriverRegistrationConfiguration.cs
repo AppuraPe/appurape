@@ -30,6 +30,8 @@ public class PendingDriverRegistrationConfiguration : IEntityTypeConfiguration<P
         builder.Property(x => x.Plate).HasMaxLength(20).IsRequired();
         builder.Property(x => x.ZoneId).IsRequired();
         builder.Property(x => x.VehicleType).IsRequired();
+        builder.Property(x => x.IdentityDocumentUrl).HasMaxLength(500);
+        builder.Property(x => x.VehiclePhotoUrl).HasMaxLength(500);
 
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => new { x.Email, x.IsCompleted });

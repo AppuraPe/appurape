@@ -37,7 +37,7 @@ En `backend/src/IquitosDelivery.Api/appsettings.Development.json`, `User Secrets
 - `Storage:Supabase:Bucket = appurape`
 - `Storage:PublicBaseUrl`
 - `Email:Provider = Logging` en Render
-- `frontend/client-app/src/environments/environment.ts` -> `storagePublicBaseUrl`
+- `frontend/ops-app/src/environments/environment.ts` -> `storagePublicBaseUrl`
 - `backend/src/IquitosDelivery.Api/appsettings.Development.json`
 - `backend/src/IquitosDelivery.Api/appsettings.Testing.json`
 

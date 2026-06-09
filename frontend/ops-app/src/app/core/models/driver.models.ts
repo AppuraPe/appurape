@@ -15,8 +15,11 @@ export interface AvailableDriverOrderListItemResponse {
   zoneName: string;
   deliveryAddress: string;
   deliveryReference: string;
+  courierEarningAmount: number;
   total: number;
   paymentMethod: string;
+  assignedCourierUserId?: string | null;
+  assignedCourierType?: string | null;
   createdAtUtc: string;
   readyAtUtc?: string | null;
 }
@@ -25,8 +28,11 @@ export interface DriverAssignedOrderListItemResponse {
   id: string;
   restaurantName: string;
   status: OrderStatus | string;
+  courierEarningAmount: number;
   total: number;
   deliveryAddress: string;
+  assignedCourierUserId?: string | null;
+  assignedCourierType?: string | null;
   createdAtUtc: string;
   readyAtUtc?: string | null;
   pickedUpAtUtc?: string | null;
@@ -44,6 +50,10 @@ export interface PendingDriverResponse {
   plate: string;
   approvalStatus: string;
   isAvailable: boolean;
+  trustLevel: string;
+  trustScore: number;
+  completedDeliveriesCount: number;
+  averageRating: number;
 }
 
 export interface UpdateDriverOrderStatusRequest {

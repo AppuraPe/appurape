@@ -24,6 +24,14 @@ public class AdminDriverDetailResponse
 
     public bool IsAvailable { get; set; }
 
+    public string TrustLevel { get; set; } = string.Empty;
+
+    public int CompletedDeliveriesCount { get; set; }
+
+    public decimal TrustScore { get; set; }
+
+    public decimal AverageRating { get; set; }
+
     public string UserStatus { get; set; } = string.Empty;
 
     public string? IdentityDocumentUrl { get; set; }

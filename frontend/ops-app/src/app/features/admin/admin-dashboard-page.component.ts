@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../core/services/admin-api.service';
+import { CommunityApiService } from '../../core/services/community-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -17,13 +18,13 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
         <app-page-header
           eyebrow="AppuraPe Admin"
           title="Panel administrativo"
-          subtitle="Resumen rapido de las revisiones pendientes."
+          subtitle="Resumen rapido de las revisiones y de la salud de la red."
         />
 
         <app-notice
           tone="info"
-          title="Prioridad operativa"
-          message="Revisa primero las cuentas pendientes. Aprobar habilita la operacion; suspender bloquea temporalmente el uso del panel operativo."
+          title="Prioridad de la red"
+          message="Revisa primero las cuentas pendientes. Aprobar habilita la operación; suspender bloquea temporalmente el uso de la plataforma."
         />
 
         @if (errorMessage()) {
@@ -40,12 +41,21 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               <span class="muted">Drivers pendientes</span>
               <strong>{{ pendingDriversCount() }}</strong>
             </div>
+            <div class="stat-card">
+              <span class="muted">Comunidad abierta</span>
+              <strong>{{ openCommunityRequestsCount() }}</strong>
+            </div>
+            <div class="stat-card">
+              <span class="muted">Colaboradores activos</span>
+              <strong>{{ activeCollaboratorsCount() }}</strong>
+            </div>
           </div>
         }
 
         <div class="page-actions">
           <a class="button" routerLink="/admin/restaurants/pending">Ver restaurantes</a>
           <a class="button secondary" routerLink="/admin/drivers/pending">Ver drivers</a>
+          <a class="button secondary" routerLink="/admin/community">Ver comunidad</a>
           <a class="button ghost" routerLink="/admin/restaurants">Todos los restaurantes</a>
           <a class="button ghost" routerLink="/admin/drivers">Todos los drivers</a>
           <button class="button ghost" type="button" (click)="loadDashboard()" [disabled]="isLoading()">Recargar</button>
@@ -56,10 +66,13 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 })
 export class AdminDashboardPageComponent {
   private readonly adminApi = inject(AdminApiService);
+  private readonly communityApi = inject(CommunityApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly pendingRestaurantsCount = signal(0);
   readonly pendingDriversCount = signal(0);
+  readonly openCommunityRequestsCount = signal(0);
+  readonly activeCollaboratorsCount = signal(0);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
 
@@ -74,12 +87,15 @@ export class AdminDashboardPageComponent {
     forkJoin({
       restaurants: this.adminApi.getPendingRestaurants(),
       drivers: this.adminApi.getPendingDrivers(),
+      community: this.communityApi.getAdminOverview(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ restaurants, drivers }) => {
+        next: ({ restaurants, drivers, community }) => {
           this.pendingRestaurantsCount.set(restaurants.length);
           this.pendingDriversCount.set(drivers.length);
+          this.openCommunityRequestsCount.set(community.publishedRequestsCount);
+          this.activeCollaboratorsCount.set(community.activeCollaboratorsCount);
           this.isLoading.set(false);
         },
         error: (error) => {

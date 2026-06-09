@@ -8,4 +8,11 @@ public interface IEmailSender
         string code,
         int expiresInMinutes,
         CancellationToken cancellationToken = default);
+
+    Task SendPasswordResetCodeAsync(
+        string toEmail,
+        string recipientName,
+        string code,
+        int expiresInMinutes,
+        CancellationToken cancellationToken = default);
 }

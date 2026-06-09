@@ -16,6 +16,12 @@ public class RestaurantDetailResponse
 
     public string ZoneName { get; set; } = string.Empty;
 
+    public Guid? BusinessTypeId { get; set; }
+
+    public string? BusinessTypeCode { get; set; }
+
+    public string? BusinessTypeName { get; set; }
+
     public TimeSpan OpenTime { get; set; }
 
     public TimeSpan CloseTime { get; set; }

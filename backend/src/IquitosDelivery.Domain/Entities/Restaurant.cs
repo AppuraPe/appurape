@@ -21,6 +21,10 @@ public class Restaurant : BaseEntity
 
     public Zone Zone { get; set; } = null!;
 
+    public Guid? BusinessTypeId { get; set; }
+
+    public BusinessType? BusinessType { get; set; }
+
     public ApprovalStatus ApprovalStatus { get; set; }
 
     public TimeSpan OpenTime { get; set; }

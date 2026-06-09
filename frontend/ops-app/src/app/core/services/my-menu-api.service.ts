@@ -4,14 +4,12 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CreateMenuCategoryRequest,
-  CreateMenuItemRequest,
   MenuCategoryFilters,
   MenuCategoryResponse,
   MenuItemFilters,
   MenuItemResponse,
   UpdateMenuCategoryRequest,
   UpdateMenuItemAvailabilityRequest,
-  UpdateMenuItemRequest,
 } from '../models/restaurant.models';
 
 @Injectable({ providedIn: 'root' })
@@ -39,11 +37,11 @@ export class MyMenuApiService {
     });
   }
 
-  createItem(request: CreateMenuItemRequest): Observable<MenuItemResponse> {
+  createItem(request: FormData): Observable<MenuItemResponse> {
     return this.http.post<MenuItemResponse>(`${this.baseUrl}/items`, request);
   }
 
-  updateItem(id: string, request: UpdateMenuItemRequest): Observable<MenuItemResponse> {
+  updateItem(id: string, request: FormData): Observable<MenuItemResponse> {
     return this.http.put<MenuItemResponse>(`${this.baseUrl}/items/${id}`, request);
   }
 

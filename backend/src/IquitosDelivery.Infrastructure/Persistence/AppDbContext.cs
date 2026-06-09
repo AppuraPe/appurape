@@ -20,9 +20,21 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<PendingDriverRegistration> PendingDriverRegistrations => Set<PendingDriverRegistration>();
 
+    public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
+
     public DbSet<CustomerProfile> Customers => Set<CustomerProfile>();
 
+    public DbSet<CollaboratorProfile> CollaboratorProfiles => Set<CollaboratorProfile>();
+
+    public DbSet<CommunityCollaborator> CommunityCollaborators => Set<CommunityCollaborator>();
+
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
+
+    public DbSet<BusinessType> BusinessTypes => Set<BusinessType>();
+
+    public DbSet<CommissionRule> CommissionRules => Set<CommissionRule>();
+
+    public DbSet<FinancialMovement> FinancialMovements => Set<FinancialMovement>();
 
     public DbSet<Restaurant> Restaurants => Set<Restaurant>();
 
@@ -31,6 +43,12 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
 
     public DbSet<DriverProfile> Drivers => Set<DriverProfile>();
+
+    public DbSet<CommunityRoute> CommunityRoutes => Set<CommunityRoute>();
+
+    public DbSet<CommunityRequest> CommunityRequests => Set<CommunityRequest>();
+
+    public DbSet<CommunityRequestApplication> CommunityRequestApplications => Set<CommunityRequestApplication>();
 
     public DbSet<Zone> Zones => Set<Zone>();
 
@@ -48,11 +66,29 @@ public class AppDbContext : DbContext, IAppDbContext
 
     IQueryable<PendingDriverRegistration> IAppDbContext.PendingDriverRegistrations => PendingDriverRegistrations;
 
+    IQueryable<PasswordResetRequest> IAppDbContext.PasswordResetRequests => PasswordResetRequests;
+
     IQueryable<CustomerProfile> IAppDbContext.Customers => Customers;
+
+    IQueryable<CollaboratorProfile> IAppDbContext.CollaboratorProfiles => CollaboratorProfiles;
+
+    IQueryable<CommunityCollaborator> IAppDbContext.CommunityCollaborators => CommunityCollaborators;
+
+    IQueryable<BusinessType> IAppDbContext.BusinessTypes => BusinessTypes;
+
+    IQueryable<CommissionRule> IAppDbContext.CommissionRules => CommissionRules;
+
+    IQueryable<FinancialMovement> IAppDbContext.FinancialMovements => FinancialMovements;
 
     IQueryable<Restaurant> IAppDbContext.Restaurants => Restaurants;
 
     IQueryable<DriverProfile> IAppDbContext.Drivers => Drivers;
+
+    IQueryable<CommunityRoute> IAppDbContext.CommunityRoutes => CommunityRoutes;
+
+    IQueryable<CommunityRequest> IAppDbContext.CommunityRequests => CommunityRequests;
+
+    IQueryable<CommunityRequestApplication> IAppDbContext.CommunityRequestApplications => CommunityRequestApplications;
 
     IQueryable<MenuCategory> IAppDbContext.MenuCategories => MenuCategories;
 

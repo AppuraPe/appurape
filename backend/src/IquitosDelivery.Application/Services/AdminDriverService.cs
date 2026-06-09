@@ -69,6 +69,12 @@ public class AdminDriverService : IAdminDriverService
                 ZoneName = x.Zone.Name,
                 ApprovalStatus = x.ApprovalStatus.ToString(),
                 IsAvailable = x.IsAvailable,
+                TrustLevel = x.TrustLevel.ToString(),
+                CompletedDeliveriesCount = x.CompletedDeliveriesCount,
+                TrustScore = x.TrustScore,
+                AverageRating = x.Orders.Where(o => o.Status == OrderStatus.Delivered && o.DriverRating.HasValue)
+                    .Select(o => (decimal?)o.DriverRating)
+                    .Average() ?? 0m,
                 UserStatus = x.User.Status.ToString(),
                 CreatedAtUtc = x.User.CreatedAtUtc
             })
@@ -98,7 +104,7 @@ public class AdminDriverService : IAdminDriverService
         await _statusValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var driver = await GetDriverForModerationAsync(driverId, cancellationToken);
-        ApplyDriverAction(driver, NormalizeAction(request.Action));
+        await ApplyDriverActionAsync(driver, NormalizeAction(request.Action), cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -122,6 +128,7 @@ public class AdminDriverService : IAdminDriverService
         driver.ApprovalStatus = ApprovalStatus.Approved;
         driver.IsAvailable = true;
         driver.User.Status = UserStatus.Active;
+        await RecalculateTrustMetricsAsync(driver, cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -134,6 +141,9 @@ public class AdminDriverService : IAdminDriverService
 
         driver.ApprovalStatus = ApprovalStatus.Rejected;
         driver.IsAvailable = false;
+        driver.TrustLevel = TrustLevel.Verified;
+        driver.CompletedDeliveriesCount = 0;
+        driver.TrustScore = 0m;
         driver.User.Status = UserStatus.Pending;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -141,7 +151,7 @@ public class AdminDriverService : IAdminDriverService
         return await GetDriverResponseAsync(driverId, cancellationToken);
     }
 
-    private static void ApplyDriverAction(DriverProfile driver, string action)
+    private async Task ApplyDriverActionAsync(DriverProfile driver, string action, CancellationToken cancellationToken)
     {
         switch (action)
         {
@@ -149,11 +159,15 @@ public class AdminDriverService : IAdminDriverService
                 driver.User.Status = UserStatus.Active;
                 driver.ApprovalStatus = ApprovalStatus.Approved;
                 driver.IsAvailable = true;
+                await RecalculateTrustMetricsAsync(driver, cancellationToken);
                 break;
             case "reject":
                 driver.User.Status = UserStatus.Pending;
                 driver.ApprovalStatus = ApprovalStatus.Rejected;
                 driver.IsAvailable = false;
+                driver.CompletedDeliveriesCount = 0;
+                driver.TrustScore = 0m;
+                driver.TrustLevel = TrustLevel.Verified;
                 break;
             case "suspend":
                 driver.User.Status = UserStatus.Suspended;
@@ -167,6 +181,15 @@ public class AdminDriverService : IAdminDriverService
 
                 driver.User.Status = UserStatus.Active;
                 driver.IsAvailable = true;
+                await RecalculateTrustMetricsAsync(driver, cancellationToken);
+                break;
+            case "trust":
+                EnsureApprovedDriver(driver);
+                driver.TrustLevel = TrustLevel.Trusted;
+                break;
+            case "verify":
+                EnsureApprovedDriver(driver);
+                driver.TrustLevel = TrustLevel.Verified;
                 break;
             default:
                 throw new AppException("Invalid admin action.");
@@ -209,7 +232,13 @@ public class AdminDriverService : IAdminDriverService
             VehicleType = x.VehicleType.ToString(),
             Plate = x.Plate,
             ApprovalStatus = x.ApprovalStatus.ToString(),
-            IsAvailable = x.IsAvailable
+            IsAvailable = x.IsAvailable,
+            TrustLevel = x.TrustLevel.ToString(),
+            CompletedDeliveriesCount = x.CompletedDeliveriesCount,
+            TrustScore = x.TrustScore,
+            AverageRating = x.Orders.Where(o => o.Status == OrderStatus.Delivered && o.DriverRating.HasValue)
+                .Select(o => (decimal?)o.DriverRating)
+                .Average() ?? 0m
         };
     }
 
@@ -228,12 +257,36 @@ public class AdminDriverService : IAdminDriverService
             ZoneName = x.Zone.Name,
             ApprovalStatus = x.ApprovalStatus.ToString(),
             IsAvailable = x.IsAvailable,
+            TrustLevel = x.TrustLevel.ToString(),
+            CompletedDeliveriesCount = x.CompletedDeliveriesCount,
+            TrustScore = x.TrustScore,
+            AverageRating = x.Orders.Where(o => o.Status == OrderStatus.Delivered && o.DriverRating.HasValue)
+                .Select(o => (decimal?)o.DriverRating)
+                .Average() ?? 0m,
             UserStatus = x.User.Status.ToString(),
             IdentityDocumentUrl = x.IdentityDocumentUrl,
             VehiclePhotoUrl = x.VehiclePhotoUrl,
             CreatedAtUtc = x.User.CreatedAtUtc,
             UpdatedAtUtc = x.User.UpdatedAtUtc
         };
+    }
+
+    private static void EnsureApprovedDriver(DriverProfile driver)
+    {
+        if (driver.ApprovalStatus != ApprovalStatus.Approved || driver.User.Status != UserStatus.Active)
+        {
+            throw new AppException("Only approved and active drivers can change trust level.");
+        }
+    }
+
+    private async Task RecalculateTrustMetricsAsync(DriverProfile driver, CancellationToken cancellationToken)
+    {
+        var averageRating = await _dbContext.Orders
+            .Where(x => x.DriverId == driver.Id && x.Status == OrderStatus.Delivered && x.DriverRating.HasValue)
+            .AverageAsync(x => (decimal?)x.DriverRating, cancellationToken);
+
+        driver.TrustScore = DriverTrustCalculator.CalculateScore(driver.CompletedDeliveriesCount, averageRating);
+        driver.TrustLevel = DriverTrustCalculator.CalculateLevel(driver.TrustScore);
     }
 
     private static string NormalizeAction(string action)

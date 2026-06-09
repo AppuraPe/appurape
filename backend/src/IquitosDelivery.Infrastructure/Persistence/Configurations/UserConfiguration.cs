@@ -17,12 +17,14 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.Phone).HasMaxLength(20).IsRequired();
         builder.Property(x => x.Email).HasMaxLength(256).IsRequired();
         builder.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.GoogleSubject).HasMaxLength(128);
         builder.Property(x => x.Role).IsRequired();
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.UpdatedAtUtc);
 
         builder.HasIndex(x => x.Email).IsUnique();
+        builder.HasIndex(x => x.GoogleSubject).IsUnique();
 
         builder.HasOne(x => x.CustomerProfile)
             .WithOne(x => x.User)
@@ -32,6 +34,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasOne(x => x.DriverProfile)
             .WithOne(x => x.User)
             .HasForeignKey<DriverProfile>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.CollaboratorProfile)
+            .WithOne(x => x.User)
+            .HasForeignKey<CollaboratorProfile>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.CommunityCollaborator)
+            .WithOne(x => x.User)
+            .HasForeignKey<CommunityCollaborator>(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.OwnedRestaurants)

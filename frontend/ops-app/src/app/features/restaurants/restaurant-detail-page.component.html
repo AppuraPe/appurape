@@ -1,0 +1,346 @@
+<section class="mx-auto w-full max-w-[1240px] space-y-5 px-4 pb-28 pt-3 sm:px-6 lg:space-y-6 lg:px-8 lg:pb-12">
+  <app-back-button fallbackUrl="/restaurants" label="Volver a restaurantes" />
+
+  @if (errorMessage()) {
+    <div class="rounded-[22px] border border-red-200 bg-red-50 p-5 text-red-700 shadow-[0_8px_20px_rgba(6,25,43,0.06)]" role="status" aria-live="polite">
+      <strong class="block text-xl font-black tracking-[-0.04em] text-loreto-carbon">No pudimos abrir este restaurante</strong>
+      <p class="mt-2 text-sm leading-6">{{ errorMessage() }}</p>
+      <div class="mt-4">
+        <a class="inline-flex min-h-11 items-center justify-center rounded-full border border-primary-700 px-5 text-sm font-black text-primary-700 transition hover:bg-primary-50" routerLink="/restaurants">Volver a restaurantes</a>
+      </div>
+    </div>
+  } @else if (isLoading()) {
+    <div class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]" role="status" aria-live="polite" aria-busy="true">
+      <span class="text-xs font-black uppercase tracking-[0.16em] text-primary-700">Cargando restaurante</span>
+      <div class="mt-4 h-4 w-40 animate-pulse rounded-full bg-[#f3e2de]"></div>
+      <div class="mt-3 h-4 w-56 animate-pulse rounded-full bg-[#f3e2de]"></div>
+      <div class="mt-3 h-4 w-full animate-pulse rounded-full bg-[#f3e2de]"></div>
+    </div>
+  } @else if (restaurant()) {
+    <section class="overflow-hidden rounded-[24px] border border-[#ead8d2] bg-white shadow-[0_8px_22px_rgba(6,25,43,0.07)]">
+      <div class="relative h-[180px] w-full overflow-hidden sm:h-[220px]">
+        <img class="h-full w-full object-cover" [src]="restaurant()!.logoUrl || '/img/banner1.png'" [alt]="restaurant()!.name" />
+        <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,25,43,0.1),rgba(6,25,43,0.52))]"></div>
+        <div class="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5">
+          <div class="mb-2.5 flex flex-wrap gap-2">
+            @if (hasText(restaurant()!.zoneName)) {
+              <span class="inline-flex rounded-full bg-white/92 px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-primary-700">{{ restaurant()!.zoneName }}</span>
+            }
+            <span class="inline-flex rounded-full bg-white/16 px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-white backdrop-blur-sm">{{ formatSchedule(restaurant()!.openTime, restaurant()!.closeTime) }}</span>
+            <span class="inline-flex rounded-full px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em]" [class]="restaurant()!.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ restaurant()!.isActive ? 'Activo' : 'No activo' }}</span>
+          </div>
+          <p class="text-[0.64rem] font-black uppercase tracking-[0.18em] text-white/78">Restaurante</p>
+          <h1 class="max-w-3xl text-balance font-display text-[1.65rem] font-black leading-[0.96] tracking-[-0.05em] text-white sm:text-[2.05rem]">{{ restaurant()!.name }}</h1>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+      <div class="grid gap-5">
+        <div class="grid gap-4 rounded-[22px] border border-[#ead8d2] bg-white p-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)] sm:p-5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <span class="inline-flex rounded-full bg-primary-100 px-3 py-1 text-[0.64rem] font-black uppercase tracking-[0.12em] text-primary-700">Menú</span>
+              <h2 class="mt-2.5 text-[1.35rem] font-black tracking-[-0.04em] text-loreto-carbon sm:text-[1.5rem]">Pide desde el celular</h2>
+              <p class="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{{ restaurantSubtitle() }}</p>
+            </div>
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <a class="inline-flex min-h-11 items-center justify-center rounded-full border border-primary-700 px-4 text-sm font-black text-primary-700 transition hover:bg-primary-50" routerLink="/restaurants">Cambiar restaurante</a>
+              <button data-checkout-target class="hidden min-h-11 items-center justify-center rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600 lg:inline-flex" type="button" (click)="openCheckoutDrawer()">Tu pedido ({{ totalQuantity() }})</button>
+            </div>
+          </div>
+        </div>
+
+        @if (isGlobalSearchContext()) {
+          <div class="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+            <span class="inline-flex rounded-full bg-white px-3 py-1 text-[0.64rem] font-black uppercase tracking-[0.12em] text-primary-700">Búsqueda</span>
+            <strong class="mt-3 block text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ menuSearchQuery() }}</strong>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a class="inline-flex min-h-11 items-center justify-center rounded-full border border-primary-700 px-4 text-sm font-black text-primary-700 transition hover:bg-white" [routerLink]="['/restaurants']" [queryParams]="{ q: menuSearchQuery() }">Volver a resultados</a>
+              <button class="inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600" type="button" (click)="clearMenuSearch()">Ver menú</button>
+            </div>
+          </div>
+        }
+
+        <section class="rounded-[24px] border border-[#ead8d2] bg-white p-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)] sm:p-5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="text-[1.2rem] font-black tracking-[-0.04em] text-loreto-carbon">Buscar en el menú</h3>
+              <p class="mt-1 text-sm leading-5.5 text-text-muted">{{ visibleItemsSummary() }}</p>
+            </div>
+            <button class="inline-flex min-h-11 items-center justify-center rounded-full border border-[#ddc8c1] bg-surface-soft px-4 text-sm font-black text-loreto-carbon transition hover:bg-white disabled:opacity-40" type="button" (click)="clearMenuSearch()" [disabled]="!hasActiveMenuSearch()">Limpiar</button>
+          </div>
+
+          <div class="mt-4 grid gap-2">
+            <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted" for="menuSearch">Menú</label>
+            <input id="menuSearch" type="search" [formControl]="menuSearchControl" placeholder="Busca plato o categoría" autocomplete="off" class="min-h-12 rounded-2xl border border-[#ddc8c1] bg-surface-soft px-4 text-sm text-loreto-carbon outline-none placeholder:text-text-muted/70 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+          </div>
+
+          <div class="mt-5 -mx-1 overflow-x-auto overscroll-x-contain px-1">
+            <div class="flex min-w-full snap-x snap-mandatory items-start gap-3 pb-2">
+              <button type="button" (click)="selectCategory('all')" class="group flex w-20 shrink-0 snap-start flex-col items-center gap-2 text-center">
+                <div class="h-16 w-16 overflow-hidden rounded-full border-2 bg-surface-soft" [class]="selectedCategoryId() === 'all' ? 'border-primary-700 ring-4 ring-primary-200' : 'border-[#ead8d2]'">
+                  <img class="h-full w-full object-cover object-top" src="/img/banner1.png" alt="Todos" />
+                </div>
+                <span class="line-clamp-1 w-full text-xs font-black" [class]="selectedCategoryId() === 'all' ? 'text-primary-700' : 'text-loreto-carbon'">Todos</span>
+              </button>
+
+              @for (category of visibleMenu()?.categories ?? []; track category.id) {
+                <button type="button" (click)="selectCategory(category.id)" class="group flex w-20 shrink-0 snap-start flex-col items-center gap-2 text-center">
+                  <div class="h-16 w-16 overflow-hidden rounded-full border-2 bg-surface-soft" [class]="selectedCategoryId() === category.id ? 'border-primary-700 ring-4 ring-primary-200' : 'border-[#ead8d2]'">
+                    <img class="h-full w-full object-cover object-top" [src]="getCategoryPreviewImage(category)" [alt]="category.name" />
+                  </div>
+                  <span class="line-clamp-2 w-full text-xs font-black leading-4" [class]="selectedCategoryId() === category.id ? 'text-primary-700' : 'text-loreto-carbon'">{{ category.name }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+
+        @if (!filteredVisibleCategories().length) {
+          <div class="rounded-[24px] border border-dashed border-[#ead8d2] bg-white p-6 text-center shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+            <div class="mx-auto grid h-11 w-11 place-items-center rounded-full bg-primary-100 text-primary-700">M</div>
+            <h2 class="mt-4 text-xl font-black tracking-[-0.04em] text-loreto-carbon">{{ menuEmptyStateTitle() }}</h2>
+            <p class="mt-2 text-sm leading-6 text-text-muted">{{ menuEmptyStateMessage() }}</p>
+          </div>
+        } @else if (selectedCategoryId() === 'all') {
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @for (item of groupedItemsForAllCategories(); track item.id) {
+              <app-menu-card
+                [title]="item.name"
+                [subtitle]="item.categoryName || ''"
+                [description]="''"
+                [imageUrl]="item.imageUrl"
+                [priceLabel]="'' + (item.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                [metaBadge]="item.isAvailable ? 'Disponible' : 'No disponible'"
+                [metaBadgeTone]="item.isAvailable ? 'success' : 'warning'"
+                [actionLabel]="'Agregar al pedido'"
+                [actionMode]="'button'"
+                [actionDisabled]="!item.isAvailable || isAnimatingAddFor(item.id)"
+                [showCartIcon]="true"
+                [compactDesktopAction]="true"
+                [actionAriaLabel]="'Agregar ' + item.name + ' al pedido'"
+                (primaryAction)="addItemWithAnimation(item, $event)"
+              />
+            }
+          </div>
+        } @else {
+          <div class="space-y-5">
+            @for (category of filteredVisibleCategories(); track category.id) {
+              <section class="space-y-4">
+                <div class="min-w-0">
+                  <h3 class="text-[1.25rem] font-black tracking-[-0.04em] text-loreto-carbon">{{ category.name }}</h3>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  @for (item of category.items; track item.id) {
+                    <app-menu-card
+                      [title]="item.name"
+                      [subtitle]="item.categoryName || ''"
+                      [description]="''"
+                      [imageUrl]="item.imageUrl"
+                      [priceLabel]="'' + (item.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                      [metaBadge]="item.isAvailable ? 'Disponible' : 'No disponible'"
+                      [metaBadgeTone]="item.isAvailable ? 'success' : 'warning'"
+                      [actionLabel]="'Agregar al pedido'"
+                      [actionMode]="'button'"
+                      [actionDisabled]="!item.isAvailable || isAnimatingAddFor(item.id)"
+                      [showCartIcon]="true"
+                      [compactDesktopAction]="true"
+                      [actionAriaLabel]="'Agregar ' + item.name + ' al pedido'"
+                      (primaryAction)="addItemWithAnimation(item, $event)"
+                    />
+                  }
+                </div>
+              </section>
+            }
+          </div>
+        }
+      </div>
+
+      <aside class="hidden lg:sticky lg:top-24 lg:grid lg:gap-4">
+        <div class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-black uppercase tracking-[0.16em] text-primary-700">Tu pedido</p>
+              <h3 class="mt-2 text-xl font-black tracking-[-0.04em] text-loreto-carbon">{{ totalQuantity() }} producto(s)</h3>
+            </div>
+            <strong class="text-xl font-black tracking-[-0.04em] text-primary-700">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+          </div>
+          <button data-checkout-target type="button" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600" (click)="openCheckoutDrawer()">Revisar</button>
+        </div>
+      </aside>
+    </section>
+
+    @if (cartItems().length) {
+      <div class="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 rounded-[18px] border border-[#ead8d2] bg-white/96 p-3 shadow-[0_14px_30px_rgba(6,25,43,0.14)] backdrop-blur-md lg:hidden" aria-label="Resumen móvil del pedido">
+        <div class="mb-2.5 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-primary-700">Tu pedido</span>
+            <strong class="mt-1 block text-sm text-loreto-carbon">{{ totalQuantity() }} producto(s)</strong>
+          </div>
+          <strong class="text-sm font-black text-primary-700">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+        </div>
+        <button data-checkout-target type="button" class="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600" (click)="openCheckoutDrawer()">Revisar pedido</button>
+      </div>
+    }
+  }
+</section>
+
+@if (activeFlyAnimation(); as fly) {
+  <div
+    class="pointer-events-none fixed z-[110] grid h-10 w-10 place-items-center rounded-full bg-primary-700 text-white shadow-lg transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+    [style.left.px]="fly.active ? fly.toX : fly.x"
+    [style.top.px]="fly.active ? fly.toY : fly.y"
+    [style.opacity]="fly.active ? '0.12' : '1'"
+    [style.transform]="fly.active ? 'translate(-50%, -50%) scale(0.45)' : 'translate(-50%, -50%) scale(1)'"
+    aria-hidden="true"
+  >
+    <lucide-angular class="h-4 w-4" [img]="shoppingCartIcon"></lucide-angular>
+  </div>
+}
+
+<ng-template #checkoutDrawerTemplate>
+  @if (isCheckoutDrawerOpen()) {
+    <div class="fixed inset-0 z-[90] bg-black/38 backdrop-blur-[2px]" (click)="closeCheckoutDrawer()"></div>
+  }
+
+  <div
+    id="drawer-checkout"
+    class="fixed inset-x-0 bottom-0 z-[100] h-[86dvh] w-full overflow-y-auto overscroll-contain rounded-t-[28px] border border-[#ead8d2] bg-white px-4 pb-5 pt-3 transition-transform sm:right-0 sm:top-0 sm:h-[100dvh] sm:max-w-[460px] sm:rounded-none sm:rounded-l-[28px] sm:border-l sm:px-5 sm:pt-4"
+    [class.translate-y-full]="!isCheckoutDrawerOpen()"
+    [class.translate-y-0]="isCheckoutDrawerOpen()"
+    tabindex="-1"
+    aria-labelledby="drawer-checkout-label"
+  >
+    <div class="mx-auto w-full max-w-[520px] sm:max-w-none">
+      <div class="mb-3 flex justify-center sm:hidden">
+        <span class="h-1.5 w-14 rounded-full bg-[#e7d6d0]"></span>
+      </div>
+
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h5 id="drawer-checkout-label" class="text-[1.7rem] font-black tracking-[-0.05em] text-loreto-carbon">Resumen</h5>
+          <p class="mt-1 text-sm text-text-muted">Revisa el pedido antes de enviarlo.</p>
+        </div>
+        <button type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-soft text-loreto-carbon transition hover:bg-primary-100" (click)="closeCheckoutDrawer()" aria-label="Cerrar checkout">×</button>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div class="rounded-2xl border border-[#ead8d2] bg-surface-soft p-4 text-center">
+          <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted">Productos</span>
+          <strong class="mt-2 block text-xl font-black tracking-[-0.04em] text-loreto-carbon">{{ totalQuantity() }}</strong>
+        </div>
+        <div class="rounded-2xl border border-[#ead8d2] bg-surface-soft p-4 text-center">
+          <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted">Subtotal</span>
+          <strong class="mt-2 block text-xl font-black tracking-[-0.04em] text-primary-700">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <h3 class="text-[1.35rem] font-black tracking-[-0.04em] text-loreto-carbon">Productos</h3>
+
+        @if (!cartItems().length) {
+          <div class="mt-3 rounded-2xl border border-dashed border-[#ead8d2] bg-surface-soft p-5 text-center">
+            <h4 class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">Sin productos</h4>
+          </div>
+        } @else {
+          <div class="mt-3 space-y-3">
+            @for (item of cartItems(); track item.menuItemId) {
+              <div class="rounded-2xl border border-[#ead8d2] bg-surface-soft p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <h4 class="line-clamp-2 font-black text-loreto-carbon">{{ item.name }}</h4>
+                    <p class="text-xs text-text-muted">{{ item.price | currency: 'PEN' : 'symbol' : '1.2-2' }} c/u</p>
+                  </div>
+                  <strong class="shrink-0 text-sm font-black text-primary-700">{{ item.price * item.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2">
+                    <button class="grid h-9 w-9 place-items-center rounded-full border border-[#ddc8c1] bg-white text-loreto-carbon transition hover:bg-primary-50" type="button" (click)="decrementItem(item.menuItemId)">-</button>
+                    <span class="w-6 text-center text-sm font-black text-loreto-carbon">{{ item.quantity }}</span>
+                    <button class="grid h-9 w-9 place-items-center rounded-full border border-[#ddc8c1] bg-white text-loreto-carbon transition hover:bg-primary-50" type="button" (click)="incrementItem(item.menuItemId)">+</button>
+                  </div>
+                  <button class="grid h-10 w-10 place-items-center rounded-full border border-[#ddc8c1] bg-white text-accent-600 transition hover:bg-accent-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" type="button" (click)="removeItem(item.menuItemId)" aria-label="Quitar producto">
+                    <lucide-angular class="h-4 w-4" [img]="trashIcon" aria-hidden="true"></lucide-angular>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <form class="mt-6 space-y-4 pb-28 sm:pb-6" [formGroup]="checkoutForm" (ngSubmit)="submitOrder()">
+        <div>
+          <h3 class="text-[1.35rem] font-black tracking-[-0.04em] text-loreto-carbon">Entrega</h3>
+        </div>
+
+        <div class="grid gap-2">
+          <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted" for="deliveryAddress">Dirección</label>
+          <input id="deliveryAddress" type="text" formControlName="deliveryAddress" placeholder="Dirección" class="min-h-12 rounded-2xl border border-[#ddc8c1] bg-white px-4 text-sm text-loreto-carbon outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+          @if (checkoutForm.controls.deliveryAddress.invalid && checkoutForm.controls.deliveryAddress.touched) {
+            <span class="text-xs font-semibold text-red-600">Completa este campo.</span>
+          }
+        </div>
+
+        <div class="grid gap-2">
+          <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted" for="deliveryReference">Referencia</label>
+          <input id="deliveryReference" type="text" formControlName="deliveryReference" placeholder="Referencia" class="min-h-12 rounded-2xl border border-[#ddc8c1] bg-white px-4 text-sm text-loreto-carbon outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+          @if (checkoutForm.controls.deliveryReference.invalid && checkoutForm.controls.deliveryReference.touched) {
+            <span class="text-xs font-semibold text-red-600">Completa este campo.</span>
+          }
+        </div>
+
+        <div class="grid gap-2">
+          <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted" for="paymentMethod">Pago</label>
+          <div class="relative">
+            <select
+              id="paymentMethod"
+              formControlName="paymentMethod"
+              class="min-h-12 w-full appearance-none rounded-2xl border border-[#ddc8c1] bg-white px-4 pr-10 text-sm font-medium text-loreto-carbon outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
+            >
+              @for (method of paymentMethods; track method) {
+                <option [value]="method">{{ method }}</option>
+              }
+            </select>
+            <span class="pointer-events-none absolute inset-y-0 right-3 inline-flex items-center text-text-muted" aria-hidden="true">
+              <svg viewBox="0 0 20 20" class="h-4 w-4 fill-current">
+                <path d="M5.2 7.2a.75.75 0 0 1 1.06 0L10 10.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L5.2 8.26a.75.75 0 0 1 0-1.06Z" />
+              </svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="grid gap-2">
+          <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted" for="notes">Notas</label>
+          <textarea id="notes" rows="3" formControlName="notes" placeholder="Notas para el pedido" class="rounded-2xl border border-[#ddc8c1] bg-white px-4 py-3 text-sm text-loreto-carbon outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"></textarea>
+        </div>
+
+        @if (!isAuthenticated()) {
+          <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-700">Inicia sesión para pedir.</div>
+        }
+
+        @if (checkoutErrorMessage()) {
+          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="status" aria-live="polite">
+            {{ checkoutErrorMessage() }}
+          </div>
+        }
+
+        <div class="fixed inset-x-0 bottom-0 z-[101] border-t border-[#ead8d2] bg-white/98 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-10px_24px_rgba(6,25,43,0.08)] backdrop-blur sm:static sm:mt-2 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none">
+          <div class="flex items-center justify-between gap-3 sm:hidden">
+            <div class="min-w-0">
+              <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted">Subtotal</span>
+              <strong class="mt-1 block text-base font-black text-loreto-carbon">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+            </div>
+            <span class="text-sm font-semibold text-text-muted">{{ totalQuantity() }} prod.</span>
+          </div>
+
+          <button class="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600 disabled:opacity-50 sm:mt-0" type="submit" [disabled]="submitDisabled()">
+            {{ submitButtonLabel() }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>

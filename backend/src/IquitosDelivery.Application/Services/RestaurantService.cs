@@ -11,6 +11,8 @@ namespace IquitosDelivery.Application.Services;
 
 public class RestaurantService : IRestaurantService
 {
+    private const string LegacyRestaurantBusinessTypeCode = "Restaurant";
+    private const string LegacyRestaurantBusinessTypeName = "Restaurant";
     private const string LimaWindowsTimeZoneId = "SA Pacific Standard Time";
     private const string LimaIanaTimeZoneId = "America/Lima";
 
@@ -60,6 +62,9 @@ public class RestaurantService : IRestaurantService
                 Reference = x.Reference,
                 ZoneId = x.ZoneId,
                 ZoneName = x.Zone.Name,
+                BusinessTypeId = x.BusinessTypeId,
+                BusinessTypeCode = x.BusinessType != null ? x.BusinessType.Code : LegacyRestaurantBusinessTypeCode,
+                BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : LegacyRestaurantBusinessTypeName,
                 OpenTime = x.OpenTime,
                 CloseTime = x.CloseTime,
                 LogoUrl = x.LogoUrl
@@ -87,6 +92,9 @@ public class RestaurantService : IRestaurantService
                 Reference = x.Reference,
                 ZoneId = x.ZoneId,
                 ZoneName = x.Zone.Name,
+                BusinessTypeId = x.BusinessTypeId,
+                BusinessTypeCode = x.BusinessType != null ? x.BusinessType.Code : LegacyRestaurantBusinessTypeCode,
+                BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : LegacyRestaurantBusinessTypeName,
                 OpenTime = x.OpenTime,
                 CloseTime = x.CloseTime,
                 LogoUrl = x.LogoUrl,
@@ -161,6 +169,7 @@ public class RestaurantService : IRestaurantService
 
         var restaurant = await _dbContext.Restaurants
             .Include(x => x.Zone)
+            .Include(x => x.BusinessType)
             .FirstOrDefaultAsync(x => x.OwnerUserId == _currentUserService.UserId.Value, cancellationToken);
 
         if (restaurant is null)
@@ -182,6 +191,9 @@ public class RestaurantService : IRestaurantService
             Reference = restaurant.Reference,
             ZoneId = restaurant.ZoneId,
             ZoneName = restaurant.Zone.Name,
+            BusinessTypeId = restaurant.BusinessTypeId,
+            BusinessTypeCode = restaurant.BusinessType?.Code ?? LegacyRestaurantBusinessTypeCode,
+            BusinessTypeName = restaurant.BusinessType?.Name ?? LegacyRestaurantBusinessTypeName,
             OpenTime = restaurant.OpenTime,
             CloseTime = restaurant.CloseTime,
             LogoUrl = restaurant.LogoUrl,

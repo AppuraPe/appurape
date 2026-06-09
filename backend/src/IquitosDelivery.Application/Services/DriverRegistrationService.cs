@@ -59,6 +59,8 @@ public class DriverRegistrationService
         registration.VehicleType = request.VehicleType;
         registration.Plate = request.Plate.Trim();
         registration.ZoneId = request.ZoneId;
+        registration.IdentityDocumentUrl = string.IsNullOrWhiteSpace(request.IdentityDocumentUrl) ? null : request.IdentityDocumentUrl.Trim();
+        registration.VehiclePhotoUrl = string.IsNullOrWhiteSpace(request.VehiclePhotoUrl) ? null : request.VehiclePhotoUrl.Trim();
 
         await SendVerificationCodeAsync(registration, cancellationToken);
 
@@ -107,8 +109,14 @@ public class DriverRegistrationService
             Plate = registration.Plate,
             ZoneId = registration.ZoneId,
             ApprovalStatus = ApprovalStatus.Pending,
+            TrustLevel = TrustLevel.Verified,
+            CompletedDeliveriesCount = 0,
+            TrustScore = 0m,
+            IdentityDocumentUrl = registration.IdentityDocumentUrl,
+            VehiclePhotoUrl = registration.VehiclePhotoUrl,
             IsAvailable = false
         };
+        user.DriverProfile = driverProfile;
 
         MarkRegistrationAsCompleted(registration);
 

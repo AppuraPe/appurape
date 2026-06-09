@@ -16,6 +16,10 @@ public class MenuItemConfiguration : IEntityTypeConfiguration<MenuItem>
         builder.Property(x => x.Description).HasMaxLength(1000).IsRequired();
         builder.Property(x => x.Price).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.ImageUrl).HasMaxLength(500);
+        builder.Property(x => x.Sku).HasMaxLength(80);
+        builder.Property(x => x.UnitLabel).HasMaxLength(50);
+        builder.Property(x => x.TrackStock).IsRequired();
+        builder.Property(x => x.StockQuantity);
 
         builder.HasOne(x => x.Restaurant)
             .WithMany(x => x.MenuItems)

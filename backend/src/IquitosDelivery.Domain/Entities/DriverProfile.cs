@@ -22,6 +22,12 @@ public class DriverProfile
 
     public bool IsAvailable { get; set; }
 
+    public TrustLevel TrustLevel { get; set; }
+
+    public int CompletedDeliveriesCount { get; set; }
+
+    public decimal TrustScore { get; set; }
+
     public string? IdentityDocumentUrl { get; set; }
 
     public string? VehiclePhotoUrl { get; set; }

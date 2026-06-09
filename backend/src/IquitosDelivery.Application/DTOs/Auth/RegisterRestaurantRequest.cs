@@ -22,7 +22,11 @@ public class RegisterRestaurantRequest
 
     public Guid ZoneId { get; set; }
 
+    public Guid? BusinessTypeId { get; set; }
+
     public TimeSpan OpenTime { get; set; }
 
     public TimeSpan CloseTime { get; set; }
+
+    public string? LogoUrl { get; set; }
 }

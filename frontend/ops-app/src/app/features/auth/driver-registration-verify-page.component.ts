@@ -4,58 +4,78 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthApiService } from '../../core/services/auth-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
+import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
+import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { getRegistrationState, setRegistrationState } from './registration-flow.storage';
 
 @Component({
   selector: 'app-driver-registration-verify-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, PageHeaderComponent, AppNoticeComponent],
+  imports: [ReactiveFormsModule, RouterLink, AppBackButtonComponent, PageHeaderComponent, AppNoticeComponent, AppButtonComponent, AppSurfaceCardComponent],
   template: `
-    <section class="auth-page">
-      <div class="page-card auth-card">
-        <app-page-header
-          eyebrow="Verificacion"
-          title="Verificar correo"
-          subtitle="Ingresa el codigo que AppuraPe envio al correo del driver."
-        />
-
-        <app-notice
-          tone="info"
-          title="Paso 2 de 3"
-          message="Si no encuentras el codigo, revisa spam o usa Reenviar codigo. No puedes completar el registro sin verificar el correo."
-        />
-
-        @if (errorMessage()) {
-          <div class="message error">{{ errorMessage() }}</div>
-        }
-
-        @if (successMessage()) {
-          <div class="message success">{{ successMessage() }}</div>
-        }
-
-        <form class="form-grid" [formGroup]="form" (ngSubmit)="verify()">
-          <div class="field">
-            <label for="email">Email</label>
-            <input id="email" type="email" formControlName="email" readonly />
+    <section class="px-4 py-4 sm:px-6 sm:py-6">
+      <div class="mx-auto grid w-full max-w-[860px] gap-3">
+        <app-back-button fallbackUrl="/register/driver" label="Volver" />
+      </div>
+      <div class="mx-auto mt-3 grid w-full max-w-[860px] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <app-surface-card variant="soft" extraClass="hidden gap-4 p-4 sm:p-5 lg:grid">
+          <div class="grid gap-2">
+            <span class="inline-flex w-fit items-center rounded-full bg-primary-100 px-3 py-1 text-[0.7rem] font-black uppercase tracking-[0.18em] text-primary-700">
+              Paso 2 de 3
+            </span>
+            <h1 class="text-3xl font-black tracking-[-0.05em] sm:text-[2.1rem]">Verifica tu correo</h1>
+            <p class="text-sm leading-6 text-text-muted">
+              Usa el código enviado al correo del driver para desbloquear el último paso.
+            </p>
           </div>
 
-          <div class="field">
-            <label for="code">Codigo</label>
-            <input id="code" type="text" formControlName="code" />
-          </div>
+          <app-notice
+            tone="info"
+            title="Sin fricción"
+            message="Si no lo recibes, reenvíalo. La vista conserva el mismo patrón móvil del resto del flujo."
+          />
+        </app-surface-card>
 
-          <div class="page-actions">
-            <button class="button" type="submit" [disabled]="isSubmitting()">
-              {{ isSubmitting() ? 'Verificando...' : 'Verificar codigo' }}
-            </button>
-            <button class="button secondary" type="button" (click)="resend()" [disabled]="isResending()">
-              {{ isResending() ? 'Reenviando...' : 'Reenviar codigo' }}
-            </button>
-            <a class="button ghost" routerLink="/register/driver">Volver</a>
-          </div>
-        </form>
+        <app-surface-card variant="page" extraClass="w-full p-5 sm:p-6">
+          <app-page-header
+            eyebrow="Verificación"
+            title="Verificar correo"
+            subtitle="Un formulario corto, con mejor jerarquía y sin empujar el layout."
+          />
+
+          @if (errorMessage()) {
+            <div class="message error">{{ errorMessage() }}</div>
+          }
+
+          @if (successMessage()) {
+            <div class="message success">{{ successMessage() }}</div>
+          }
+
+          <form class="form-grid" [formGroup]="form" (ngSubmit)="verify()">
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" type="email" formControlName="email" readonly />
+            </div>
+
+            <div class="field">
+              <label for="code">Código</label>
+              <input id="code" type="text" formControlName="code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3">
+              <app-button type="submit" [disabled]="isSubmitting()" size="lg" block>
+                {{ isSubmitting() ? 'Verificando...' : 'Verificar código' }}
+              </app-button>
+              <app-button variant="secondary" type="button" (click)="resend()" [disabled]="isResending()" block>
+                {{ isResending() ? 'Reenviando...' : 'Reenviar código' }}
+              </app-button>
+              <app-button variant="ghost" routerLink="/register/driver" block>Volver</app-button>
+            </div>
+          </form>
+        </app-surface-card>
       </div>
     </section>
   `,
@@ -106,7 +126,7 @@ export class DriverRegistrationVerifyPageComponent {
       .subscribe({
         next: (response) => {
           if (!response.isVerified) {
-            this.errorMessage.set(response.message || 'No se pudo verificar el codigo.');
+            this.errorMessage.set(response.message || 'No se pudo verificar el código.');
             this.isSubmitting.set(false);
             return;
           }
@@ -117,12 +137,12 @@ export class DriverRegistrationVerifyPageComponent {
             started: true,
             verified: true,
           });
-          this.successMessage.set(response.message || 'Codigo verificado correctamente.');
+          this.successMessage.set(response.message || 'Código verificado correctamente.');
           this.isSubmitting.set(false);
           void this.router.navigateByUrl('/register/driver/complete');
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo verificar el codigo.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo verificar el código.'));
           this.isSubmitting.set(false);
         },
       });
@@ -143,11 +163,11 @@ export class DriverRegistrationVerifyPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          this.successMessage.set(response.message || 'Te enviamos un nuevo codigo a tu correo.');
+          this.successMessage.set(response.message || 'Te enviamos un nuevo código a tu correo.');
           this.isResending.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo reenviar el codigo.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo reenviar el código.'));
           this.isResending.set(false);
         },
       });

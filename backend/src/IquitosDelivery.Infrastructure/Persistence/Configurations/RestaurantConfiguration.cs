@@ -33,6 +33,11 @@ public class RestaurantConfiguration : IEntityTypeConfiguration<Restaurant>
             .HasForeignKey(x => x.ZoneId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.BusinessType)
+            .WithMany(x => x.Restaurants)
+            .HasForeignKey(x => x.BusinessTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(x => x.Categories)
             .WithOne(x => x.Restaurant)
             .HasForeignKey(x => x.RestaurantId)

@@ -1,0 +1,2105 @@
+
+> appurape@0.0.0 start
+> ng serve --port 4201 --host 127.0.0.1
+
+[33m>[39m Building...
+[32m√[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m         [2m | [22m[36m843.52 kB[39m[2m | [22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m       [2m | [22m [36m12.21 kB[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m[1m855.73 kB[22m
+
+Application bundle generation complete. [28.317 seconds] - 2026-06-04T22:08:30.066Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m4201[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m [2m | [22m[36m843.82 kB[39m[2m | [22m
+
+Application bundle generation complete. [9.522 seconds] - 2026-06-05T14:28:07.905Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.670 seconds] - 2026-06-05T14:32:36.752Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of CommunityHubPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:24:4:
+[37m      24 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:64:145:
+[37m      64 │ ...� {{ collaborator.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:82:140:
+[37m      82 │ ...2-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+         ╵                                           [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:66:63:
+[37m      66 │ ...collaborator()!.collaborationRating | [32mnumber[37m:'1.1-1' }}/5</strong>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:229:142:
+[37m      229 │ ...-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+          ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:42:102:
+[37m      42 │ ...trong>{{ request()!.matchScore | [32mnumber[37m:'1.0-0' }}%</strong></div>
+         ╵                                     [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:78:130:
+[37m      78 │ ...e }}% · {{ match.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                         [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:62:
+[37m      79 │ ...muted">{{ match.distanceKm | [32mnumber[37m:'1.1-1' }} km · {{ match.e...
+         ╵                                 [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:148:
+[37m      79 │ ...es }} min · Match {{ match.matchScore [32m| numb[37mer:'1.0-0' }}%</span>
+         ╵                                          [32m~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.646 seconds] - 2026-06-05T14:33:00.541Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of CommunityHubPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:24:4:
+[37m      24 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:64:145:
+[37m      64 │ ...� {{ collaborator.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:82:140:
+[37m      82 │ ...2-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+         ╵                                           [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:66:63:
+[37m      66 │ ...collaborator()!.collaborationRating | [32mnumber[37m:'1.1-1' }}/5</strong>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:229:142:
+[37m      229 │ ...-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+          ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:42:102:
+[37m      42 │ ...trong>{{ request()!.matchScore | [32mnumber[37m:'1.0-0' }}%</strong></div>
+         ╵                                     [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:78:130:
+[37m      78 │ ...e }}% · {{ match.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                         [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:62:
+[37m      79 │ ...muted">{{ match.distanceKm | [32mnumber[37m:'1.1-1' }} km · {{ match.e...
+         ╵                                 [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:148:
+[37m      79 │ ...es }} min · Match {{ match.matchScore [32m| numb[37mer:'1.0-0' }}%</span>
+         ╵                                          [32m~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.890 seconds] - 2026-06-05T14:33:16.663Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of CommunityHubPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:24:4:
+[37m      24 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:64:145:
+[37m      64 │ ...� {{ collaborator.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:82:140:
+[37m      82 │ ...2-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+         ╵                                           [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:66:63:
+[37m      66 │ ...collaborator()!.collaborationRating | [32mnumber[37m:'1.1-1' }}/5</strong>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:229:142:
+[37m      229 │ ...-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+          ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:42:102:
+[37m      42 │ ...trong>{{ request()!.matchScore | [32mnumber[37m:'1.0-0' }}%</strong></div>
+         ╵                                     [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:78:130:
+[37m      78 │ ...e }}% · {{ match.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                         [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:62:
+[37m      79 │ ...muted">{{ match.distanceKm | [32mnumber[37m:'1.1-1' }} km · {{ match.e...
+         ╵                                 [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:148:
+[37m      79 │ ...es }} min · Match {{ match.matchScore [32m| numb[37mer:'1.0-0' }}%</span>
+         ╵                                          [32m~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.100 seconds] - 2026-06-05T14:34:01.951Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of CommunityHubPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:24:4:
+[37m      24 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:64:145:
+[37m      64 │ ...� {{ collaborator.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-community-dashboard-page.component.ts:82:140:
+[37m      82 │ ...2-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+         ╵                                           [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:66:63:
+[37m      66 │ ...collaborator()!.collaborationRating | [32mnumber[37m:'1.1-1' }}/5</strong>
+         ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:229:142:
+[37m      229 │ ...-2' }} · Match {{ request.matchScore |[32m numbe[37mr:'1.0-0' }}%</span>
+          ╵                                          [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:42:102:
+[37m      42 │ ...trong>{{ request()!.matchScore | [32mnumber[37m:'1.0-0' }}%</strong></div>
+         ╵                                     [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:78:130:
+[37m      78 │ ...e }}% · {{ match.collaborationRating [32m| numb[37mer:'1.1-1' }}/5</span>
+         ╵                                         [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:62:
+[37m      79 │ ...muted">{{ match.distanceKm | [32mnumber[37m:'1.1-1' }} km · {{ match.e...
+         ╵                                 [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'number'.
+To fix this, import the "DecimalPipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:79:148:
+[37m      79 │ ...es }} min · Match {{ match.matchScore [32m| numb[37mer:'1.0-0' }}%</span>
+         ╵                                          [32m~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m         [2m | [22m[36m953.08 kB[39m[2m | [22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m       [2m | [22m [36m12.21 kB[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m[1m965.29 kB[22m
+
+Application bundle generation complete. [2.287 seconds] - 2026-06-05T14:34:19.831Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of CommunityHubPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-hub-page.component.ts:24:4:
+[37m      24 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m [2m | [22m[36m953.01 kB[39m[2m | [22m
+
+Application bundle generation complete. [4.995 seconds] - 2026-06-05T14:38:06.133Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m [2m | [22m[36m953.00 kB[39m[2m | [22m
+
+Application bundle generation complete. [5.641 seconds] - 2026-06-05T14:59:17.608Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m [2m | [22m[36m953.50 kB[39m[2m | [22m
+
+Application bundle generation complete. [2.098 seconds] - 2026-06-05T15:13:22.532Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.552 seconds] - 2026-06-05T15:38:59.304Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.014 seconds] - 2026-06-05T15:39:54.209Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.848 seconds] - 2026-06-05T15:40:28.471Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.341 seconds] - 2026-06-05T15:40:44.816Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.234 seconds] - 2026-06-05T15:41:02.391Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.132 seconds] - 2026-06-05T15:41:18.223Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.484 seconds] - 2026-06-05T15:43:14.737Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.010 seconds] - 2026-06-05T15:43:33.566Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.014 seconds] - 2026-06-05T15:44:37.876Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.508 seconds] - 2026-06-05T15:48:16.185Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.071 seconds] - 2026-06-05T19:12:35.221Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.325 seconds] - 2026-06-05T19:15:21.843Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.658 seconds] - 2026-06-05T19:15:35.439Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.776 seconds] - 2026-06-05T19:15:43.427Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.836 seconds] - 2026-06-05T19:15:55.859Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.090 seconds] - 2026-06-05T19:16:27.208Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.743 seconds] - 2026-06-05T19:26:29.718Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.632 seconds] - 2026-06-05T19:27:38.781Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.399 seconds] - 2026-06-05T19:28:44.699Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.518 seconds] - 2026-06-05T19:35:27.069Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.617 seconds] - 2026-06-05T19:35:56.594Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.392 seconds] - 2026-06-05T19:36:14.069Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.461 seconds] - 2026-06-05T19:36:27.679Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.640 seconds] - 2026-06-05T19:36:54.688Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-drivers-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:6:42:
+[37m      6 │ ...geComponent } from [32m'./features/admin/admin-drivers-page.component'[37m;
+        ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-drivers-page.component"[0m
+
+    src/app/app.routes.ts:5:42:
+[37m      5 │ ...geComponent } from [32m'./features/admin/admin-drivers-page.component'[37m;
+        ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.016 seconds] - 2026-06-05T19:41:44.473Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-drivers-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:6:42:
+[37m      6 │ ...geComponent } from [32m'./features/admin/admin-drivers-page.component'[37m;
+        ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-drivers-page.component"[0m
+
+    src/app/app.routes.ts:5:42:
+[37m      5 │ ...geComponent } from [32m'./features/admin/admin-drivers-page.component'[37m;
+        ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.431 seconds] - 2026-06-05T19:46:11.636Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-restaurants-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:10:46:
+[37m      10 │ ...ponent } from [32m'./features/admin/admin-restaurants-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-restaurants-page.component"[0m
+
+    src/app/app.routes.ts:9:46:
+[37m      9 │ ...mponent } from [32m'./features/admin/admin-restaurants-page.component'[37m;
+        ╵                   [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.022 seconds] - 2026-06-05T19:47:22.480Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-restaurants-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:10:46:
+[37m      10 │ ...ponent } from [32m'./features/admin/admin-restaurants-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-restaurants-page.component"[0m
+
+    src/app/app.routes.ts:9:46:
+[37m      9 │ ...mponent } from [32m'./features/admin/admin-restaurants-page.component'[37m;
+        ╵                   [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.432 seconds] - 2026-06-05T19:47:42.920Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/driver/driver-dashboard-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:22:45:
+[37m      22 │ ...ponent } from [32m'./features/driver/driver-dashboard-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/driver/driver-dashboard-page.component"[0m
+
+    src/app/app.routes.ts:21:45:
+[37m      21 │ ...ponent } from [32m'./features/driver/driver-dashboard-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.010 seconds] - 2026-06-05T19:48:43.157Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/driver/driver-dashboard-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:22:45:
+[37m      22 │ ...ponent } from [32m'./features/driver/driver-dashboard-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/driver/driver-dashboard-page.component"[0m
+
+    src/app/app.routes.ts:21:45:
+[37m      21 │ ...ponent } from [32m'./features/driver/driver-dashboard-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.721 seconds] - 2026-06-05T19:51:48.089Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-restaurant-detail-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:9:51:
+[37m      9 │ ...ent } from [32m'./features/admin/admin-restaurant-detail-page.compon[37m...
+        ╵               [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-restaurant-detail-page.component"[0m
+
+    src/app/app.routes.ts:8:51:
+[37m      8 │ ...ent } from [32m'./features/admin/admin-restaurant-detail-page.compon[37m...
+        ╵               [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.015 seconds] - 2026-06-05T19:52:52.884Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-restaurant-detail-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:9:51:
+[37m      9 │ ...ent } from [32m'./features/admin/admin-restaurant-detail-page.compon[37m...
+        ╵               [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-restaurant-detail-page.component"[0m
+
+    src/app/app.routes.ts:8:51:
+[37m      8 │ ...ent } from [32m'./features/admin/admin-restaurant-detail-page.compon[37m...
+        ╵               [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.503 seconds] - 2026-06-05T19:53:06.005Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: StatusBadgeComponent is not used within the template of AdminRestaurantDetailPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-restaurant-detail-page.component.ts:35:4:
+[37m      35 │     [32mStatusBadgeComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-driver-detail-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:5:47:
+[37m      5 │ ...onent } from [32m'./features/admin/admin-driver-detail-page.component'[37m;
+        ╵                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-driver-detail-page.component"[0m
+
+    src/app/app.routes.ts:4:47:
+[37m      4 │ ...onent } from [32m'./features/admin/admin-driver-detail-page.component'[37m;
+        ╵                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.019 seconds] - 2026-06-05T19:54:25.967Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: StatusBadgeComponent is not used within the template of AdminRestaurantDetailPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-restaurant-detail-page.component.ts:35:4:
+[37m      35 │     [32mStatusBadgeComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/admin/admin-driver-detail-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:5:47:
+[37m      5 │ ...onent } from [32m'./features/admin/admin-driver-detail-page.component'[37m;
+        ╵                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/admin/admin-driver-detail-page.component"[0m
+
+    src/app/app.routes.ts:4:47:
+[37m      4 │ ...onent } from [32m'./features/admin/admin-driver-detail-page.component'[37m;
+        ╵                 [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.988 seconds] - 2026-06-05T19:55:53.812Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: StatusBadgeComponent is not used within the template of AdminDriverDetailPageComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-driver-detail-page.component.ts:38:4:
+[37m      38 │     [32mStatusBadgeComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.693 seconds] - 2026-06-05T19:56:02.795Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.526 seconds] - 2026-06-05T19:59:42.152Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-dashboard-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:27:49:
+[37m      27 │ ...nt } from [32m'./features/restaurant/restaurant-dashboard-page.comp[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-dashboard-page.component"[0m
+
+    src/app/app.routes.ts:26:49:
+[37m      26 │ ...nt } from [32m'./features/restaurant/restaurant-dashboard-page.comp[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.009 seconds] - 2026-06-05T20:00:31.195Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-dashboard-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:27:49:
+[37m      27 │ ...nt } from [32m'./features/restaurant/restaurant-dashboard-page.comp[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-dashboard-page.component"[0m
+
+    src/app/app.routes.ts:26:49:
+[37m      26 │ ...nt } from [32m'./features/restaurant/restaurant-dashboard-page.comp[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.471 seconds] - 2026-06-05T20:00:44.006Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-profile-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:30:47:
+[37m      30 │ ...nt } from [32m'./features/restaurant/restaurant-profile-page.compon[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-profile-page.component"[0m
+
+    src/app/app.routes.ts:29:47:
+[37m      29 │ ...nt } from [32m'./features/restaurant/restaurant-profile-page.compon[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.011 seconds] - 2026-06-05T20:02:04.681Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-profile-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:30:47:
+[37m      30 │ ...nt } from [32m'./features/restaurant/restaurant-profile-page.compon[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-profile-page.component"[0m
+
+    src/app/app.routes.ts:29:47:
+[37m      29 │ ...nt } from [32m'./features/restaurant/restaurant-profile-page.compon[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.732 seconds] - 2026-06-05T20:02:17.809Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/driver/driver-available-orders-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:21:51:
+[37m      21 │ ...nt } from [32m'./features/driver/driver-available-orders-page.compo[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/driver/driver-available-orders-page.component"[0m
+
+    src/app/app.routes.ts:20:51:
+[37m      20 │ ...nt } from [32m'./features/driver/driver-available-orders-page.compo[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.010 seconds] - 2026-06-05T20:03:27.727Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/driver/driver-available-orders-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:21:51:
+[37m      21 │ ...nt } from [32m'./features/driver/driver-available-orders-page.compo[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/driver/driver-available-orders-page.component"[0m
+
+    src/app/app.routes.ts:20:51:
+[37m      20 │ ...nt } from [32m'./features/driver/driver-available-orders-page.compo[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.752 seconds] - 2026-06-05T20:03:40.822Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/driver/driver-my-orders-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:23:44:
+[37m      23 │ ...ponent } from [32m'./features/driver/driver-my-orders-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/driver/driver-my-orders-page.component"[0m
+
+    src/app/app.routes.ts:22:44:
+[37m      22 │ ...ponent } from [32m'./features/driver/driver-my-orders-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.014 seconds] - 2026-06-05T20:05:57.621Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/driver/driver-my-orders-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:23:44:
+[37m      23 │ ...ponent } from [32m'./features/driver/driver-my-orders-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/driver/driver-my-orders-page.component"[0m
+
+    src/app/app.routes.ts:22:44:
+[37m      22 │ ...ponent } from [32m'./features/driver/driver-my-orders-page.component'[37m;
+         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.869 seconds] - 2026-06-05T20:08:59.596Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-orders-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:29:46:
+[37m      29 │ ...nt } from [32m'./features/restaurant/restaurant-orders-page.compone[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-orders-page.component"[0m
+
+    src/app/app.routes.ts:28:46:
+[37m      28 │ ...nt } from [32m'./features/restaurant/restaurant-orders-page.compone[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.017 seconds] - 2026-06-05T20:10:09.598Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-orders-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:29:46:
+[37m      29 │ ...nt } from [32m'./features/restaurant/restaurant-orders-page.compone[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-orders-page.component"[0m
+
+    src/app/app.routes.ts:28:46:
+[37m      28 │ ...nt } from [32m'./features/restaurant/restaurant-orders-page.compone[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [9.740 seconds] - 2026-06-05T20:10:30.841Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-categories-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:26:50:
+[37m      26 │ ...nt } from [32m'./features/restaurant/restaurant-categories-page.com[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-categories-page.component"[0m
+
+    src/app/app.routes.ts:25:50:
+[37m      25 │ ...nt } from [32m'./features/restaurant/restaurant-categories-page.com[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.017 seconds] - 2026-06-05T20:12:04.241Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-categories-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:26:50:
+[37m      26 │ ...nt } from [32m'./features/restaurant/restaurant-categories-page.com[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-categories-page.component"[0m
+
+    src/app/app.routes.ts:25:50:
+[37m      25 │ ...nt } from [32m'./features/restaurant/restaurant-categories-page.com[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.713 seconds] - 2026-06-05T20:13:03.281Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-items-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:28:45:
+[37m      28 │ ...nt } from [32m'./features/restaurant/restaurant-items-page.component'[37m;
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-items-page.component"[0m
+
+    src/app/app.routes.ts:27:45:
+[37m      27 │ ...nt } from [32m'./features/restaurant/restaurant-items-page.component'[37m;
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.017 seconds] - 2026-06-05T20:14:57.402Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/restaurant/restaurant-items-page.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.routes.ts:28:45:
+[37m      28 │ ...nt } from [32m'./features/restaurant/restaurant-items-page.component'[37m;
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/restaurant/restaurant-items-page.component"[0m
+
+    src/app/app.routes.ts:27:45:
+[37m      27 │ ...nt } from [32m'./features/restaurant/restaurant-items-page.component'[37m;
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.913 seconds] - 2026-06-05T20:21:59.777Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.245 seconds] - 2026-06-05T20:23:41.312Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'createdAtUtc' does not exist on type 'PendingDriverResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-pending-drivers-page.component.ts:180:32:
+[37m      180 │                       {{ driver.[32mcreatedAtUtc[37m | date: 'medium' }}
+          ╵                                 [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'date'.
+To fix this, import the "DatePipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-pending-drivers-page.component.ts:180:47:
+[37m      180 │                       {{ driver.createdAtUtc | [32mdate[37m: 'medium' }}
+          ╵                                                [32m~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.172 seconds] - 2026-06-05T20:24:07.951Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'createdAtUtc' does not exist on type 'PendingDriverResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-pending-drivers-page.component.ts:180:32:
+[37m      180 │                       {{ driver.[32mcreatedAtUtc[37m | date: 'medium' }}
+          ╵                                 [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'date'.
+To fix this, import the "DatePipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-pending-drivers-page.component.ts:180:47:
+[37m      180 │                       {{ driver.createdAtUtc | [32mdate[37m: 'medium' }}
+          ╵                                                [32m~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.628 seconds] - 2026-06-05T20:24:35.201Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'createdAtUtc' does not exist on type 'PendingDriverResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-pending-drivers-page.component.ts:180:32:
+[37m      180 │                       {{ driver.[32mcreatedAtUtc[37m | date: 'medium' }}
+          ╵                                 [32m~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'date'.
+To fix this, import the "DatePipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/admin-pending-drivers-page.component.ts:180:47:
+[37m      180 │                       {{ driver.createdAtUtc | [32mdate[37m: 'medium' }}
+          ╵                                                [32m~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.593 seconds] - 2026-06-05T20:27:08.430Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.015 seconds] - 2026-06-05T20:27:23.781Z
+
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles.css"[0m
+
+    angular:styles/global:styles:1:8:
+[37m      1 │ @import [32m'src/styles.css'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles.css" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string' is not assignable to type 'boolean'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/auth/login-page.component.ts:46:66:
+[37m      46 │ ...      <app-button type="submit" [disabled]="isSubmitting()" [32mblock[37m>
+         ╵                                                                [32m~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'string | null' is not assignable to type 'string | number'.
+  Type 'null' is not assignable to type 'string | number'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/community/community-request-detail-page.component.ts:56:51:
+[37m      56 │ ...c-card label="Compensacion" [[32mvalue[37m]="request()!.compensationAmo...
+         ╵                                 [32m~~~~~[0m
+
+[39m[22m

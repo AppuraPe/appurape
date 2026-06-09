@@ -40,4 +40,15 @@ public class OrdersController : ControllerBase
         var response = await _orderService.GetMyOrderByIdAsync(id, cancellationToken);
         return Ok(response);
     }
+
+    [HttpPatch("my/{id:guid}/driver-rating")]
+    [ProducesResponseType(typeof(CustomerOrderDetailResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CustomerOrderDetailResponse>> RateDriver(
+        Guid id,
+        [FromBody] RateDriverRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _orderService.RateDriverAsync(id, request, cancellationToken);
+        return Ok(response);
+    }
 }

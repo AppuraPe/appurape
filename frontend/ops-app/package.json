@@ -1,9 +1,9 @@
 {
-  "name": "iquitos-delivery-ops",
+  "name": "appurape",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --port 4201",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -16,6 +16,13 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capgo/capacitor-social-login": "^8.3.22",
+    "lucide-angular": "^1.0.0",
+    "ngx-sonner": "^3.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -23,8 +30,11 @@
     "@angular/build": "^21.2.7",
     "@angular/cli": "^21.2.7",
     "@angular/compiler-cli": "^21.2.0",
+    "@tailwindcss/postcss": "^4.3.0",
     "jsdom": "^28.0.0",
+    "postcss": "^8.5.15",
     "prettier": "^3.8.1",
+    "tailwindcss": "^4.3.0",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"
   }

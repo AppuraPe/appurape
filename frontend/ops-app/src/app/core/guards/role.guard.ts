@@ -1,23 +1,24 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const roleGuard: CanActivateFn = (route) => {
+export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   const allowedRoles = (route.data?.['roles'] as string[] | undefined) ?? [];
   const currentRole = authService.getCurrentRole();
 
-  if (!authService.hasValidOpsSession()) {
-    return router.createUrlTree(['/login']);
+  if (!authService.hasValidSession()) {
+    return router.createUrlTree(['/login'], {
+      queryParams: { redirectTo: state.url },
+    });
   }
 
   if (currentRole && allowedRoles.includes(currentRole)) {
     return true;
   }
 
-  const fallbackRoute = authService.getDefaultRoute();
-  return fallbackRoute === '/login'
-    ? router.createUrlTree(['/login'])
-    : router.createUrlTree([fallbackRoute]);
+  return router.createUrlTree(['/unauthorized'], {
+    queryParams: { redirectTo: authService.getDefaultRoute(currentRole) },
+  });
 };

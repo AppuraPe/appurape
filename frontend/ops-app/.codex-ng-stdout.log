@@ -1,0 +1,38 @@
+
+> appurape@0.0.0 start
+> ng serve --port 4201
+
+[33m>[39m Building...
+[32m√[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                                  [2m | [22m [1mRaw size[22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m                                 [2m | [22m[36m102.46 kB[39m[2m | [22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m                                   [2m | [22m [36m10.91 kB[39m[2m | [22m
+[32mchunk-C5TWZWQX.js[39m  [2m | [22m[2m-[22m                                      [2m | [22m  [36m7.91 kB[39m[2m | [22m
+[32mchunk-VRFHBWGL.js[39m  [2m | [22m[2m-[22m                                      [2m | [22m  [36m2.62 kB[39m[2m | [22m
+[32mchunk-VUJOFXKG.js[39m  [2m | [22m[2m-[22m                                      [2m | [22m[36m938 bytes[39m[2m | [22m
+[32mchunk-BXGE75TT.js[39m  [2m | [22m[2m-[22m                                      [2m | [22m[36m312 bytes[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m                          [2m | [22m[1m125.15 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                                  [2m | [22m [1mRaw size[22m
+[32mchunk-W35L2SH7.js[39m  [2m | [22m[2mrestaurant-detail-page-component[22m       [2m | [22m [36m94.47 kB[39m[2m | [22m
+[32mchunk-DUMIFIVT.js[39m  [2m | [22m[2mrestaurant-list-page-component[22m         [2m | [22m [36m75.85 kB[39m[2m | [22m
+[32mchunk-WA2NAMK6.js[39m  [2m | [22m[2mmy-order-detail-page-component[22m         [2m | [22m [36m58.12 kB[39m[2m | [22m
+[32mchunk-JF4USJV6.js[39m  [2m | [22m[2mrestaurant-items-page-component[22m        [2m | [22m [36m49.13 kB[39m[2m | [22m
+[32mchunk-RZDXO7VO.js[39m  [2m | [22m[2mcommunity-hub-page-component[22m           [2m | [22m [36m48.56 kB[39m[2m | [22m
+[32mchunk-QCN47T23.js[39m  [2m | [22m[2mcommunity-request-detail-page-component[22m[2m | [22m [36m44.26 kB[39m[2m | [22m
+[32mchunk-PILWM2BX.js[39m  [2m | [22m[2mmy-orders-page-component[22m               [2m | [22m [36m41.88 kB[39m[2m | [22m
+[32mchunk-M6TDDDEM.js[39m  [2m | [22m[2mregister-page-component[22m                [2m | [22m [36m39.43 kB[39m[2m | [22m
+[32mchunk-RXR26P2F.js[39m  [2m | [22m[2madmin-driver-detail-page-component[22m     [2m | [22m [36m37.01 kB[39m[2m | [22m
+[32mchunk-GC3HWSXQ.js[39m  [2m | [22m[2mrestaurant-profile-page-component[22m      [2m | [22m [36m35.09 kB[39m[2m | [22m
+[32mchunk-3KFDK4XK.js[39m  [2m | [22m[2madmin-drivers-page-component[22m           [2m | [22m [36m34.49 kB[39m[2m | [22m
+[32mchunk-2MAZB2Y7.js[39m  [2m | [22m[2madmin-restaurants-page-component[22m       [2m | [22m [36m34.30 kB[39m[2m | [22m
+[32mchunk-X6QNBT52.js[39m  [2m | [22m[2madmin-pending-drivers-page-component[22m   [2m | [22m [36m33.74 kB[39m[2m | [22m
+[32mchunk-Q4ZLZXKS.js[39m  [2m | [22m[2mrestaurant-orders-page-component[22m       [2m | [22m [36m33.66 kB[39m[2m | [22m
+[32mchunk-WUHYTOKG.js[39m  [2m | [22m[2mdriver-my-orders-page-component[22m        [2m | [22m [36m32.05 kB[39m[2m | [22m
+[2m...and 41 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [39.144 seconds] - 2026-06-08T16:04:45.764Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.

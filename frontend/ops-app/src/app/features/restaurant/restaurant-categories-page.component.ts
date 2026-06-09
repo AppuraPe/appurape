@@ -1,6 +1,14 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FilterX,
+  FolderKanban,
+  Layers3,
+  LucideAngularModule,
+  RefreshCw,
+  Search,
+} from 'lucide-angular';
 import { debounceTime } from 'rxjs';
 import {
   CreateMenuCategoryRequest,
@@ -9,137 +17,184 @@ import {
 } from '../../core/models/restaurant.models';
 import { MyMenuApiService } from '../../core/services/my-menu-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { AppButtonComponent } from '../../shared/components/app-button.component';
+import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 
 @Component({
   selector: 'app-restaurant-categories-page',
   standalone: true,
-  imports: [PageHeaderComponent, ReactiveFormsModule, AppNoticeComponent, StatusBadgeComponent],
+  imports: [
+    PageHeaderComponent,
+    ReactiveFormsModule,
+    LucideAngularModule,
+    AppNoticeComponent,
+    StatusBadgeComponent,
+    AppButtonComponent,
+    AppMetricCardComponent,
+    AppSurfaceCardComponent,
+  ],
   template: `
-    <section class="grid">
-      <div class="page-card">
+    <section class="grid gap-6">
+      <app-surface-card variant="page">
         <app-page-header
-          eyebrow="Menu"
+          eyebrow="AppuraPe Menu"
           title="Categorias"
-          subtitle="Crea y edita categorias. Una categoria inactiva ayuda a ocultar grupos de productos sin borrar informacion."
+          subtitle="Crea y edita categorias para ordenar mejor el menu del restaurante."
         />
 
         @if (errorMessage()) {
-          <div class="message error">{{ errorMessage() }}</div>
+          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {{ errorMessage() }}
+          </div>
         }
 
         @if (successMessage()) {
-          <div class="message success">{{ successMessage() }}</div>
+          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+            {{ successMessage() }}
+          </div>
         }
 
-        <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
-          <div class="form-grid two-col">
-            <div class="field">
-              <label for="categoryName">Nombre</label>
-              <input id="categoryName" type="text" formControlName="name" />
+        <div class="stats-grid">
+          <app-metric-card label="Categorias" [value]="categories().length" helper="Resultados visibles en la lista" />
+          <app-metric-card label="Activas" [value]="activeCategoriesCount()" helper="Disponibles para mostrar productos" />
+          <app-metric-card label="Modo" [value]="editingCategory() ? 'Edicion' : 'Creacion'" helper="Estado actual del formulario" />
+        </div>
+      </app-surface-card>
+
+      <div class="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+        <app-surface-card variant="page">
+          <form class="grid gap-4" [formGroup]="form" (ngSubmit)="submit()">
+            <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
+              <lucide-angular class="h-4 w-4" [img]="folderIcon" aria-hidden="true"></lucide-angular>
+              {{ editingCategory() ? 'Editar categoria' : 'Nueva categoria' }}
             </div>
 
-            <div class="field">
-              <label for="categorySortOrder">SortOrder</label>
-              <input id="categorySortOrder" type="number" min="0" formControlName="sortOrder" />
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-loreto-carbon">Nombre</span>
+                <input id="categoryName" type="text" formControlName="name" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-loreto-carbon">SortOrder</span>
+                <input id="categorySortOrder" type="number" min="0" formControlName="sortOrder" />
+              </label>
             </div>
-          </div>
 
-          @if (editingCategory()) {
-            <label class="checkbox-field">
-              <input type="checkbox" formControlName="isActive" />
-              <span>Categoria activa</span>
-            </label>
-          }
-
-          <div class="page-actions">
-            <button class="button primary-action" type="submit" [disabled]="isSubmitting()">
-              {{
-                isSubmitting()
-                  ? (editingCategory() ? 'Guardando...' : 'Creando...')
-                  : (editingCategory() ? 'Guardar cambios' : 'Crear')
-              }}
-            </button>
             @if (editingCategory()) {
-              <button class="button secondary" type="button" (click)="cancelEdit()" [disabled]="isSubmitting()">
-                Cancelar
-              </button>
+              <label class="flex items-center gap-3 rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-loreto-carbon">
+                <input type="checkbox" formControlName="isActive" />
+                <span>Categoria activa</span>
+              </label>
             }
-            <button class="button ghost" type="button" (click)="loadCategories()" [disabled]="isLoading() || isSubmitting()">
-              Recargar
-            </button>
-          </div>
-        </form>
-      </div>
 
-      <div class="page-card">
-        <app-page-header
-          eyebrow="Lista"
-          title="Categorias actuales"
-          subtitle="Selecciona una categoria para editarla."
-        />
+            <div class="flex flex-wrap gap-3">
+              <app-button size="lg" type="submit" [disabled]="isSubmitting()">
+                {{
+                  isSubmitting()
+                    ? (editingCategory() ? 'Guardando...' : 'Creando...')
+                    : (editingCategory() ? 'Guardar cambios' : 'Crear')
+                }}
+              </app-button>
+              @if (editingCategory()) {
+                <app-button variant="secondary" size="lg" type="button" (click)="cancelEdit()" [disabled]="isSubmitting()">
+                  Cancelar
+                </app-button>
+              }
+              <app-button variant="ghost" size="lg" type="button" (click)="loadCategories()" [disabled]="isLoading() || isSubmitting()">
+                <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
+                Recargar
+              </app-button>
+            </div>
+          </form>
+        </app-surface-card>
 
-        <form class="filters-grid" [formGroup]="filtersForm" (ngSubmit)="loadCategories()">
-          <div class="field search-field">
-            <label for="categorySearch">Buscar categoria</label>
-            <input
-              id="categorySearch"
-              type="search"
-              formControlName="q"
-              placeholder="Buscar por nombre"
-              autocomplete="off"
-            />
-          </div>
+        <app-surface-card variant="page">
+          <app-page-header
+            eyebrow="Lista"
+            title="Categorias actuales"
+            subtitle="Selecciona una categoria para editarla o revisa su estado."
+          />
 
-          <div class="field">
-            <label for="categoryActiveFilter">Estado</label>
-            <select id="categoryActiveFilter" formControlName="isActive">
-              <option value="">Todas</option>
-              <option value="true">Activas</option>
-              <option value="false">Inactivas</option>
-            </select>
-          </div>
+          <form class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_auto]" [formGroup]="filtersForm" (ngSubmit)="loadCategories()">
+            <label class="grid gap-2">
+              <span class="text-sm font-semibold text-loreto-carbon">Buscar categoria</span>
+              <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 shadow-sm focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <lucide-angular class="h-4 w-4 text-primary-700" [img]="searchIcon" aria-hidden="true"></lucide-angular>
+                <input
+                  id="categorySearch"
+                  type="search"
+                  formControlName="q"
+                  placeholder="Buscar por nombre"
+                  autocomplete="off"
+                  class="min-h-0 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0"
+                />
+              </div>
+            </label>
 
-          <div class="page-actions compact">
-            <button class="button" type="submit" [disabled]="isLoading()">Aplicar</button>
-            <button class="button ghost" type="button" (click)="clearFilters()" [disabled]="isLoading()">Limpiar</button>
-          </div>
-        </form>
+            <label class="grid gap-2">
+              <span class="text-sm font-semibold text-loreto-carbon">Estado</span>
+              <select id="categoryActiveFilter" formControlName="isActive">
+                <option value="">Todas</option>
+                <option value="true">Activas</option>
+                <option value="false">Inactivas</option>
+              </select>
+            </label>
 
-        @if (isLoading()) {
-          <div class="message">Cargando categorias...</div>
-        } @else if (!categories().length) {
-          <div class="message">No hay categorias para los filtros seleccionados.</div>
-        } @else {
-          <div class="list">
-            @for (category of categories(); track category.id) {
-              <article class="page-card">
-                <div class="split">
-                  <div class="stack">
-                    <strong>{{ category.name }}</strong>
-                    <span class="muted">SortOrder: {{ category.sortOrder }}</span>
+            <div class="flex flex-wrap items-end gap-3 xl:justify-end">
+              <app-button type="submit" [disabled]="isLoading()">
+                <lucide-angular class="h-4 w-4" [img]="searchIcon" aria-hidden="true"></lucide-angular>
+                Aplicar
+              </app-button>
+              <app-button variant="ghost" type="button" (click)="clearFilters()" [disabled]="isLoading()">
+                <lucide-angular class="h-4 w-4" [img]="filterXIcon" aria-hidden="true"></lucide-angular>
+                Limpiar
+              </app-button>
+            </div>
+          </form>
+
+          @if (isLoading()) {
+            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
+              Cargando categorias...
+            </div>
+          } @else if (!categories().length) {
+            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-4 text-sm font-semibold text-text-muted">
+              No hay categorias para los filtros seleccionados.
+            </div>
+          } @else {
+            <div class="grid gap-4">
+              @for (category of categories(); track category.id) {
+                <app-surface-card variant="page">
+                  <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+                    <div class="grid gap-2">
+                      <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ category.name }}</strong>
+                      <span class="text-sm text-text-muted">SortOrder: {{ category.sortOrder }}</span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 xl:justify-end">
+                      <app-status-badge [status]="category.isActive" [label]="category.isActive ? 'Activa' : 'Inactiva'" />
+                      <app-button variant="secondary" size="lg" type="button" (click)="startEdit(category)" [disabled]="isSubmitting()">
+                        Editar
+                      </app-button>
+                    </div>
                   </div>
 
-                  <div class="stack align-end">
-                    <app-status-badge [status]="category.isActive" [label]="category.isActive ? 'Activa' : 'Inactiva'" />
-                    <button class="button secondary primary-action" type="button" (click)="startEdit(category)" [disabled]="isSubmitting()">
-                      Editar
-                    </button>
-                  </div>
-                </div>
-                @if (!category.isActive) {
-                  <app-notice
-                    tone="warning"
-                    title="Categoria inactiva"
-                    message="Los productos dentro de una categoria inactiva pueden quedar fuera de la experiencia publica."
-                  />
-                }
-              </article>
-            }
-          </div>
-        }
+                  @if (!category.isActive) {
+                    <app-notice
+                      tone="warning"
+                      title="Categoria inactiva"
+                      message="Los productos dentro de una categoria inactiva pueden quedar fuera de la experiencia publica."
+                    />
+                  }
+                </app-surface-card>
+              }
+            </div>
+          }
+        </app-surface-card>
       </div>
     </section>
   `,
@@ -148,6 +203,12 @@ export class RestaurantCategoriesPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly myMenuApi = inject(MyMenuApiService);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly folderIcon = FolderKanban;
+  readonly searchIcon = Search;
+  readonly filterXIcon = FilterX;
+  readonly refreshIcon = RefreshCw;
+  readonly layersIcon = Layers3;
 
   readonly categories = signal<MenuCategoryResponse[]>([]);
   readonly editingCategory = signal<MenuCategoryResponse | null>(null);
@@ -173,6 +234,10 @@ export class RestaurantCategoriesPageComponent {
     });
 
     this.loadCategories();
+  }
+
+  activeCategoriesCount(): number {
+    return this.categories().filter((category) => category.isActive).length;
   }
 
   loadCategories(): void {

@@ -11,6 +11,7 @@ namespace IquitosDelivery.Application.Services;
 public class RestaurantRegistrationService
     : EmailRegistrationServiceBase<PendingRestaurantRegistration>, IRestaurantRegistrationService
 {
+    private const string DefaultRestaurantBusinessTypeCode = "Restaurant";
     private readonly IValidator<StartRestaurantRegistrationRequest> _startValidator;
     private readonly IValidator<VerifyRestaurantRegistrationCodeRequest> _verifyValidator;
     private readonly IValidator<CompleteRestaurantRegistrationRequest> _completeValidator;
@@ -40,6 +41,7 @@ public class RestaurantRegistrationService
         var email = NormalizeEmail(request.Email);
         await EnsureEmailIsAvailableAsync(email, cancellationToken);
         await EnsureZoneExistsAsync(request.ZoneId, cancellationToken);
+        var businessTypeId = await ResolveRestaurantBusinessTypeIdAsync(request.BusinessTypeId, cancellationToken);
 
         var registration = await GetLatestPendingRegistrationAsync(email, cancellationToken);
         if (registration is null)
@@ -61,8 +63,10 @@ public class RestaurantRegistrationService
         registration.Address = request.Address.Trim();
         registration.Reference = request.Reference.Trim();
         registration.ZoneId = request.ZoneId;
+        registration.BusinessTypeId = businessTypeId;
         registration.OpenTime = request.OpenTime;
         registration.CloseTime = request.CloseTime;
+        registration.LogoUrl = string.IsNullOrWhiteSpace(request.LogoUrl) ? null : request.LogoUrl.Trim();
 
         await SendVerificationCodeAsync(registration, cancellationToken);
 
@@ -112,9 +116,11 @@ public class RestaurantRegistrationService
             Address = registration.Address,
             Reference = registration.Reference,
             ZoneId = registration.ZoneId,
+            BusinessTypeId = registration.BusinessTypeId,
             ApprovalStatus = ApprovalStatus.Pending,
             OpenTime = registration.OpenTime,
             CloseTime = registration.CloseTime,
+            LogoUrl = registration.LogoUrl,
             IsActive = false
         };
 
@@ -177,5 +183,33 @@ public class RestaurantRegistrationService
         }
 
         return registration;
+    }
+
+    private async Task<Guid> ResolveRestaurantBusinessTypeIdAsync(Guid? businessTypeId, CancellationToken cancellationToken)
+    {
+        if (businessTypeId.HasValue)
+        {
+            var requestedTypeExists = await DbContext.BusinessTypes
+                .AnyAsync(x => x.Id == businessTypeId.Value && x.IsActive, cancellationToken);
+
+            if (!requestedTypeExists)
+            {
+                throw new NotFoundException("The selected business type was not found.");
+            }
+
+            return businessTypeId.Value;
+        }
+
+        var defaultBusinessTypeId = await DbContext.BusinessTypes
+            .Where(x => x.Code == DefaultRestaurantBusinessTypeCode && x.IsActive)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (!defaultBusinessTypeId.HasValue)
+        {
+            throw new NotFoundException("The default restaurant business type was not found.");
+        }
+
+        return defaultBusinessTypeId.Value;
     }
 }

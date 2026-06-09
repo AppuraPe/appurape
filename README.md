@@ -1,12 +1,12 @@
 # AppuraPe
 
-**AppuraPe** es una plataforma de delivery local, mobile-first, que conecta clientes, restaurantes, drivers y administradores en un flujo operativo completo para pedidos locales.
+**AppuraPe** es una red logística comunitaria mobile-first que conecta clientes, restaurantes, drivers, colaboradores y administradores en un flujo operativo completo para pedidos y apoyos cercanos.
 
-El proyecto incluye backend .NET, dos aplicaciones Angular y documentacion tecnica de soporte para ejecucion local, correo y arquitectura.
+El proyecto incluye backend .NET, una SPA Angular activa y documentacion tecnica de soporte para ejecucion local, correo y arquitectura.
 
 ## Que es AppuraPe
 
-AppuraPe es un MVP funcional de delivery local. Permite que un cliente explore restaurantes, revise menus publicos, cree pedidos y haga seguimiento basico del flujo operativo. En paralelo, restaurantes, drivers y administradores cuentan con paneles separados para operar el negocio.
+AppuraPe es un MVP funcional de logística comunitaria. Permite que un cliente explore restaurantes, revise menus publicos, cree pedidos y haga seguimiento del flujo. En paralelo, restaurantes, drivers y administradores cuentan con paneles para operar la red.
 
 El producto visible se llama **AppuraPe**. Algunos nombres tecnicos internos del backend aun conservan el nombre historico `IquitosDelivery`, pero no forman parte del branding visible.
 
@@ -15,7 +15,8 @@ El producto visible se llama **AppuraPe**. Algunos nombres tecnicos internos del
 - **Customer**: experiencia publica para clientes, catalogo, menu, registro, login y pedidos.
 - **Restaurant**: panel para gestionar perfil, categorias, productos y pedidos del restaurante.
 - **Driver**: panel para revisar pedidos disponibles, tomar pedidos y actualizar estados.
-- **Admin**: panel administrativo para revisar, aprobar o rechazar restaurantes y drivers.
+- **Collaborator**: capa futura para usuarios verificados o de confianza que apoyan la red.
+- **Admin**: panel administrativo para revisar, aprobar o rechazar restaurantes, drivers y colaboradores.
 
 ## Stack tecnologico
 
@@ -31,8 +32,8 @@ El producto visible se llama **AppuraPe**. Algunos nombres tecnicos internos del
 ### Frontend
 
 - Angular
-- `frontend/client-app`: aplicacion publica para clientes
-- `frontend/ops-app`: aplicacion operativa para restaurantes, drivers y administradores
+- `frontend/ops-app`: SPA activa que unifica experiencia publica, operativa y administrativa
+- `frontend/shared`: base compartida para utilidades y modelos comunes
 
 ### Correo
 
@@ -57,7 +58,7 @@ Cada rol tiene rutas, permisos y experiencias separadas dentro del sistema.
 4. El cliente crea un pedido.
 5. El restaurante gestiona el pedido desde su panel.
 6. El driver revisa pedidos disponibles, toma pedidos y actualiza el avance.
-7. El administrador gestiona aprobaciones de restaurantes y drivers.
+7. El administrador gestiona aprobaciones de restaurantes, drivers y colaboradores.
 
 ## Registro con verificacion por correo
 
@@ -66,6 +67,7 @@ AppuraPe implementa registro por correo con codigo de verificacion para:
 - Customer
 - Restaurant
 - Driver
+- Collaborator
 
 El flujo general es:
 
@@ -137,15 +139,7 @@ cd backend
 dotnet build .\IquitosDelivery.sln --no-restore -m:1
 ```
 
-### Client App
-
-```powershell
-cd frontend\client-app
-npm install
-npm start
-```
-
-### Ops App
+### Frontend unificado
 
 ```powershell
 cd frontend\ops-app
@@ -153,11 +147,7 @@ npm install
 npm start
 ```
 
-Si se levantan ambas apps Angular al mismo tiempo, usa puertos distintos:
-
-```powershell
-npm start -- --port 4201
-```
+La SPA unificada corre por defecto en `http://localhost:4201/`.
 
 En Windows, si PowerShell bloquea `npm.ps1`, se puede usar `npm.cmd`:
 
@@ -180,8 +170,8 @@ Variables que Render pedira o que debes revisar:
 - `Jwt__Key`
 - `Email__Provider=Logging`
 - `Storage__Supabase__ServiceKey`
-
-Si quieres publicar también el frontend en Render después, lo dejamos como `Static Site` separado.
+ 
+Si quieres publicar la SPA unificada en Render despues, la dejamos como `Static Site` apuntando a `frontend/ops-app`.
 
 ## Configuracion de correo
 
@@ -244,6 +234,97 @@ $env:Storage__Supabase__Bucket="appurape"
 $env:Storage__PublicBaseUrl="https://<your-project>.supabase.co/storage/v1/object/public/appurape"
 ```
 
+## Login rapido con Google
+
+AppuraPe ya puede autenticarse con Google para cuentas `Customer`.
+
+### Backend
+
+Debes registrar los Client IDs permitidos para validar el `idToken` de Google:
+
+```powershell
+$env:GoogleAuth__AllowedClientIds__0="<google-web-client-id>.apps.googleusercontent.com"
+```
+
+Si despues agregas login nativo para Capacitor, puedes sumar mas Client IDs:
+
+```powershell
+$env:GoogleAuth__AllowedClientIds__1="<google-android-o-ios-client-id>.apps.googleusercontent.com"
+```
+
+### Frontend
+
+Configura el Client ID web en:
+
+- `frontend/ops-app/src/environments/environment.development.ts`
+- `frontend/ops-app/src/environments/environment.ts`
+
+Propiedad:
+
+```ts
+googleClientId: '<google-web-client-id>.apps.googleusercontent.com'
+```
+
+Si vas a exportar con Capacitor, agrega tambien:
+
+```ts
+googleIosClientId: '<google-ios-client-id>.apps.googleusercontent.com',
+googleIosServerClientId: '<google-web-client-id>.apps.googleusercontent.com'
+```
+
+Notas:
+
+- `googleClientId` se usa para Web y Android.
+- `googleIosClientId` se usa para iPhone/iPad.
+- `googleIosServerClientId` es opcional para este flujo online, pero conviene dejarlo igual al Web Client ID si luego amplias el flujo nativo.
+
+### Capacitor
+
+El frontend ya incluye `@capgo/capacitor-social-login` para login nativo de Google.
+
+Despues de instalar dependencias o cambiar plugins, sincroniza Capacitor:
+
+```powershell
+cd frontend\ops-app
+npx cap sync android
+```
+
+Para que el backend acepte tokens nativos, registra tambien los Client IDs moviles en `GoogleAuth__AllowedClientIds`.
+
+### Flujo actual
+
+- El login con Google crea o vincula cuentas `Customer`.
+- Si el correo ya pertenece a `Restaurant`, `Driver` o `Admin`, el acceso por Google se rechaza.
+- En navegador usa Google Identity Services; en la app móvil usa el selector nativo de Google.
+- El backend valida el token de Google y luego emite el JWT propio de AppuraPe.
+
+## Recuperacion de contrasena
+
+AppuraPe ya incluye recuperacion de contrasena por codigo enviado al correo.
+
+### Endpoints
+
+- `POST /api/auth/password/forgot`
+- `POST /api/auth/password/resend-code`
+- `POST /api/auth/password/reset`
+
+### Flujo
+
+- El usuario ingresa su correo.
+- El sistema envia un codigo de 6 digitos si la cuenta existe.
+- El usuario ingresa el codigo y define una nueva contrasena.
+- El codigo vence en 10 minutos.
+
+### Frontend
+
+La pantalla publica ya existe en:
+
+- `frontend/ops-app/src/app/features/auth/forgot-password-page.component.ts`
+
+Y se accede desde:
+
+- `frontend/ops-app/src/app/features/auth/login-page.component.ts`
+
 ## Estructura del repositorio
 
 ```text
@@ -257,8 +338,8 @@ $env:Storage__PublicBaseUrl="https://<your-project>.supabase.co/storage/v1/objec
 │   ├── tests
 │   └── IquitosDelivery.sln
 ├── frontend
-│   ├── client-app
-│   └── ops-app
+│   ├── ops-app
+│   └── shared
 ├── docs
 └── README.md
 ```
@@ -276,13 +357,15 @@ Implementado:
 - creacion de pedidos
 - gestion de pedidos por restaurante
 - flujo operativo de driver
-- panel admin para restaurantes y drivers
+- base de red comunitaria para colaboradores
+- panel admin para restaurantes, drivers y colaboradores
 - proveedores de correo Logging, Mailtrap y SMTP
 - mejoras responsive y enfoque mobile-first
+- SPA unificada para customer + ops
 
 Pendiente o futuro:
 
-- despliegue productivo
+- frontend unificada en `ops-app`
 - imagenes reales de restaurantes/productos
 - pagos reales
 - tracking en tiempo real
@@ -318,11 +401,13 @@ Usos aceptados:
 
 - AppuraPe
 - AppuraPe | Delivery local
-- AppuraPe | Panel operativo
+- AppuraPe | Plataforma unificada
 - AppuraPe Admin
 - AppuraPe Restaurant
 - AppuraPe Driver
 
 ## Cierre
 
-AppuraPe es un MVP funcional de delivery local con backend, apps web y flujos operativos completos para clientes, restaurantes, drivers y administradores.
+AppuraPe es un MVP funcional de red logística comunitaria con backend, app web unificada y flujos operativos completos para clientes, restaurantes, drivers, colaboradores y administradores.
+
+

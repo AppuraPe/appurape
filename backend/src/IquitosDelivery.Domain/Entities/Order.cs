@@ -17,6 +17,10 @@ public class Order : BaseEntity
 
     public DriverProfile? Driver { get; set; }
 
+    public Guid? AssignedCourierUserId { get; set; }
+
+    public CourierType? AssignedCourierType { get; set; }
+
     public Guid ZoneId { get; set; }
 
     public Zone Zone { get; set; } = null!;
@@ -27,9 +31,25 @@ public class Order : BaseEntity
 
     public decimal Subtotal { get; set; }
 
+    public decimal BusinessCommissionAmount { get; set; }
+
+    public decimal BusinessNetAmount { get; set; }
+
     public decimal DeliveryFee { get; set; }
 
+    public decimal DeliveryPlatformCommissionAmount { get; set; }
+
+    public decimal CourierEarningAmount { get; set; }
+
+    public decimal ServiceFeeAmount { get; set; }
+
+    public decimal DiscountAmount { get; set; }
+
+    public decimal PlatformRevenueAmount { get; set; }
+
     public decimal Total { get; set; }
+
+    public string? PricingSnapshotJson { get; set; }
 
     public string DeliveryAddress { get; set; } = string.Empty;
 
@@ -44,6 +64,10 @@ public class Order : BaseEntity
     public DateTime? PickedUpAtUtc { get; set; }
 
     public DateTime? DeliveredAtUtc { get; set; }
+
+    public int? DriverRating { get; set; }
+
+    public string? DriverFeedback { get; set; }
 
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 

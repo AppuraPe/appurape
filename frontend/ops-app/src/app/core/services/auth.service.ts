@@ -1,23 +1,35 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, firstValueFrom, map, Observable, of, tap } from 'rxjs';
 import {
-  AppRole,
   AuthResponse,
+  CompleteCustomerRegistrationRequest,
   CompleteRegistrationRequest,
   CurrentUserResponse,
+  GoogleLoginRequest,
   LoginRequest,
+  ResendCustomerRegistrationCodeRequest,
+  ResendRegistrationCodeRequest,
+  StartCustomerRegistrationRequest,
+  StartDriverRegistrationRequest,
+  StartRestaurantRegistrationRequest,
+  UserRole,
+  VerificationCodeResponse,
+  VerificationStatusResponse,
+  VerifyRegistrationCodeRequest,
 } from '../models/auth.models';
 import { AuthApiService } from './auth-api.service';
+import { AuthSessionStore } from '@app/shared/core/auth/auth-session.store';
+import { getDefaultRouteForRole, isOpsRole as isOpsRoleHelper } from '@app/shared/core/auth/role.utils';
 
-const TOKEN_KEY = 'iquitosDelivery.ops.token';
-const USER_KEY = 'iquitosDelivery.ops.user';
+const TOKEN_KEY = 'iquitosDelivery.app.token';
+const USER_KEY = 'iquitosDelivery.app.user';
 
 @Injectable({ providedIn: 'root' })
-export class AuthService {
+export class AuthService extends AuthSessionStore {
   private readonly authApi = inject(AuthApiService);
 
-  private readonly tokenState = signal<string | null>(this.readValue(TOKEN_KEY));
-  private readonly userState = signal<CurrentUserResponse | null>(this.readUser());
+  private readonly tokenState = signal<string | null>(this.readStoredToken());
+  private readonly userState = signal<CurrentUserResponse | null>(this.readStoredUser());
   private readonly readyState = signal(false);
 
   readonly token = this.tokenState.asReadonly();
@@ -26,23 +38,86 @@ export class AuthService {
   readonly isAuthenticated = computed(() => !!this.tokenState() && !!this.userState()?.isAuthenticated);
   readonly currentRole = computed(() => this.userState()?.role ?? null);
 
+  constructor() {
+    super({
+      tokenKey: TOKEN_KEY,
+      userKey: USER_KEY,
+    });
+  }
+
   login(request: LoginRequest): Observable<CurrentUserResponse> {
     return this.authApi.login(request).pipe(
-      tap((response) => this.handleAuthResponse(response)),
+      tap((response) => this.applyAuthResponse(response)),
       map((response) => this.mapAuthResponseToCurrentUser(response)),
     );
+  }
+
+  loginWithGoogle(request: GoogleLoginRequest): Observable<CurrentUserResponse> {
+    return this.authApi.loginWithGoogle(request).pipe(
+      tap((response) => this.applyAuthResponse(response)),
+      map((response) => this.mapAuthResponseToCurrentUser(response)),
+    );
+  }
+
+  startCustomerRegistration(request: StartCustomerRegistrationRequest): Observable<VerificationCodeResponse> {
+    return this.authApi.startCustomerRegistration(request);
+  }
+
+  verifyCustomerRegistrationCode(
+    request: VerifyRegistrationCodeRequest,
+  ): Observable<VerificationStatusResponse> {
+    return this.authApi.verifyCustomerRegistrationCode(request);
+  }
+
+  resendCustomerRegistrationCode(
+    request: ResendCustomerRegistrationCodeRequest,
+  ): Observable<VerificationCodeResponse> {
+    return this.authApi.resendCustomerRegistrationCode(request);
+  }
+
+  completeCustomerRegistration(request: CompleteCustomerRegistrationRequest): Observable<CurrentUserResponse> {
+    return this.authApi.completeCustomerRegistration(request).pipe(
+      tap((response) => this.applyAuthResponse(response)),
+      map((response) => this.mapAuthResponseToCurrentUser(response)),
+    );
+  }
+
+  startRestaurantRegistration(request: FormData): Observable<VerificationCodeResponse> {
+    return this.authApi.startRestaurantRegistration(request);
+  }
+
+  verifyRestaurantRegistrationCode(request: VerifyRegistrationCodeRequest): Observable<VerificationStatusResponse> {
+    return this.authApi.verifyRestaurantRegistrationCode(request);
+  }
+
+  resendRestaurantRegistrationCode(
+    request: ResendRegistrationCodeRequest,
+  ): Observable<VerificationCodeResponse> {
+    return this.authApi.resendRestaurantRegistrationCode(request);
   }
 
   completeRestaurantRegistration(request: CompleteRegistrationRequest): Observable<CurrentUserResponse> {
     return this.authApi.completeRestaurantRegistration(request).pipe(
-      tap((response) => this.handleAuthResponse(response)),
+      tap((response) => this.applyAuthResponse(response)),
       map((response) => this.mapAuthResponseToCurrentUser(response)),
     );
   }
 
+  startDriverRegistration(request: FormData): Observable<VerificationCodeResponse> {
+    return this.authApi.startDriverRegistration(request);
+  }
+
+  verifyDriverRegistrationCode(request: VerifyRegistrationCodeRequest): Observable<VerificationStatusResponse> {
+    return this.authApi.verifyDriverRegistrationCode(request);
+  }
+
+  resendDriverRegistrationCode(request: ResendRegistrationCodeRequest): Observable<VerificationCodeResponse> {
+    return this.authApi.resendDriverRegistrationCode(request);
+  }
+
   completeDriverRegistration(request: CompleteRegistrationRequest): Observable<CurrentUserResponse> {
     return this.authApi.completeDriverRegistration(request).pipe(
-      tap((response) => this.handleAuthResponse(response)),
+      tap((response) => this.applyAuthResponse(response)),
       map((response) => this.mapAuthResponseToCurrentUser(response)),
     );
   }
@@ -57,14 +132,7 @@ export class AuthService {
 
     await firstValueFrom(
       this.authApi.getCurrentUser().pipe(
-        tap((user) => {
-          if (!this.isOpsRole(user.role)) {
-            this.clearSession();
-            return;
-          }
-
-          this.setCurrentUser(user);
-        }),
+        tap((user) => this.setCurrentUser(user)),
         catchError(() => {
           this.clearSession();
           return of(null);
@@ -79,106 +147,46 @@ export class AuthService {
     this.clearSession();
   }
 
-  getToken(): string | null {
-    return this.tokenState();
-  }
-
-  getCurrentRole(): AppRole | string | null {
-    return this.currentRole();
-  }
-
   hasValidOpsSession(): boolean {
     return this.isAuthenticated() && this.isOpsRole();
   }
 
-  getDefaultRoute(role: AppRole | string | null = this.currentRole()): string {
-    switch (role) {
-      case 'Restaurant':
-        return '/restaurant/dashboard';
-      case 'Driver':
-        return '/driver/dashboard';
-      case 'Admin':
-        return '/admin/dashboard';
-      default:
-        return '/login';
-    }
+  hasValidSession(): boolean {
+    return this.isAuthenticated();
   }
 
-  isOpsRole(role: AppRole | string | null = this.currentRole()): boolean {
-    return role === 'Restaurant' || role === 'Driver' || role === 'Admin';
+  getDefaultRoute(role: UserRole | string | null = this.getCurrentRole()): string {
+    return getDefaultRouteForRole(role);
   }
 
-  private handleAuthResponse(response: AuthResponse): void {
-    const currentUser = this.mapAuthResponseToCurrentUser(response);
+  override isOpsRole(role: UserRole | string | null = this.getCurrentRole()): boolean {
+    return isOpsRoleHelper(role);
+  }
+
+  getToken(): string | null {
+    return this.tokenState();
+  }
+
+  getCurrentRole(): UserRole | string | null {
+    return this.currentRole();
+  }
+
+  private applyAuthResponse(response: AuthResponse): void {
+    const currentUser = this.writeAuthResponse(response);
     this.tokenState.set(response.token);
     this.userState.set(currentUser);
-    this.writeValue(TOKEN_KEY, response.token);
-    this.writeUser(currentUser);
     this.readyState.set(true);
   }
 
   private setCurrentUser(user: CurrentUserResponse): void {
+    this.writeCurrentUser(user);
     this.userState.set(user);
-    this.writeUser(user);
-  }
-
-  private mapAuthResponseToCurrentUser(response: AuthResponse): CurrentUserResponse {
-    return {
-      userId: response.userId,
-      fullName: response.fullName,
-      email: response.email,
-      role: response.role,
-      status: response.status,
-      isAuthenticated: true,
-    };
   }
 
   private clearSession(): void {
     this.tokenState.set(null);
     this.userState.set(null);
     this.readyState.set(true);
-    this.removeValue(TOKEN_KEY);
-    this.removeValue(USER_KEY);
-  }
-
-  private readUser(): CurrentUserResponse | null {
-    const raw = this.readValue(USER_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(raw) as CurrentUserResponse;
-    } catch {
-      return null;
-    }
-  }
-
-  private writeUser(user: CurrentUserResponse): void {
-    this.writeValue(USER_KEY, JSON.stringify(user));
-  }
-
-  private readValue(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  }
-
-  private writeValue(key: string, value: string): void {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      // Keep auth usable even if storage is restricted.
-    }
-  }
-
-  private removeValue(key: string): void {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // Keep auth usable even if storage is restricted.
-    }
+    this.clearStoredSession();
   }
 }

@@ -18,6 +18,16 @@ public class MenuItemResponse
 
     public string? ImageUrl { get; set; }
 
+    public string? Sku { get; set; }
+
+    public string? UnitLabel { get; set; }
+
+    public bool TrackStock { get; set; }
+
+    public int? StockQuantity { get; set; }
+
+    public bool HasStock { get; set; }
+
     public bool IsAvailable { get; set; }
 
     public bool IsActive { get; set; }

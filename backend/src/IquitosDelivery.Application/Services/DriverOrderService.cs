@@ -34,7 +34,11 @@ public class DriverOrderService : IDriverOrderService
         var driver = await GetCurrentApprovedDriverAsync(cancellationToken);
         var searchTerm = SearchQuery.Normalize(filters.Q);
         var query = _dbContext.Orders
-            .Where(x => x.Status == OrderStatus.ReadyForPickup && x.DriverId == null && x.ZoneId == driver.ZoneId);
+            .Where(x =>
+                x.Status == OrderStatus.ReadyForPickup &&
+                x.DriverId == null &&
+                x.AssignedCourierUserId == null &&
+                x.ZoneId == driver.ZoneId);
 
         if (searchTerm is not null)
         {
@@ -55,8 +59,11 @@ public class DriverOrderService : IDriverOrderService
                 ZoneName = x.Zone.Name,
                 DeliveryAddress = x.DeliveryAddress,
                 DeliveryReference = x.DeliveryReference,
+                CourierEarningAmount = x.CourierEarningAmount,
                 Total = x.Total,
                 PaymentMethod = x.PaymentMethod.ToString(),
+                AssignedCourierUserId = x.AssignedCourierUserId,
+                AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
                 CreatedAtUtc = x.CreatedAtUtc,
                 ReadyAtUtc = x.ReadyAtUtc
             })
@@ -72,6 +79,7 @@ public class DriverOrderService : IDriverOrderService
                 x.Id == orderId &&
                 x.Status == OrderStatus.ReadyForPickup &&
                 x.DriverId == null &&
+                x.AssignedCourierUserId == null &&
                 x.ZoneId == driver.ZoneId)
             .Select(MapDriverOrderDetail())
             .FirstOrDefaultAsync(cancellationToken);
@@ -102,7 +110,7 @@ public class DriverOrderService : IDriverOrderService
             throw new AppException("Order is outside the driver's zone.");
         }
 
-        if (order.DriverId is not null)
+        if (order.DriverId is not null || order.AssignedCourierUserId is not null)
         {
             throw new AppException("Order has already been taken.");
         }
@@ -113,8 +121,11 @@ public class DriverOrderService : IDriverOrderService
         }
 
         order.DriverId = driver.Id;
+        order.AssignedCourierUserId = driver.UserId;
+        order.AssignedCourierType = CourierType.Driver;
         order.Status = OrderStatus.Assigned;
         driver.IsAvailable = false;
+        await AssignCourierFinancialMovementsAsync(order.Id, driver.UserId, cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -128,7 +139,7 @@ public class DriverOrderService : IDriverOrderService
         var driver = await GetCurrentApprovedDriverAsync(cancellationToken);
         var searchTerm = SearchQuery.Normalize(filters.Q);
         var query = _dbContext.Orders
-            .Where(x => x.DriverId == driver.Id);
+            .Where(x => x.AssignedCourierUserId == driver.UserId && x.AssignedCourierType == CourierType.Driver);
 
         if (filters.Status.HasValue)
         {
@@ -149,8 +160,11 @@ public class DriverOrderService : IDriverOrderService
                 Id = x.Id,
                 RestaurantName = x.Restaurant.Name,
                 Status = x.Status.ToString(),
+                CourierEarningAmount = x.CourierEarningAmount,
                 Total = x.Total,
                 DeliveryAddress = x.DeliveryAddress,
+                AssignedCourierUserId = x.AssignedCourierUserId,
+                AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
                 CreatedAtUtc = x.CreatedAtUtc,
                 ReadyAtUtc = x.ReadyAtUtc,
                 PickedUpAtUtc = x.PickedUpAtUtc
@@ -169,7 +183,10 @@ public class DriverOrderService : IDriverOrderService
         }
 
         var order = await _dbContext.Orders
-            .Where(x => x.Id == orderId && x.DriverId == driver.Id)
+            .Where(x =>
+                x.Id == orderId &&
+                x.AssignedCourierUserId == driver.UserId &&
+                x.AssignedCourierType == CourierType.Driver)
             .Select(MapDriverOrderDetail())
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -195,7 +212,7 @@ public class DriverOrderService : IDriverOrderService
             throw new NotFoundException("Order was not found.");
         }
 
-        if (order.DriverId != driver.Id)
+        if (order.AssignedCourierUserId != driver.UserId || order.AssignedCourierType != CourierType.Driver)
         {
             throw new ForbiddenException("You are not allowed to update this order.");
         }
@@ -213,6 +230,8 @@ public class DriverOrderService : IDriverOrderService
         {
             order.DeliveredAtUtc = DateTime.UtcNow;
             driver.IsAvailable = true;
+            await MarkOrderFinancialMovementsAvailableAsync(order.Id, cancellationToken);
+            await RegisterCompletedDeliveryAsync(driver, cancellationToken);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -290,13 +309,22 @@ public class DriverOrderService : IDriverOrderService
             Notes = x.Notes,
             PaymentMethod = x.PaymentMethod.ToString(),
             Subtotal = x.Subtotal,
+            BusinessCommissionAmount = x.BusinessCommissionAmount,
+            BusinessNetAmount = x.BusinessNetAmount,
             DeliveryFee = x.DeliveryFee,
+            DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
+            CourierEarningAmount = x.CourierEarningAmount,
+            ServiceFeeAmount = x.ServiceFeeAmount,
+            DiscountAmount = x.DiscountAmount,
+            PlatformRevenueAmount = x.PlatformRevenueAmount,
             Total = x.Total,
             CreatedAtUtc = x.CreatedAtUtc,
             AcceptedAtUtc = x.AcceptedAtUtc,
             ReadyAtUtc = x.ReadyAtUtc,
             PickedUpAtUtc = x.PickedUpAtUtc,
             DeliveredAtUtc = x.DeliveredAtUtc,
+            AssignedCourierUserId = x.AssignedCourierUserId,
+            AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
             Items = x.Items
                 .OrderBy(i => i.ProductName)
                 .Select(i => new OrderItemDetailResponse
@@ -309,5 +337,47 @@ public class DriverOrderService : IDriverOrderService
                 })
                 .ToList()
         };
+    }
+
+    private async Task RegisterCompletedDeliveryAsync(DriverProfile driver, CancellationToken cancellationToken)
+    {
+        driver.CompletedDeliveriesCount += 1;
+        await RefreshTrustMetricsAsync(driver, cancellationToken);
+    }
+
+    private async Task AssignCourierFinancialMovementsAsync(Guid orderId, Guid courierUserId, CancellationToken cancellationToken)
+    {
+        var movements = await _dbContext.FinancialMovements
+            .Where(x => x.OrderId == orderId && x.Type == FinancialMovementType.CourierEarning)
+            .ToListAsync(cancellationToken);
+
+        foreach (var movement in movements)
+        {
+            movement.UserId = courierUserId;
+        }
+    }
+
+    private async Task MarkOrderFinancialMovementsAvailableAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var availableAtUtc = DateTime.UtcNow;
+        var movements = await _dbContext.FinancialMovements
+            .Where(x => x.OrderId == orderId && x.Status == FinancialMovementStatus.Pending)
+            .ToListAsync(cancellationToken);
+
+        foreach (var movement in movements)
+        {
+            movement.Status = FinancialMovementStatus.Available;
+            movement.AvailableAtUtc = availableAtUtc;
+        }
+    }
+
+    private async Task RefreshTrustMetricsAsync(DriverProfile driver, CancellationToken cancellationToken)
+    {
+        var averageRating = await _dbContext.Orders
+            .Where(x => x.DriverId == driver.Id && x.Status == OrderStatus.Delivered && x.DriverRating.HasValue)
+            .AverageAsync(x => (decimal?)x.DriverRating, cancellationToken);
+
+        driver.TrustScore = DriverTrustCalculator.CalculateScore(driver.CompletedDeliveriesCount, averageRating);
+        driver.TrustLevel = DriverTrustCalculator.CalculateLevel(driver.TrustScore);
     }
 }

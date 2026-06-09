@@ -24,6 +24,12 @@ public class AdminRestaurantDetailResponse
 
     public string ZoneName { get; set; } = string.Empty;
 
+    public Guid? BusinessTypeId { get; set; }
+
+    public string? BusinessTypeCode { get; set; }
+
+    public string? BusinessTypeName { get; set; }
+
     public string ApprovalStatus { get; set; } = string.Empty;
 
     public bool IsActive { get; set; }

@@ -4,16 +4,22 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AuthResponse,
+  CompleteCustomerRegistrationRequest,
   CompleteRegistrationRequest,
   CurrentUserResponse,
+  ForgotPasswordRequest,
+  GoogleLoginRequest,
   LoginRequest,
+  ResetPasswordRequest,
+  ResendCustomerRegistrationCodeRequest,
+  ResendPasswordResetCodeRequest,
   ResendRegistrationCodeRequest,
+  StartCustomerRegistrationRequest,
   VerificationCodeResponse,
   VerificationStatusResponse,
+  VerifyCustomerRegistrationCodeRequest,
   VerifyRegistrationCodeRequest,
 } from '../models/auth.models';
-import { StartDriverRegistrationRequest } from '../models/driver.models';
-import { StartRestaurantRegistrationRequest } from '../models/restaurant.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
@@ -24,11 +30,47 @@ export class AuthApiService {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, request);
   }
 
+  loginWithGoogle(request: GoogleLoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/google`, request);
+  }
+
+  startPasswordReset(request: ForgotPasswordRequest): Observable<VerificationCodeResponse> {
+    return this.http.post<VerificationCodeResponse>(`${this.baseUrl}/password/forgot`, request);
+  }
+
+  resendPasswordResetCode(request: ResendPasswordResetCodeRequest): Observable<VerificationCodeResponse> {
+    return this.http.post<VerificationCodeResponse>(`${this.baseUrl}/password/resend-code`, request);
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<VerificationStatusResponse> {
+    return this.http.post<VerificationStatusResponse>(`${this.baseUrl}/password/reset`, request);
+  }
+
   getCurrentUser(): Observable<CurrentUserResponse> {
     return this.http.get<CurrentUserResponse>(`${this.baseUrl}/me`);
   }
 
-  startRestaurantRegistration(request: StartRestaurantRegistrationRequest): Observable<VerificationCodeResponse> {
+  startCustomerRegistration(request: StartCustomerRegistrationRequest): Observable<VerificationCodeResponse> {
+    return this.http.post<VerificationCodeResponse>(`${this.baseUrl}/register/customer/start`, request);
+  }
+
+  verifyCustomerRegistrationCode(
+    request: VerifyCustomerRegistrationCodeRequest,
+  ): Observable<VerificationStatusResponse> {
+    return this.http.post<VerificationStatusResponse>(`${this.baseUrl}/register/customer/verify-code`, request);
+  }
+
+  resendCustomerRegistrationCode(
+    request: ResendCustomerRegistrationCodeRequest,
+  ): Observable<VerificationCodeResponse> {
+    return this.http.post<VerificationCodeResponse>(`${this.baseUrl}/register/customer/resend-code`, request);
+  }
+
+  completeCustomerRegistration(request: CompleteCustomerRegistrationRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/register/customer/complete`, request);
+  }
+
+  startRestaurantRegistration(request: FormData): Observable<VerificationCodeResponse> {
     return this.http.post<VerificationCodeResponse>(`${this.baseUrl}/register/restaurant/start`, request);
   }
 
@@ -44,7 +86,7 @@ export class AuthApiService {
     return this.http.post<AuthResponse>(`${this.baseUrl}/register/restaurant/complete`, request);
   }
 
-  startDriverRegistration(request: StartDriverRegistrationRequest): Observable<VerificationCodeResponse> {
+  startDriverRegistration(request: FormData): Observable<VerificationCodeResponse> {
     return this.http.post<VerificationCodeResponse>(`${this.baseUrl}/register/driver/start`, request);
   }
 

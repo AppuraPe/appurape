@@ -15,6 +15,9 @@ public class DriverProfileConfiguration : IEntityTypeConfiguration<DriverProfile
         builder.Property(x => x.Plate).HasMaxLength(20).IsRequired();
         builder.Property(x => x.VehicleType).IsRequired();
         builder.Property(x => x.ApprovalStatus).IsRequired();
+        builder.Property(x => x.TrustLevel).IsRequired();
+        builder.Property(x => x.CompletedDeliveriesCount).IsRequired();
+        builder.Property(x => x.TrustScore).HasPrecision(5, 2).IsRequired();
         builder.Property(x => x.IdentityDocumentUrl).HasMaxLength(500);
         builder.Property(x => x.VehiclePhotoUrl).HasMaxLength(500);
 

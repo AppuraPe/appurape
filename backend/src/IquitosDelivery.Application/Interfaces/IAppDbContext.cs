@@ -12,11 +12,29 @@ public interface IAppDbContext
 
     IQueryable<PendingDriverRegistration> PendingDriverRegistrations { get; }
 
+    IQueryable<PasswordResetRequest> PasswordResetRequests { get; }
+
     IQueryable<CustomerProfile> Customers { get; }
+
+    IQueryable<CollaboratorProfile> CollaboratorProfiles { get; }
+
+    IQueryable<CommunityCollaborator> CommunityCollaborators { get; }
+
+    IQueryable<BusinessType> BusinessTypes { get; }
+
+    IQueryable<CommissionRule> CommissionRules { get; }
+
+    IQueryable<FinancialMovement> FinancialMovements { get; }
 
     IQueryable<Restaurant> Restaurants { get; }
 
     IQueryable<DriverProfile> Drivers { get; }
+
+    IQueryable<CommunityRoute> CommunityRoutes { get; }
+
+    IQueryable<CommunityRequest> CommunityRequests { get; }
+
+    IQueryable<CommunityRequestApplication> CommunityRequestApplications { get; }
 
     IQueryable<MenuCategory> MenuCategories { get; }
 

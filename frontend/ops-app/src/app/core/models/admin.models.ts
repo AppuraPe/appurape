@@ -1,4 +1,4 @@
-export type AdminStatusAction = 'approve' | 'reject' | 'suspend' | 'reactivate';
+export type AdminStatusAction = 'approve' | 'reject' | 'suspend' | 'reactivate' | 'trust' | 'verify';
 
 export interface PendingRestaurantResponse {
   id: string;
@@ -23,6 +23,9 @@ export interface AdminRestaurantListItemResponse {
   address: string;
   zoneId: string;
   zoneName: string;
+  businessTypeId?: string | null;
+  businessTypeCode?: string | null;
+  businessTypeName?: string | null;
   approvalStatus: string;
   isActive: boolean;
   userStatus: string;
@@ -41,6 +44,9 @@ export interface AdminRestaurantDetailResponse {
   reference: string;
   zoneId: string;
   zoneName: string;
+  businessTypeId?: string | null;
+  businessTypeCode?: string | null;
+  businessTypeName?: string | null;
   approvalStatus: string;
   isActive: boolean;
   userStatus: string;
@@ -63,6 +69,10 @@ export interface AdminDriverListItemResponse {
   zoneName: string;
   approvalStatus: string;
   isAvailable: boolean;
+  trustLevel: string;
+  trustScore: number;
+  completedDeliveriesCount: number;
+  averageRating: number;
   userStatus: string;
   createdAtUtc: string;
 }
@@ -79,6 +89,10 @@ export interface AdminDriverDetailResponse {
   zoneName: string;
   approvalStatus: string;
   isAvailable: boolean;
+  trustLevel: string;
+  trustScore: number;
+  completedDeliveriesCount: number;
+  averageRating: number;
   userStatus: string;
   identityDocumentUrl?: string | null;
   vehiclePhotoUrl?: string | null;

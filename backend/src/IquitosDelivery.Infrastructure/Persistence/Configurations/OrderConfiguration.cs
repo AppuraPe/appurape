@@ -15,8 +15,16 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.PaymentMethod).IsRequired();
         builder.Property(x => x.Subtotal).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.BusinessCommissionAmount).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.BusinessNetAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.DeliveryFee).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.DeliveryPlatformCommissionAmount).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.CourierEarningAmount).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.ServiceFeeAmount).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.DiscountAmount).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.PlatformRevenueAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.Total).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.PricingSnapshotJson);
         builder.Property(x => x.DeliveryAddress).HasMaxLength(300).IsRequired();
         builder.Property(x => x.DeliveryReference).HasMaxLength(300).IsRequired();
         builder.Property(x => x.Notes).HasMaxLength(1000);
@@ -26,6 +34,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.ReadyAtUtc);
         builder.Property(x => x.PickedUpAtUtc);
         builder.Property(x => x.DeliveredAtUtc);
+        builder.Property(x => x.AssignedCourierUserId);
+        builder.Property(x => x.AssignedCourierType);
+        builder.Property(x => x.DriverRating);
+        builder.Property(x => x.DriverFeedback).HasMaxLength(1000);
+
+        builder.HasIndex(x => x.AssignedCourierUserId);
 
         builder.HasOne(x => x.Customer)
             .WithMany(x => x.Orders)

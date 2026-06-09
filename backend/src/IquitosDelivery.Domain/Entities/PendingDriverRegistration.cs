@@ -9,4 +9,8 @@ public class PendingDriverRegistration : PendingEmailRegistrationBase
     public string Plate { get; set; } = string.Empty;
 
     public Guid ZoneId { get; set; }
+
+    public string? IdentityDocumentUrl { get; set; }
+
+    public string? VehiclePhotoUrl { get; set; }
 }

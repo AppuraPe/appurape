@@ -23,4 +23,12 @@ public class PendingDriverResponse
     public string ApprovalStatus { get; set; } = string.Empty;
 
     public bool IsAvailable { get; set; }
+
+    public string TrustLevel { get; set; } = string.Empty;
+
+    public int CompletedDeliveriesCount { get; set; }
+
+    public decimal TrustScore { get; set; }
+
+    public decimal AverageRating { get; set; }
 }

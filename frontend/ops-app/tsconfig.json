@@ -4,6 +4,12 @@
   "compileOnSave": false,
   "compilerOptions": {
     "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@app/shared/*": [
+        "../shared/src/*"
+      ]
+    },
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,

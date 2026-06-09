@@ -1,0 +1,5 @@
+C:\Users\NAYCOLL\IquitosDelivery\.tmp\backend-obj\Debug\net9.0\IquitosDelivery.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\NAYCOLL\IquitosDelivery\.tmp\backend-obj\Debug\net9.0\IquitosDelivery.Domain.AssemblyInfoInputs.cache
+C:\Users\NAYCOLL\IquitosDelivery\.tmp\backend-obj\Debug\net9.0\IquitosDelivery.Domain.AssemblyInfo.cs
+C:\Users\NAYCOLL\IquitosDelivery\.tmp\backend-obj\Debug\net9.0\IquitosDelivery.Domain.csproj.CoreCompileInputs.cache
+C:\Users\NAYCOLL\IquitosDelivery\.tmp\backend-obj\Debug\net9.0\IquitosDelivery.Domain.sourcelink.json

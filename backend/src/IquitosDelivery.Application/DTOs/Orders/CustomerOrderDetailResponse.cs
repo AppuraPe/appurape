@@ -20,7 +20,21 @@ public class CustomerOrderDetailResponse
 
     public decimal Subtotal { get; set; }
 
+    public decimal BusinessCommissionAmount { get; set; }
+
+    public decimal BusinessNetAmount { get; set; }
+
     public decimal DeliveryFee { get; set; }
+
+    public decimal DeliveryPlatformCommissionAmount { get; set; }
+
+    public decimal CourierEarningAmount { get; set; }
+
+    public decimal ServiceFeeAmount { get; set; }
+
+    public decimal DiscountAmount { get; set; }
+
+    public decimal PlatformRevenueAmount { get; set; }
 
     public decimal Total { get; set; }
 
@@ -33,6 +47,14 @@ public class CustomerOrderDetailResponse
     public DateTime? PickedUpAtUtc { get; set; }
 
     public DateTime? DeliveredAtUtc { get; set; }
+
+    public Guid? AssignedCourierUserId { get; set; }
+
+    public string? AssignedCourierType { get; set; }
+
+    public int? DriverRating { get; set; }
+
+    public string? DriverFeedback { get; set; }
 
     public List<OrderItemDetailResponse> Items { get; set; } = new();
 }
