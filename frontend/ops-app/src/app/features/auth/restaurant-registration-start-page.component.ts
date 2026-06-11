@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { StartRestaurantRegistrationRequest } from '../../core/models/restaurant.models';
+import { StartBusinessRegistrationRequest } from '../../core/models/business.model';
 import { ZoneResponse } from '../../core/models/zone.models';
 import { AuthApiService } from '../../core/services/auth-api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -214,7 +214,7 @@ export class RestaurantRegistrationStartPageComponent {
     }
 
     const raw = this.form.getRawValue();
-    const request: StartRestaurantRegistrationRequest = {
+    const request: StartBusinessRegistrationRequest = {
       firstName: raw.firstName.trim(),
       lastName: raw.lastName.trim(),
       phone: raw.phone.trim(),

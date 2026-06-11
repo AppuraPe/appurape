@@ -1,4 +1,4 @@
-import { OrderStatus } from './restaurant.models';
+import { BusinessOrderStatus } from './business.model';
 
 export type VehicleType = 0 | 1 | 2;
 
@@ -27,7 +27,7 @@ export interface AvailableDriverOrderListItemResponse {
 export interface DriverAssignedOrderListItemResponse {
   id: string;
   restaurantName: string;
-  status: OrderStatus | string;
+  status: BusinessOrderStatus | string;
   courierEarningAmount: number;
   total: number;
   deliveryAddress: string;
@@ -66,7 +66,7 @@ export interface DriverAvailableOrderFilters {
 
 export interface DriverMyOrderFilters {
   q?: string;
-  status?: OrderStatus | string;
+  status?: BusinessOrderStatus | string;
 }
 
 export interface StartDriverRegistrationRequest {

@@ -13,8 +13,8 @@ import {
   ShieldCheck,
   Store,
 } from 'lucide-angular';
-import { AdminRestaurantDetailResponse, AdminStatusAction } from '../../core/models/admin.models';
-import { AdminApiService } from '../../core/services/admin-api.service';
+import { AdminBusinessDetailResponse, UpdateAdminBusinessStatusAction } from '../../core/models/admin-business.models';
+import { AdminBusinessesApiService } from '../../core/services/admin-businesses-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
@@ -23,7 +23,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 
 @Component({
-  selector: 'app-admin-restaurant-detail-page',
+  selector: 'app-admin-business-detail-page',
   standalone: true,
   imports: [
     DatePipe,
@@ -204,9 +204,9 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     </section>
   `,
 })
-export class AdminRestaurantDetailPageComponent {
+export class AdminBusinessDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
-  private readonly adminApi = inject(AdminApiService);
+  private readonly adminBusinessesApi = inject(AdminBusinessesApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly storeIcon = Store;
@@ -218,16 +218,16 @@ export class AdminRestaurantDetailPageComponent {
   readonly calendarIcon = CalendarClock;
   readonly clockIcon = Clock3;
 
-  readonly actions: Array<{ label: string; value: AdminStatusAction }> = [
+  readonly actions: Array<{ label: string; value: UpdateAdminBusinessStatusAction }> = [
     { label: 'Approve', value: 'approve' },
     { label: 'Reject', value: 'reject' },
     { label: 'Suspend', value: 'suspend' },
     { label: 'Reactivate', value: 'reactivate' },
   ];
 
-  readonly restaurant = signal<AdminRestaurantDetailResponse | null>(null);
+  readonly restaurant = signal<AdminBusinessDetailResponse | null>(null);
   readonly isLoading = signal(true);
-  readonly actionInProgress = signal<AdminStatusAction | null>(null);
+  readonly actionInProgress = signal<UpdateAdminBusinessStatusAction | null>(null);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
 
@@ -241,8 +241,8 @@ export class AdminRestaurantDetailPageComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    this.adminApi
-      .getRestaurantById(this.restaurantId)
+    this.adminBusinessesApi
+      .getBusinessById(this.restaurantId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (restaurant) => {
@@ -256,13 +256,13 @@ export class AdminRestaurantDetailPageComponent {
       });
   }
 
-  updateStatus(action: AdminStatusAction): void {
+  updateStatus(action: UpdateAdminBusinessStatusAction): void {
     this.actionInProgress.set(action);
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    this.adminApi
-      .updateRestaurantStatus(this.restaurantId, action)
+    this.adminBusinessesApi
+      .updateBusinessStatus(this.restaurantId, action)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (restaurant) => {
@@ -277,3 +277,4 @@ export class AdminRestaurantDetailPageComponent {
       });
   }
 }
+

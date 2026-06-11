@@ -7,19 +7,19 @@ import { LucideAngularModule, ShoppingCart, Trash2 } from 'lucide-angular';
 import { debounceTime, distinctUntilChanged, forkJoin, map } from 'rxjs';
 import { CreateOrderRequest, PaymentMethod } from '../../core/models/orders.models';
 import {
-  MenuItemResponse,
-  PublicMenuCategoryResponse,
-  PublicMenuResponse,
-  RestaurantDetailResponse,
-} from '../../core/models/restaurants.models';
+  BusinessDetailResponse,
+  CatalogCategoryResponse,
+  CatalogResponse,
+} from '../../core/models/businesses.models';
+import { CatalogItemResponse } from '../../core/models/catalog.models';
 import { AuthService } from '../../core/services/auth.service';
+import { BusinessesApiService } from '../../core/services/businesses-api.service';
 import { CheckoutDrawerUiService } from '../../core/services/checkout-drawer-ui.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
-import { RestaurantsApiService } from '../../core/services/restaurants-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
-import { MenuCardComponent } from './components/menu-card.component';
+import { MenuCardComponent } from '../restaurants/components/menu-card.component';
 
 type CartLine = {
   menuItemId: string;
@@ -42,12 +42,12 @@ type FlyAnimationState = {
 };
 
 @Component({
-  selector: 'app-restaurant-detail-page',
+  selector: 'app-business-detail-page',
   standalone: true,
   imports: [RouterLink, CurrencyPipe, ReactiveFormsModule, LucideAngularModule, AppBackButtonComponent, MenuCardComponent],
-  templateUrl: './restaurant-detail-page.component.html',
+  templateUrl: './business-detail-page.component.html',
 })
-export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
+export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   private static readonly FLY_ANIMATION_DURATION_MS = 650;
   private static readonly PAYMENT_METHOD_TO_ENUM: Record<PaymentMethod, number> = {
     Cash: 0,
@@ -59,7 +59,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly formBuilder = inject(FormBuilder);
-  private readonly restaurantsApi = inject(RestaurantsApiService);
+  private readonly businessesApi = inject(BusinessesApiService);
   private readonly ordersApi = inject(OrdersApiService);
   private readonly checkoutDrawerUi = inject(CheckoutDrawerUiService);
   private readonly notificationService = inject(NotificationService);
@@ -67,8 +67,8 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly paymentMethods: PaymentMethod[] = ['Cash', 'Yape', 'Plin', 'Card'];
-  readonly restaurant = signal<RestaurantDetailResponse | null>(null);
-  readonly menu = signal<PublicMenuResponse | null>(null);
+  readonly restaurant = signal<BusinessDetailResponse | null>(null);
+  readonly menu = signal<CatalogResponse | null>(null);
   readonly cartState = signal<Record<string, CartLine>>({});
   readonly isLoading = signal(true);
   readonly isSubmittingOrder = signal(false);
@@ -128,7 +128,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
 
     const categories = menu.categories
       .map((category) => this.filterCategory(category, query))
-      .filter((category): category is PublicMenuCategoryResponse => category !== null);
+      .filter((category): category is CatalogCategoryResponse => category !== null);
 
     return {
       ...menu,
@@ -232,7 +232,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
       });
 
     if (!id) {
-      const message = 'No se encontró el restaurante solicitado.';
+      const message = 'No se encontró el negocio solicitado.';
       this.errorMessage.set(message);
       this.notificationService.error(message);
       this.isLoading.set(false);
@@ -240,8 +240,8 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
     }
 
     forkJoin({
-      restaurant: this.restaurantsApi.getRestaurant(id),
-      menu: this.restaurantsApi.getRestaurantMenu(id),
+      restaurant: this.businessesApi.getBusiness(id),
+      menu: this.businessesApi.getBusinessCatalog(id),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -278,7 +278,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
     this.checkoutDrawerUi.unregister();
   }
 
-  addItem(item: MenuItemResponse): void {
+  addItem(item: CatalogItemResponse): void {
     if (!item.isAvailable) {
       return;
     }
@@ -359,7 +359,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
     this.menuSearchControl.setValue('');
   }
 
-  addItemWithAnimation(item: MenuItemResponse, event: MouseEvent): void {
+  addItemWithAnimation(item: CatalogItemResponse, event: MouseEvent): void {
     if (!item.isAvailable || this.isAnimatingAddFor(item.id)) {
       return;
     }
@@ -415,7 +415,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
         this.flyAnimationTimeoutId = setTimeout(() => {
           this.flyAnimationTimeoutId = null;
           this.finishAddAnimation(item.id);
-        }, RestaurantDetailPageComponent.FLY_ANIMATION_DURATION_MS);
+        }, BusinessDetailPageComponent.FLY_ANIMATION_DURATION_MS);
       });
     });
   }
@@ -428,7 +428,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
     this.selectedCategoryId.set(categoryId);
   }
 
-  getCategoryPreviewImage(category: PublicMenuCategoryResponse): string {
+  getCategoryPreviewImage(category: CatalogCategoryResponse): string {
     return category.items.find((item) => hasText(item.imageUrl))?.imageUrl ?? '/img/banner1.png';
   }
 
@@ -467,14 +467,14 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
     const restaurant = this.restaurant();
 
     if (!restaurant?.zoneId) {
-      const message = 'No encontramos la zona del restaurante para crear el pedido.';
+      const message = 'No encontramos la zona del negocio para crear el pedido.';
       this.checkoutErrorMessage.set(message);
       this.notificationService.error(message);
       return;
     }
 
     const formValue = this.checkoutForm.getRawValue();
-    const paymentMethod = RestaurantDetailPageComponent.PAYMENT_METHOD_TO_ENUM[formValue.paymentMethod];
+    const paymentMethod = BusinessDetailPageComponent.PAYMENT_METHOD_TO_ENUM[formValue.paymentMethod];
 
     const payload: CreateOrderRequest = {
       restaurantId: restaurant.id,
@@ -546,13 +546,13 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
   menuEmptyStateTitle(): string {
     return this.hasActiveMenuSearch()
       ? 'No encontramos platos para esa búsqueda'
-      : 'Este restaurante aún no tiene menú visible';
+      : 'Este negocio aún no tiene catalogo visible';
   }
 
   menuEmptyStateMessage(): string {
     if (this.hasActiveMenuSearch()) {
       if (this.isGlobalSearchContext()) {
-        return 'Este restaurante no tiene coincidencias visibles para esa búsqueda. Limpia el filtro local o vuelve a los resultados globales.';
+        return 'Este negocio no tiene coincidencias visibles para esa búsqueda. Limpia el filtro local o vuelve a los resultados globales.';
       }
 
       return 'Prueba con otro nombre de plato, una descripción más corta o una categoría distinta.';
@@ -603,7 +603,7 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
     return segments.length ? segments : [{ text, isMatch: false }];
   }
 
-  private filterCategory(category: PublicMenuCategoryResponse, query: string): PublicMenuCategoryResponse | null {
+  private filterCategory(category: CatalogCategoryResponse, query: string): CatalogCategoryResponse | null {
     const normalizedQuery = this.normalizeMenuMatchValue(query);
     const categoryMatches = this.matchesMenuText(category.name, normalizedQuery);
 
@@ -674,4 +674,5 @@ export class RestaurantDetailPageComponent implements AfterViewInit, OnDestroy {
     return visibleTarget;
   }
 }
+
 

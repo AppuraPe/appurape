@@ -13,8 +13,8 @@ import {
   Wallet,
 } from 'lucide-angular';
 import { debounceTime } from 'rxjs';
+import { BusinessOrderStatus } from '../../core/models/business.model';
 import { DriverAssignedOrderListItemResponse } from '../../core/models/driver.models';
-import { OrderStatus } from '../../core/models/restaurant.models';
 import { DriverOrdersApiService } from '../../core/services/driver-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { toOrderStatusValue } from '../../core/utils/order-status.utils';
@@ -27,7 +27,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
 interface DriverOrderAction {
   label: string;
-  status: OrderStatus;
+  status: BusinessOrderStatus;
 }
 
 @Component({
@@ -83,7 +83,7 @@ interface DriverOrderAction {
                 id="myOrderSearch"
                 type="search"
                 formControlName="q"
-                placeholder="Restaurante o direccion"
+                placeholder="Negocio o direcci?n"
                 autocomplete="off"
                 class="min-h-0 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0"
               />

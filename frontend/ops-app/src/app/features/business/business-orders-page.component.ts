@@ -14,8 +14,8 @@ import {
   Wallet,
 } from 'lucide-angular';
 import { debounceTime } from 'rxjs';
-import { OrderStatus, RestaurantOrderListItemResponse } from '../../core/models/restaurant.models';
-import { RestaurantOrdersApiService } from '../../core/services/restaurant-orders-api.service';
+import { BusinessOrderListItemResponse, BusinessOrderStatus } from '../../core/models/business.model';
+import { BusinessOrdersApiService } from '../../core/services/business-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { toOrderStatusValue } from '../../core/utils/order-status.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
@@ -25,14 +25,14 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 
-interface RestaurantOrderAction {
+interface BusinessOrderAction {
   label: string;
-  status: OrderStatus;
+  status: BusinessOrderStatus;
   variant?: 'danger';
 }
 
 @Component({
-  selector: 'app-restaurant-orders-page',
+  selector: 'app-business-orders-page',
   standalone: true,
   imports: [
     PageHeaderComponent,
@@ -50,8 +50,8 @@ interface RestaurantOrderAction {
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Restaurant"
-          title="Pedidos del restaurante"
+          eyebrow="AppuraPe Business"
+          title="Pedidos del negocio"
           subtitle="Gestiona el tramo operativo real desde que entra el pedido hasta que queda listo para pickup."
         />
 
@@ -200,7 +200,7 @@ interface RestaurantOrderAction {
                     <app-notice
                       tone="info"
                       title="Sin acciones disponibles"
-                      message="Este pedido ya esta fuera del tramo operativo que puede modificar el restaurante."
+                      message="Este pedido ya esta fuera del tramo operativo que puede modificar el negocio."
                     />
                   }
                 </div>
@@ -212,9 +212,9 @@ interface RestaurantOrderAction {
     </section>
   `,
 })
-export class RestaurantOrdersPageComponent {
+export class BusinessOrdersPageComponent {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly restaurantOrdersApi = inject(RestaurantOrdersApiService);
+  private readonly businessOrdersApi = inject(BusinessOrdersApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly searchIcon = Search;
@@ -226,7 +226,7 @@ export class RestaurantOrdersPageComponent {
   readonly shieldIcon = ShieldCheck;
   readonly cancelIcon = CircleSlash;
 
-  readonly orders = signal<RestaurantOrderListItemResponse[]>([]);
+  readonly orders = signal<BusinessOrderListItemResponse[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
@@ -254,7 +254,7 @@ export class RestaurantOrdersPageComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    this.restaurantOrdersApi
+    this.businessOrdersApi
       .getOrders({
         q: filters.q,
         status: filters.status || undefined,
@@ -287,7 +287,7 @@ export class RestaurantOrdersPageComponent {
     return id.slice(0, 8);
   }
 
-  getActions(status: string): RestaurantOrderAction[] {
+  getActions(status: string): BusinessOrderAction[] {
     switch (status) {
       case 'Pending':
         return [
@@ -309,12 +309,12 @@ export class RestaurantOrdersPageComponent {
     }
   }
 
-  updateStatus(order: RestaurantOrderListItemResponse, action: RestaurantOrderAction): void {
+  updateStatus(order: BusinessOrderListItemResponse, action: BusinessOrderAction): void {
     this.actionOrderId.set(order.id);
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    this.restaurantOrdersApi
+    this.businessOrdersApi
       .updateOrderStatus(order.id, { status: toOrderStatusValue(action.status) })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -330,3 +330,4 @@ export class RestaurantOrdersPageComponent {
       });
   }
 }
+

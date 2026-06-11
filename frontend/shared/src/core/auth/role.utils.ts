@@ -13,7 +13,7 @@ export function getDefaultRouteForRole(role: AppRole | string | null | undefined
     case 'Admin':
       return '/admin/dashboard';
     case 'Customer':
-      return '/restaurants';
+      return '/businesses';
     default:
       return '/login';
   }

@@ -13,37 +13,36 @@ import {
   PendingRestaurantResponse,
 } from '../models/admin.models';
 import { PendingDriverResponse } from '../models/driver.models';
+import { AdminBusinessesApiService } from './admin-businesses-api.service';
 
 @Injectable({ providedIn: 'root' })
 export class AdminApiService {
   private readonly http = inject(HttpClient);
-  private readonly restaurantsBaseUrl = `${environment.apiBaseUrl}/api/admin/restaurants`;
+  private readonly adminBusinessesApi = inject(AdminBusinessesApiService);
   private readonly driversBaseUrl = `${environment.apiBaseUrl}/api/admin/drivers`;
 
   getRestaurants(filters: AdminRestaurantFilters = {}): Observable<AdminRestaurantListItemResponse[]> {
-    return this.http.get<AdminRestaurantListItemResponse[]>(this.restaurantsBaseUrl, {
-      params: this.buildRestaurantParams(filters),
-    });
+    return this.adminBusinessesApi.getBusinesses(filters);
   }
 
   getRestaurantById(id: string): Observable<AdminRestaurantDetailResponse> {
-    return this.http.get<AdminRestaurantDetailResponse>(`${this.restaurantsBaseUrl}/${id}`);
+    return this.adminBusinessesApi.getBusinessById(id);
   }
 
   updateRestaurantStatus(id: string, action: AdminStatusAction): Observable<AdminRestaurantDetailResponse> {
-    return this.http.patch<AdminRestaurantDetailResponse>(`${this.restaurantsBaseUrl}/${id}/status`, { action });
+    return this.adminBusinessesApi.updateBusinessStatus(id, action);
   }
 
   getPendingRestaurants(): Observable<PendingRestaurantResponse[]> {
-    return this.http.get<PendingRestaurantResponse[]>(`${this.restaurantsBaseUrl}/pending`);
+    return this.adminBusinessesApi.getPendingBusinesses();
   }
 
   approveRestaurant(id: string): Observable<PendingRestaurantResponse> {
-    return this.http.patch<PendingRestaurantResponse>(`${this.restaurantsBaseUrl}/${id}/approve`, {});
+    return this.adminBusinessesApi.approveBusiness(id);
   }
 
   rejectRestaurant(id: string): Observable<PendingRestaurantResponse> {
-    return this.http.patch<PendingRestaurantResponse>(`${this.restaurantsBaseUrl}/${id}/reject`, {});
+    return this.adminBusinessesApi.rejectBusiness(id);
   }
 
   getDrivers(filters: AdminDriverFilters = {}): Observable<AdminDriverListItemResponse[]> {
@@ -70,28 +69,6 @@ export class AdminApiService {
 
   rejectDriver(id: string): Observable<PendingDriverResponse> {
     return this.http.patch<PendingDriverResponse>(`${this.driversBaseUrl}/${id}/reject`, {});
-  }
-
-  private buildRestaurantParams(filters: AdminRestaurantFilters): HttpParams {
-    let params = new HttpParams();
-
-    if (filters.q?.trim()) {
-      params = params.set('q', filters.q.trim());
-    }
-
-    if (filters.approvalStatus) {
-      params = params.set('approvalStatus', filters.approvalStatus);
-    }
-
-    if (filters.isActive !== undefined && filters.isActive !== null) {
-      params = params.set('isActive', String(filters.isActive));
-    }
-
-    if (filters.userStatus) {
-      params = params.set('status', filters.userStatus);
-    }
-
-    return params;
   }
 
   private buildDriverParams(filters: AdminDriverFilters): HttpParams {

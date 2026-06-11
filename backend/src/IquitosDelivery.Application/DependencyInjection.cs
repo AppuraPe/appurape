@@ -13,10 +13,14 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.IRestaurantRegistrationService, Services.RestaurantRegistrationService>();
         services.AddScoped<Interfaces.IDriverRegistrationService, Services.DriverRegistrationService>();
         services.AddScoped<Interfaces.IRestaurantService, Services.RestaurantService>();
+        services.AddScoped<Interfaces.IBusinessService, Services.BusinessServiceAdapter>();
         services.AddScoped<Interfaces.IMenuService, Services.MenuService>();
+        services.AddScoped<Interfaces.ICatalogService, Services.CatalogServiceAdapter>();
         services.AddScoped<Interfaces.IOrderService, Services.OrderService>();
+        services.AddScoped<Interfaces.IBusinessOrderService, Services.BusinessOrderServiceAdapter>();
         services.AddScoped<Interfaces.IDriverOrderService, Services.DriverOrderService>();
         services.AddScoped<Interfaces.IAdminRestaurantService, Services.AdminRestaurantService>();
+        services.AddScoped<Interfaces.IAdminBusinessService, Services.AdminBusinessServiceAdapter>();
         services.AddScoped<Interfaces.IAdminDriverService, Services.AdminDriverService>();
         services.AddScoped<Interfaces.IAdminFinanceService, Services.AdminFinanceService>();
         services.AddScoped<Interfaces.ICommunityService, Services.CommunityService>();

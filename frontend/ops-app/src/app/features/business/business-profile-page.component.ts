@@ -10,8 +10,8 @@ import {
   ShieldCheck,
   Store,
 } from 'lucide-angular';
-import { MyRestaurantResponse } from '../../core/models/restaurant.models';
-import { MyRestaurantApiService } from '../../core/services/my-restaurant-api.service';
+import { MyBusinessResponse } from '../../core/models/business.model';
+import { MyBusinessApiService } from '../../core/services/my-business-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { validateImageFile } from '../../core/utils/file-upload.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
@@ -21,7 +21,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 
 @Component({
-  selector: 'app-restaurant-profile-page',
+  selector: 'app-business-profile-page',
   standalone: true,
   imports: [
     PageHeaderComponent,
@@ -36,8 +36,8 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Restaurant"
-          title="Perfil del restaurante"
+          eyebrow="AppuraPe Business"
+          title="Perfil del negocio"
           subtitle="Actualiza la cara publica del negocio con una interfaz mas clara y moderna."
         />
 
@@ -62,7 +62,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             <app-notice
               tone="warning"
               title="Pendiente de aprobacion"
-              message="Tu restaurante aun no aparece al publico porque sigue pendiente de aprobacion administrativa."
+              message="Tu negocio aun no aparece al publico porque sigue pendiente de aprobacion administrativa."
             />
           }
 
@@ -70,7 +70,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             <app-notice
               tone="success"
               title="Visible para operar"
-              message="Tu restaurante esta aprobado y activo. Mantener perfil, horario y menu actualizados ayuda a evitar pedidos incorrectos."
+              message="Tu negocio esta aprobado y activo. Mantener perfil, horario y catalogo actualizados ayuda a evitar pedidos incorrectos."
             />
           }
 
@@ -78,7 +78,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             <app-notice
               tone="danger"
               title="No disponible al publico"
-              message="Tu restaurante no puede recibir pedidos mientras este inactivo, rechazado o suspendido."
+              message="Tu negocio no puede recibir pedidos mientras este inactivo, rechazado o suspendido."
             />
           }
 
@@ -106,11 +106,11 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 
               @if (logoPreviewUrl()) {
                 <div class="overflow-hidden rounded-[24px] border border-[#eddad4] bg-surface-soft">
-                  <img class="block h-64 w-full object-cover" [src]="logoPreviewUrl()" alt="Logo del restaurante" />
+                  <img class="block h-64 w-full object-cover" [src]="logoPreviewUrl()" alt="Logo del negocio" />
                 </div>
               } @else {
                 <div class="grid min-h-56 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
-                  El logo del restaurante aparecera aqui.
+                  El logo del negocio aparecera aqui.
                 </div>
               }
 
@@ -211,9 +211,9 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     </section>
   `,
 })
-export class RestaurantProfilePageComponent {
+export class BusinessProfilePageComponent {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly myRestaurantApi = inject(MyRestaurantApiService);
+  private readonly myBusinessApi = inject(MyBusinessApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly storeIcon = Store;
@@ -223,7 +223,7 @@ export class RestaurantProfilePageComponent {
   readonly clockIcon = Clock3;
   readonly refreshIcon = RefreshCw;
 
-  readonly restaurant = signal<MyRestaurantResponse | null>(null);
+  readonly restaurant = signal<MyBusinessResponse | null>(null);
   readonly isLoading = signal(true);
   readonly isSaving = signal(false);
   readonly errorMessage = signal('');
@@ -264,8 +264,8 @@ export class RestaurantProfilePageComponent {
       this.logoObjectUrl = null;
     }
 
-    this.myRestaurantApi
-      .getMyRestaurant()
+    this.myBusinessApi
+      .getMyBusiness()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (restaurant) => {
@@ -283,7 +283,7 @@ export class RestaurantProfilePageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el perfil del restaurante.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el perfil del negocio.'));
           this.isLoading.set(false);
         },
       });
@@ -343,8 +343,8 @@ export class RestaurantProfilePageComponent {
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    this.myRestaurantApi
-      .updateMyRestaurant(formData)
+    this.myBusinessApi
+      .updateMyBusiness(formData)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (updatedRestaurant) => {
@@ -365,7 +365,7 @@ export class RestaurantProfilePageComponent {
           });
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar el perfil del restaurante.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar el perfil del negocio.'));
           this.isSaving.set(false);
         },
       });
@@ -403,3 +403,4 @@ export class RestaurantProfilePageComponent {
     return value.length === 5 ? `${value}:00` : value;
   }
 }
+

@@ -11,11 +11,11 @@ import {
 } from 'lucide-angular';
 import { debounceTime } from 'rxjs';
 import {
-  CreateMenuCategoryRequest,
-  MenuCategoryResponse,
-  UpdateMenuCategoryRequest,
-} from '../../core/models/restaurant.models';
-import { MyMenuApiService } from '../../core/services/my-menu-api.service';
+  CatalogCategoryResponse,
+  CreateCatalogCategoryRequest,
+  UpdateCatalogCategoryRequest,
+} from '../../core/models/business.model';
+import { MyCatalogApiService } from '../../core/services/my-catalog-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
@@ -25,7 +25,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 
 @Component({
-  selector: 'app-restaurant-categories-page',
+  selector: 'app-business-categories-page',
   standalone: true,
   imports: [
     PageHeaderComponent,
@@ -43,7 +43,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         <app-page-header
           eyebrow="AppuraPe Menu"
           title="Categorias"
-          subtitle="Crea y edita categorias para ordenar mejor el menu del restaurante."
+          subtitle="Crea y edita categorias para ordenar mejor el catalogo del negocio."
         />
 
         @if (errorMessage()) {
@@ -199,9 +199,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     </section>
   `,
 })
-export class RestaurantCategoriesPageComponent {
+export class BusinessCategoriesPageComponent {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly myMenuApi = inject(MyMenuApiService);
+  private readonly myCatalogApi = inject(MyCatalogApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly folderIcon = FolderKanban;
@@ -210,8 +210,8 @@ export class RestaurantCategoriesPageComponent {
   readonly refreshIcon = RefreshCw;
   readonly layersIcon = Layers3;
 
-  readonly categories = signal<MenuCategoryResponse[]>([]);
-  readonly editingCategory = signal<MenuCategoryResponse | null>(null);
+  readonly categories = signal<CatalogCategoryResponse[]>([]);
+  readonly editingCategory = signal<CatalogCategoryResponse | null>(null);
   readonly isLoading = signal(true);
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal('');
@@ -245,7 +245,7 @@ export class RestaurantCategoriesPageComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    this.myMenuApi
+    this.myCatalogApi
       .getCategories({
         q: filters.q,
         isActive: this.toOptionalBoolean(filters.isActive),
@@ -274,7 +274,7 @@ export class RestaurantCategoriesPageComponent {
     this.loadCategories();
   }
 
-  startEdit(category: MenuCategoryResponse): void {
+  startEdit(category: CatalogCategoryResponse): void {
     this.editingCategory.set(category);
     this.successMessage.set('');
     this.errorMessage.set('');
@@ -308,13 +308,13 @@ export class RestaurantCategoriesPageComponent {
     this.successMessage.set('');
 
     if (editingCategory) {
-      const request: UpdateMenuCategoryRequest = {
+      const request: UpdateCatalogCategoryRequest = {
         name: raw.name.trim(),
         sortOrder: raw.sortOrder,
         isActive: raw.isActive,
       };
 
-      this.myMenuApi
+      this.myCatalogApi
         .updateCategory(editingCategory.id, request)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
@@ -333,12 +333,12 @@ export class RestaurantCategoriesPageComponent {
       return;
     }
 
-    const request: CreateMenuCategoryRequest = {
+    const request: CreateCatalogCategoryRequest = {
       name: raw.name.trim(),
       sortOrder: raw.sortOrder,
     };
 
-    this.myMenuApi
+    this.myCatalogApi
       .createCategory(request)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -367,3 +367,4 @@ export class RestaurantCategoriesPageComponent {
     return null;
   }
 }
+

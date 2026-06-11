@@ -1,6 +1,6 @@
-import { OrderStatus } from '../models/restaurant.models';
+import { BusinessOrderStatus } from '../models/business.model';
 
-const ORDER_STATUS_TO_VALUE: Record<OrderStatus, number> = {
+const ORDER_STATUS_TO_VALUE: Record<BusinessOrderStatus, number> = {
   Pending: 0,
   Accepted: 1,
   Preparing: 2,
@@ -12,6 +12,6 @@ const ORDER_STATUS_TO_VALUE: Record<OrderStatus, number> = {
   Cancelled: 8,
 };
 
-export function toOrderStatusValue(status: OrderStatus): number {
+export function toOrderStatusValue(status: BusinessOrderStatus): number {
   return ORDER_STATUS_TO_VALUE[status];
 }

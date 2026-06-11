@@ -6,60 +6,60 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  PublicSearchResponse,
-  RestaurantListItemResponse,
-  ZoneListItemResponse,
-} from '../../core/models/restaurants.models';
-import { RestaurantsApiService } from '../../core/services/restaurants-api.service';
+  BusinessListItemResponse,
+  BusinessZoneListItemResponse,
+  PublicBusinessSearchResponse,
+} from '../../core/models/businesses.models';
+import { BusinessesApiService } from '../../core/services/businesses-api.service';
 import { ZonesApiService } from '../../core/services/zones-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
-import { MenuCardComponent } from './components/menu-card.component';
-import { RestaurantsFiltersCardComponent } from './components/restaurants-filters-card.component';
-import { RestaurantsHeroSectionComponent } from './components/restaurants-hero-section.component';
-import { RestaurantsPageContainerComponent } from './components/restaurants-page-container.component';
-import { SectionHeaderComponent } from './components/section-header.component';
-import { StateCardComponent } from './components/state-card.component';
+import { BusinessesFiltersCardComponent } from './businesses-filters-card.component';
+import { BusinessesHeroSectionComponent } from './businesses-hero-section.component';
+import { BusinessesPageContainerComponent } from './businesses-page-container.component';
+import { MenuCardComponent } from '../restaurants/components/menu-card.component';
+import { SectionHeaderComponent } from '../restaurants/components/section-header.component';
+import { StateCardComponent } from '../restaurants/components/state-card.component';
 
 type BrowseResultsState = {
   mode: 'browse';
-  restaurants: RestaurantListItemResponse[];
+  restaurants: BusinessListItemResponse[];
 };
 
 type SearchResultsState = {
   mode: 'search';
-  searchResults: PublicSearchResponse;
+  searchResults: PublicBusinessSearchResponse;
 };
 
 type RestaurantListViewState = BrowseResultsState | SearchResultsState;
 
 @Component({
-  selector: 'app-restaurant-list-page',
+  selector: 'app-business-list-page',
   standalone: true,
   imports: [
-    RestaurantsPageContainerComponent,
-    RestaurantsHeroSectionComponent,
-    RestaurantsFiltersCardComponent,
+    BusinessesPageContainerComponent,
+    BusinessesHeroSectionComponent,
+    BusinessesFiltersCardComponent,
     SectionHeaderComponent,
     StateCardComponent,
     MenuCardComponent,
     CurrencyPipe,
   ],
-  templateUrl: './restaurant-list-page.component.html',
+  templateUrl: './business-list-page.component.html',
 })
-export class RestaurantListPageComponent {
+export class BusinessListPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly restaurantsApi = inject(RestaurantsApiService);
+  private readonly businessesApi = inject(BusinessesApiService);
   private readonly zonesApi = inject(ZonesApiService);
   private readonly notificationService = inject(NotificationService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private latestRequestId = 0;
 
-  readonly restaurants = signal<RestaurantListItemResponse[]>([]);
-  readonly searchResults = signal<PublicSearchResponse | null>(null);
-  readonly zones = signal<ZoneListItemResponse[]>([]);
+  readonly restaurants = signal<BusinessListItemResponse[]>([]);
+  readonly searchResults = signal<PublicBusinessSearchResponse | null>(null);
+  readonly zones = signal<BusinessZoneListItemResponse[]>([]);
   readonly isLoading = signal(true);
   readonly isLoadingZones = signal(true);
   readonly errorMessage = signal('');
@@ -83,7 +83,7 @@ export class RestaurantListPageComponent {
   );
   readonly browseSummary = computed(() => {
     const count = this.restaurants().length;
-    const label = count === 1 ? '1 restaurante disponible' : `${count} restaurantes disponibles`;
+    const label = count === 1 ? '1 negocio disponible' : `${count} negocios disponibles`;
 
     if (hasText(this.appliedZoneName())) {
       return `${label} en ${this.appliedZoneName()}.`;
@@ -95,7 +95,7 @@ export class RestaurantListPageComponent {
     const foods = this.foods().length;
     const restaurants = this.relatedRestaurants().length;
     const foodsLabel = foods === 1 ? '1 comida' : `${foods} comidas`;
-    const restaurantsLabel = restaurants === 1 ? '1 restaurante' : `${restaurants} restaurantes`;
+    const restaurantsLabel = restaurants === 1 ? '1 negocio' : `${restaurants} negocios`;
 
     return `${foodsLabel} y ${restaurantsLabel} relacionados encontrados.`;
   });
@@ -119,7 +119,7 @@ export class RestaurantListPageComponent {
     this.searchForm.controls.q.setValue('');
   }
 
-  hasZone(restaurant: RestaurantListItemResponse): boolean {
+  hasZone(restaurant: BusinessListItemResponse): boolean {
     return hasText(restaurant.zoneName);
   }
 
@@ -133,26 +133,26 @@ export class RestaurantListPageComponent {
 
   emptyStateTitle(): string {
     if (hasText(this.appliedZoneName())) {
-      return `No encontramos restaurantes en ${this.appliedZoneName()}`;
+      return `No encontramos negocios en ${this.appliedZoneName()}`;
     }
 
-    return 'No hay restaurantes disponibles ahora';
+    return 'No hay negocios disponibles ahora';
   }
 
   emptyStateMessage(): string {
     if (hasText(this.appliedZoneName())) {
-      return 'Prueba con otra zona o limpia el filtro para ver mas restaurantes disponibles en AppuraPe.';
+      return 'Prueba con otra zona o limpia el filtro para ver mas negocios disponibles en AppuraPe.';
     }
 
-    return 'Vuelve a intentarlo en unos minutos. Cuando haya restaurantes activos, apareceran aqui con su horario y zona.';
+    return 'Vuelve a intentarlo en unos minutos. Cuando haya negocios activos, apareceran aqui con su horario y zona.';
   }
 
   searchEmptyMessage(): string {
     if (this.errorMessage()) {
-      return 'Intenta nuevamente o limpia la busqueda para volver al listado normal de restaurantes.';
+      return 'Intenta nuevamente o limpia la busqueda para volver al listado normal de negocios.';
     }
 
-    return 'Prueba con otro plato, una categoria, un restaurante o limpia la busqueda para volver al listado normal.';
+    return 'Prueba con otro plato, una categoria, un negocio o limpia la busqueda para volver al listado normal.';
   }
 
   private syncFormWithQueryParams(): void {
@@ -200,7 +200,7 @@ export class RestaurantListPageComponent {
         switchMap((filters) => {
           const requestId = ++this.latestRequestId;
           const request$ = filters.q
-            ? this.restaurantsApi.searchPublic(filters.q).pipe(
+            ? this.businessesApi.searchPublic(filters.q).pipe(
                 map(
                   (searchResults): RestaurantListViewState => ({
                     mode: 'search',
@@ -217,7 +217,7 @@ export class RestaurantListPageComponent {
                   });
                 }),
               )
-            : this.restaurantsApi.getRestaurants(undefined, filters.zoneId || undefined).pipe(
+            : this.businessesApi.getBusinesses(undefined, filters.zoneId || undefined).pipe(
                 map(
                   (restaurants): RestaurantListViewState => ({
                     mode: 'browse',
@@ -297,7 +297,7 @@ export class RestaurantListPageComponent {
           this.isLoadingZones.set(false);
         },
         error: (error) => {
-          const message = getApiErrorMessage(error, 'No pudimos cargar las zonas, pero puedes buscar por comida o restaurante.');
+          const message = getApiErrorMessage(error, 'No pudimos cargar las zonas, pero puedes buscar por comida o negocio.');
           this.zonesErrorMessage.set(message);
           this.notificationService.warning(message);
           this.isLoadingZones.set(false);
@@ -305,7 +305,7 @@ export class RestaurantListPageComponent {
       });
   }
 
-  private emptySearchResults(query: string): PublicSearchResponse {
+  private emptySearchResults(query: string): PublicBusinessSearchResponse {
     return {
       query,
       foods: [],
@@ -327,3 +327,4 @@ export class RestaurantListPageComponent {
     return `${baseUrl.replace(/\/$/, '')}/2026/banner1.png`;
   }
 }
+

@@ -15,11 +15,11 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
         <app-page-header
           eyebrow="AppuraPe"
           title="Conecta tu pedido con la red que ya se mueve cerca"
-          subtitle="Explora restaurantes, arma tu pedido y sigue cada paso dentro de una plataforma pensada para delivery, colaboradores verificados y confianza local."
+          subtitle="Explora negocios locales, arma tu pedido y sigue cada paso dentro de una plataforma pensada para delivery, colaboradores verificados y confianza comunitaria."
         />
 
         <div class="hero-actions">
-          <app-button variant="secondary" [routerLink]="'/restaurants'">Ver restaurantes</app-button>
+          <app-button variant="secondary" [routerLink]="'/businesses'">Explorar negocios</app-button>
           @if (isAuthenticated()) {
             <app-button variant="ghost" [routerLink]="'/orders'">Mis pedidos</app-button>
           } @else {
@@ -31,8 +31,8 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
       <div class="grid cards">
         <app-surface-card>
           <span class="eyebrow">Explora</span>
-          <h2>Restaurantes y comercios listos para moverse</h2>
-          <p class="muted">Revisa zona, horario, disponibilidad y menu antes de avanzar.</p>
+          <h2>Negocios y comercios listos para moverse</h2>
+          <p class="muted">Revisa zona, horario, disponibilidad y catálogo antes de avanzar.</p>
         </app-surface-card>
 
         <app-surface-card>

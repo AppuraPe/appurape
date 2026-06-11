@@ -1,11 +1,11 @@
 import { Component, EventEmitter, Output, input } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LucideAngularModule, FilterX, MapPin, Search } from 'lucide-angular';
-import { BusinessZoneListItemResponse } from '../../../core/models/businesses.models';
-import { AppButtonComponent } from '../../../shared/components/app-button.component';
+import { BusinessZoneListItemResponse } from '../../core/models/businesses.models';
+import { AppButtonComponent } from '../../shared/components/app-button.component';
 
 @Component({
-  selector: 'app-restaurants-filters-card',
+  selector: 'app-businesses-filters-card',
   standalone: true,
   imports: [ReactiveFormsModule, LucideAngularModule, AppButtonComponent],
   template: `
@@ -69,7 +69,7 @@ import { AppButtonComponent } from '../../../shared/components/app-button.compon
     </section>
   `,
 })
-export class RestaurantsFiltersCardComponent {
+export class BusinessesFiltersCardComponent {
   readonly form = input.required<FormGroup>();
   readonly zones = input<BusinessZoneListItemResponse[]>([]);
   readonly isSearchMode = input(false);
@@ -83,3 +83,4 @@ export class RestaurantsFiltersCardComponent {
   readonly mapPinIcon = MapPin;
   readonly filterXIcon = FilterX;
 }
+

@@ -32,34 +32,34 @@ export class PublicLayoutComponent {
   readonly primaryDestinationRoute = computed(() =>
     this.currentRole() === 'Customer' ? '/orders' : this.defaultRoute(),
   );
-  readonly communityRoute = computed(() => '/community');
+  readonly communityRoute = computed(() => '/favors');
   readonly isNavbarOpen = signal(false);
   readonly isUserDropdownOpen = signal(false);
   readonly currentPath = signal(this.router.url);
   readonly mobileBackFallback = computed(() => {
     const path = this.currentPath();
 
-    if (path.startsWith('/restaurants/')) {
-      return '/restaurants';
+    if (path.startsWith('/restaurants/') || path.startsWith('/businesses/')) {
+      return '/businesses';
     }
 
     if (path.startsWith('/orders/')) {
       return '/orders';
     }
 
-    if (path.startsWith('/community/requests/')) {
-      return '/community';
+    if (path.startsWith('/community/requests/') || path.startsWith('/favors/')) {
+      return '/favors';
     }
 
     if (path.startsWith('/register')) {
-      return '/restaurants';
+      return '/businesses';
     }
 
-    return '/restaurants';
+    return '/businesses';
   });
   readonly shouldShowMobileBack = computed(() => {
     const path = this.currentPath();
-    return path.startsWith('/restaurants/') || path.startsWith('/orders/') || path.startsWith('/community/requests/') || path === '/register';
+    return path.startsWith('/businesses/') || path.startsWith('/restaurants/') || path.startsWith('/orders/') || path.startsWith('/community/requests/') || path.startsWith('/favors/') || path === '/register';
   });
 
   constructor() {

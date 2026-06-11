@@ -73,7 +73,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 id="availableOrderSearch"
                 type="search"
                 formControlName="q"
-                placeholder="Restaurante, direccion o zona"
+                placeholder="Negocio, direcci?n o zona"
                 autocomplete="off"
                 class="min-h-0 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0"
               />

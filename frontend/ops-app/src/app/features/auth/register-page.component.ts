@@ -50,7 +50,7 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
   template: `
     <section class="px-4 py-4 sm:px-6 sm:py-6">
       <div class="mx-auto grid w-full max-w-[980px] gap-3">
-        <app-back-button fallbackUrl="/restaurants" label="Volver a restaurantes" />
+        <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
       </div>
       <div class="mx-auto mt-3 grid w-full max-w-[980px] gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
         <app-surface-card variant="soft" extraClass="hidden gap-4 p-4 sm:p-5 lg:grid">

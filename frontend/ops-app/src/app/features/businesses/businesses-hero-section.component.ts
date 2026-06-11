@@ -2,7 +2,7 @@ import { Component, EventEmitter, Output, input } from '@angular/core';
 import { LucideAngularModule, Search, Sparkles } from 'lucide-angular';
 
 @Component({
-  selector: 'app-restaurants-hero-section',
+  selector: 'app-businesses-hero-section',
   standalone: true,
   imports: [LucideAngularModule],
   template: `
@@ -70,7 +70,7 @@ import { LucideAngularModule, Search, Sparkles } from 'lucide-angular';
     </section>
   `,
 })
-export class RestaurantsHeroSectionComponent {
+export class BusinessesHeroSectionComponent {
   readonly title = input.required<string>();
   readonly subtitle = input.required<string>();
   readonly primaryChipLabel = input.required<string>();
@@ -94,3 +94,4 @@ export class RestaurantsHeroSectionComponent {
     return 'bg-[radial-gradient(circle_at_top_left,rgba(229,27,35,0.24),transparent_36%),linear-gradient(180deg,rgba(6,25,43,0.76),rgba(6,25,43,0.54))]';
   }
 }
+

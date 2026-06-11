@@ -31,7 +31,7 @@ import { hasText } from '../../../core/utils/api-utils';
         <div class="mt-1 sm:mt-2">
           <a
             class="inline-flex min-h-10 w-full items-center justify-center rounded-full bg-accent-500 px-4 text-sm font-bold text-surface-soft transition hover:bg-accent-600"
-            [routerLink]="['/restaurants', food().restaurantId]"
+            [routerLink]="['/businesses', food().restaurantId]"
             [queryParams]="{ menuSearch: appliedQuery(), searchSource: 'global', matchedItemId: food().menuItemId, matchedCategoryName: food().categoryName || null }"
           >
             {{ food().price | currency: 'PEN' : 'symbol' : '1.2-2' }}

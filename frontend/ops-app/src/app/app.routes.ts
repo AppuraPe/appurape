@@ -1,6 +1,30 @@
-﻿import { Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+
+const businessOpsChildren: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./features/business/business-dashboard-page.component').then((m) => m.BusinessDashboardPageComponent),
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./features/business/business-profile-page.component').then((m) => m.BusinessProfilePageComponent),
+  },
+  {
+    path: 'menu/categories',
+    loadComponent: () => import('./features/business/business-categories-page.component').then((m) => m.BusinessCategoriesPageComponent),
+  },
+  {
+    path: 'menu/items',
+    loadComponent: () => import('./features/business/business-items-page.component').then((m) => m.BusinessItemsPageComponent),
+  },
+  {
+    path: 'orders',
+    loadComponent: () => import('./features/business/business-orders-page.component').then((m) => m.BusinessOrdersPageComponent),
+  },
+];
 
 export const routes: Routes = [
   {
@@ -15,18 +39,26 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./layout/public-layout.component').then((m) => m.PublicLayoutComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'restaurants' },
+      { path: '', pathMatch: 'full', redirectTo: 'businesses' },
       {
         path: 'register',
         loadComponent: () => import('./features/auth/register-page.component').then((m) => m.RegisterPageComponent),
       },
       {
         path: 'restaurants',
-        loadComponent: () => import('./features/restaurants/restaurant-list-page.component').then((m) => m.RestaurantListPageComponent),
+        loadComponent: () => import('./features/businesses/business-list-page.component').then((m) => m.BusinessListPageComponent),
+      },
+      {
+        path: 'businesses',
+        loadComponent: () => import('./features/businesses/business-list-page.component').then((m) => m.BusinessListPageComponent),
       },
       {
         path: 'restaurants/:id',
-        loadComponent: () => import('./features/restaurants/restaurant-detail-page.component').then((m) => m.RestaurantDetailPageComponent),
+        loadComponent: () => import('./features/businesses/business-detail-page.component').then((m) => m.BusinessDetailPageComponent),
+      },
+      {
+        path: 'businesses/:id',
+        loadComponent: () => import('./features/businesses/business-detail-page.component').then((m) => m.BusinessDetailPageComponent),
       },
       {
         path: 'community',
@@ -34,7 +66,17 @@ export const routes: Routes = [
         loadComponent: () => import('./features/community/community-hub-page.component').then((m) => m.CommunityHubPageComponent),
       },
       {
+        path: 'favors',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/community/community-hub-page.component').then((m) => m.CommunityHubPageComponent),
+      },
+      {
         path: 'community/requests/:id',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/community/community-request-detail-page.component').then((m) => m.CommunityRequestDetailPageComponent),
+      },
+      {
+        path: 'favors/:id',
         canActivate: [authGuard],
         loadComponent: () => import('./features/community/community-request-detail-page.component').then((m) => m.CommunityRequestDetailPageComponent),
       },
@@ -55,11 +97,23 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/restaurant-registration-start-page.component').then((m) => m.RestaurantRegistrationStartPageComponent),
   },
   {
+    path: 'register/business',
+    loadComponent: () => import('./features/auth/restaurant-registration-start-page.component').then((m) => m.RestaurantRegistrationStartPageComponent),
+  },
+  {
     path: 'register/restaurant/verify',
     loadComponent: () => import('./features/auth/restaurant-registration-verify-page.component').then((m) => m.RestaurantRegistrationVerifyPageComponent),
   },
   {
+    path: 'register/business/verify',
+    loadComponent: () => import('./features/auth/restaurant-registration-verify-page.component').then((m) => m.RestaurantRegistrationVerifyPageComponent),
+  },
+  {
     path: 'register/restaurant/complete',
+    loadComponent: () => import('./features/auth/restaurant-registration-complete-page.component').then((m) => m.RestaurantRegistrationCompletePageComponent),
+  },
+  {
+    path: 'register/business/complete',
     loadComponent: () => import('./features/auth/restaurant-registration-complete-page.component').then((m) => m.RestaurantRegistrationCompletePageComponent),
   },
   {
@@ -87,29 +141,13 @@ export const routes: Routes = [
         path: 'restaurant',
         canActivate: [roleGuard],
         data: { roles: ['Restaurant'] },
-        children: [
-          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          {
-            path: 'dashboard',
-            loadComponent: () => import('./features/restaurant/restaurant-dashboard-page.component').then((m) => m.RestaurantDashboardPageComponent),
-          },
-          {
-            path: 'profile',
-            loadComponent: () => import('./features/restaurant/restaurant-profile-page.component').then((m) => m.RestaurantProfilePageComponent),
-          },
-          {
-            path: 'menu/categories',
-            loadComponent: () => import('./features/restaurant/restaurant-categories-page.component').then((m) => m.RestaurantCategoriesPageComponent),
-          },
-          {
-            path: 'menu/items',
-            loadComponent: () => import('./features/restaurant/restaurant-items-page.component').then((m) => m.RestaurantItemsPageComponent),
-          },
-          {
-            path: 'orders',
-            loadComponent: () => import('./features/restaurant/restaurant-orders-page.component').then((m) => m.RestaurantOrdersPageComponent),
-          },
-        ],
+        children: businessOpsChildren,
+      },
+      {
+        path: 'business',
+        canActivate: [roleGuard],
+        data: { roles: ['Restaurant'] },
+        children: businessOpsChildren,
       },
       {
         path: 'driver',
@@ -147,15 +185,15 @@ export const routes: Routes = [
           },
           {
             path: 'restaurants/pending',
-            loadComponent: () => import('./features/admin/admin-pending-restaurants-page.component').then((m) => m.AdminPendingRestaurantsPageComponent),
+            loadComponent: () => import('./features/admin/admin-pending-businesses-page.component').then((m) => m.AdminPendingBusinessesPageComponent),
           },
           {
             path: 'restaurants',
-            loadComponent: () => import('./features/admin/admin-restaurants-page.component').then((m) => m.AdminRestaurantsPageComponent),
+            loadComponent: () => import('./features/admin/admin-businesses-page.component').then((m) => m.AdminBusinessesPageComponent),
           },
           {
             path: 'restaurants/:id',
-            loadComponent: () => import('./features/admin/admin-restaurant-detail-page.component').then((m) => m.AdminRestaurantDetailPageComponent),
+            loadComponent: () => import('./features/admin/admin-business-detail-page.component').then((m) => m.AdminBusinessDetailPageComponent),
           },
           {
             path: 'drivers/pending',

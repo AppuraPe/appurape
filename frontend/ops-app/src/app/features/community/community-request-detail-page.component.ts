@@ -37,7 +37,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
   ],
   template: `
     <section class="grid gap-5">
-      <app-back-button fallbackUrl="/community" label="Volver al hub" />
+      <app-back-button fallbackUrl="/favors" label="Volver a favores" />
 
       <app-surface-card variant="page">
         <app-page-header

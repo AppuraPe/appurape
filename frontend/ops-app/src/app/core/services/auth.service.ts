@@ -11,7 +11,6 @@ import {
   ResendRegistrationCodeRequest,
   StartCustomerRegistrationRequest,
   StartDriverRegistrationRequest,
-  StartRestaurantRegistrationRequest,
   UserRole,
   VerificationCodeResponse,
   VerificationStatusResponse,

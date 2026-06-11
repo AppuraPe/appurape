@@ -75,7 +75,7 @@ export class OpsLayoutComponent {
     }
 
     if (role === 'Restaurant') {
-      return 'Restaurante';
+      return 'Negocio';
     }
 
     if (role === 'Driver') {
@@ -91,12 +91,12 @@ export class OpsLayoutComponent {
     switch (role) {
       case 'Restaurant':
         return [
-          { label: 'Dashboard', path: '/restaurant/dashboard', helper: 'Estado y resumen' },
-          { label: 'Pedidos', path: '/restaurant/orders', helper: 'Preparacion y pickup' },
-          { label: 'Perfil', path: '/restaurant/profile', helper: 'Visibilidad publica' },
-          { label: 'Categorias', path: '/restaurant/menu/categories', helper: 'Organiza menu' },
-          { label: 'Productos', path: '/restaurant/menu/items', helper: 'Disponibilidad' },
-          { label: 'Comunidad', path: '/community', helper: 'Solicitudes y trayectos' },
+          { label: 'Dashboard', path: '/business/dashboard', helper: 'Estado y resumen' },
+          { label: 'Pedidos', path: '/business/orders', helper: 'Preparaci?n y pickup' },
+          { label: 'Perfil', path: '/business/profile', helper: 'Visibilidad p?blica' },
+          { label: 'Categor?as', path: '/business/menu/categories', helper: 'Organiza cat?logo' },
+          { label: 'Productos', path: '/business/menu/items', helper: 'Disponibilidad' },
+          { label: 'Favores', path: '/favors', helper: 'Solicitudes y trayectos' },
         ];
       case 'Driver':
         return [
@@ -109,9 +109,9 @@ export class OpsLayoutComponent {
         return [
           { label: 'Dashboard', path: '/admin/dashboard', helper: 'Pendientes clave' },
           { label: 'Comunidad', path: '/admin/community', helper: 'Colaboradores y métricas' },
-          { label: 'Restaurantes pendientes', path: '/admin/restaurants/pending', helper: 'Aprobar o rechazar' },
+          { label: 'Negocios pendientes', path: '/admin/restaurants/pending', helper: 'Aprobar o rechazar' },
           { label: 'Drivers pendientes', path: '/admin/drivers/pending', helper: 'Aprobar o rechazar' },
-          { label: 'Todos los restaurantes', path: '/admin/restaurants', helper: 'Estados y detalle' },
+          { label: 'Todos los negocios', path: '/admin/restaurants', helper: 'Estados y detalle' },
           { label: 'Todos los drivers', path: '/admin/drivers', helper: 'Estados y detalle' },
         ];
       default:

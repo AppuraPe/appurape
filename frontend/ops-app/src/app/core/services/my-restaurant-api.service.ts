@@ -1,19 +1,17 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { MyRestaurantResponse } from '../models/restaurant.models';
+import { MyBusinessResponse } from '../models/business.model';
+import { MyBusinessApiService } from './my-business-api.service';
 
 @Injectable({ providedIn: 'root' })
 export class MyRestaurantApiService {
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiBaseUrl}/api/my/restaurant`;
+  private readonly myBusinessApi = inject(MyBusinessApiService);
 
-  getMyRestaurant(): Observable<MyRestaurantResponse> {
-    return this.http.get<MyRestaurantResponse>(this.baseUrl);
+  getMyRestaurant(): Observable<MyBusinessResponse> {
+    return this.myBusinessApi.getMyBusiness();
   }
 
-  updateMyRestaurant(request: FormData): Observable<MyRestaurantResponse> {
-    return this.http.put<MyRestaurantResponse>(this.baseUrl, request);
+  updateMyRestaurant(request: FormData): Observable<MyBusinessResponse> {
+    return this.myBusinessApi.updateMyBusiness(request);
   }
 }

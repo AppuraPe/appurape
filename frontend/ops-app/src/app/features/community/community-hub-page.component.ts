@@ -38,12 +38,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
   ],
   template: `
     <section class="grid gap-5">
-      <app-back-button fallbackUrl="/restaurants" label="Volver a restaurantes" />
+      <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
 
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Comunidad"
-          title="Red comunitaria"
+          eyebrow="AppuraPe Favores"
+          title="Red de favores"
           subtitle="Activa tu disponibilidad, registra trayectos y gestiona solicitudes compensadas desde una vista más simple."
         />
 

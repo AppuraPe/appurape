@@ -25,7 +25,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
   template: `
     <section class="px-4 py-4 sm:px-6 sm:py-6">
       <div class="mx-auto grid w-full max-w-[960px] gap-3">
-        <app-back-button fallbackUrl="/restaurants" label="Volver a restaurantes" />
+        <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
       </div>
       <div class="mx-auto mt-3 grid w-full max-w-[960px] gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
         <app-surface-card variant="soft" extraClass="hidden gap-4 p-4 sm:p-5 lg:grid">
@@ -35,7 +35,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             </span>
             <h1 class="text-3xl font-black tracking-[-0.05em] sm:text-[2.25rem]">Tu acceso diario</h1>
             <p class="max-w-md text-sm leading-6 text-text-muted">
-              Entra rápido para pedir, repartir o gestionar tu restaurante sin pantallas pesadas.
+              Entra rápido para pedir, repartir o gestionar tu negocio sin pantallas pesadas.
             </p>
           </div>
 
@@ -140,7 +140,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 <span class="text-sm font-black text-loreto-carbon">Crear cuenta</span>
                 <div class="flex flex-wrap gap-2 text-sm font-semibold text-primary-700">
                   <a class="rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register">Cliente</a>
-                  <a class="rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/restaurant">Restaurante</a>
+                  <a class="rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/restaurant">Negocio</a>
                   <a class="rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/driver">Driver</a>
                 </div>
               </div>

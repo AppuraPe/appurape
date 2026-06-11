@@ -1,14 +1,14 @@
-<app-restaurants-hero-section
-  [title]="'Explora restaurantes sin perder tiempo'"
+<app-businesses-hero-section
+  [title]="'Explorar negocios sin perder tiempo'"
   [subtitle]="isSearchMode() ? searchSummary() : browseSummary()"
   [primaryChipLabel]="'Buscar'"
   [secondaryChipLabel]="'Filtrar'"
   [backgroundImageUrl]="heroBackgroundImageUrl"
   [overlayStrength]="'soft'"
 />
-<app-restaurants-page-container>
+<app-businesses-page-container>
   <section class="relative pb-2 md:pb-4">
-    <app-restaurants-filters-card
+    <app-businesses-filters-card
       [form]="searchForm"
       [zones]="zones()"
       [isSearchMode]="isSearchMode()"
@@ -41,10 +41,10 @@
       <app-section-header [title]="'Resultados para ' + appliedQuery()" [subtitle]="searchSummary()" badge="Busqueda" badgeClass="bg-primary-100 text-primary-700" />
 
       <section class="space-y-4">
-        <app-section-header title="Comidas" [subtitle]="'Platos relacionados con tu búsqueda.'" [badge]="'' + foods().length" badgeClass="bg-[#ffe6e3] text-primary-700" />
+        <app-section-header title="Productos" [subtitle]="'Productos relacionados con tu búsqueda.'" [badge]="'' + foods().length" badgeClass="bg-[#ffe6e3] text-primary-700" />
 
         @if (!foods().length) {
-          <app-state-card title="Sin comidas" message="No encontramos platos visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+          <app-state-card title="Sin productos" message="No encontramos productos visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
         } @else {
           <div class="grid gap-4 md:grid-cols-2">
             @for (food of foods(); track food.menuItemId) {
@@ -57,9 +57,9 @@
                 [rightChip]="food.categoryName || ''"
                 [rightChipTone]="'muted'"
                 [priceLabel]="'' + (food.price | currency: 'PEN' : 'symbol' : '1.2-2')"
-                [actionLabel]="'Ver restaurante'"
+                [actionLabel]="'Ver negocio'"
                 [actionMode]="'link'"
-                [actionRoute]="['/restaurants', food.restaurantId]"
+                [actionRoute]="['/businesses', food.restaurantId]"
                 [actionQueryParams]="{ menuSearch: appliedQuery(), searchSource: 'global', matchedItemId: food.menuItemId, matchedCategoryName: food.categoryName || null }"
               />
             }
@@ -68,23 +68,23 @@
       </section>
 
       <section class="space-y-4">
-        <app-section-header title="Restaurantes" [subtitle]="'Locales que coinciden con tu búsqueda.'" [badge]="'' + relatedRestaurants().length" badgeClass="bg-[#e8eef7] text-[#23456a]" />
+        <app-section-header title="Negocios" [subtitle]="'Negocios que coinciden con tu búsqueda.'" [badge]="'' + relatedRestaurants().length" badgeClass="bg-[#e8eef7] text-[#23456a]" />
 
         @if (!relatedRestaurants().length) {
-          <app-state-card title="Sin restaurantes" message="No encontramos restaurantes visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+          <app-state-card title="Sin negocios" message="No encontramos negocios visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
         } @else {
           <div class="grid gap-4 md:grid-cols-2">
             @for (restaurant of relatedRestaurants(); track restaurant.restaurantId) {
               <app-menu-card
                 [title]="restaurant.name"
                 [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
-                [description]="'Disponible para explorar su menú y pedir desde la app.'"
+                [description]="'Disponible para explorar su catálogo y pedir desde la app.'"
                 [imageUrl]="restaurant.logoUrl"
                 [leftChip]="restaurant.zoneName || ''"
                 [rightChip]="''"
-                [actionLabel]="'Ver menú'"
+                [actionLabel]="'Ver catálogo'"
                 [actionMode]="'link'"
-                [actionRoute]="['/restaurants', restaurant.restaurantId]"
+                [actionRoute]="['/businesses', restaurant.restaurantId]"
               />
             }
           </div>
@@ -98,23 +98,23 @@
       }
     </app-state-card>
   } @else {
-    <app-section-header title="Restaurantes" [subtitle]="browseSummary()" [badge]="hasZoneFilter() ? 'Zona' : ''" badgeClass="bg-[#e8eef7] text-[#23456a]" />
+      <app-section-header title="Negocios" [subtitle]="browseSummary()" [badge]="hasZoneFilter() ? 'Zona' : ''" badgeClass="bg-[#e8eef7] text-[#23456a]" />
 
     <div class="grid gap-4 md:grid-cols-2">
       @for (restaurant of restaurants(); track restaurant.id) {
-        <app-menu-card
-          [title]="restaurant.name"
-          [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
-          [description]="'Explora el menú y arma tu pedido sin salir del flujo móvil.'"
-          [imageUrl]="restaurant.logoUrl"
-          [leftChip]="restaurant.zoneName || ''"
-          [rightChip]="restaurant.isOpenNow ? 'Abierto' : 'Cerrado'"
-          [rightChipTone]="restaurant.isOpenNow ? 'success' : 'warning'"
-          [actionLabel]="'Ver menú'"
-          [actionMode]="'link'"
-          [actionRoute]="['/restaurants', restaurant.id]"
-        />
+            <app-menu-card
+              [title]="restaurant.name"
+              [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
+              [description]="'Explora el catálogo y arma tu pedido sin salir del flujo móvil.'"
+              [imageUrl]="restaurant.logoUrl"
+              [leftChip]="restaurant.zoneName || ''"
+              [rightChip]="restaurant.isOpenNow ? 'Abierto' : 'Cerrado'"
+              [rightChipTone]="restaurant.isOpenNow ? 'success' : 'warning'"
+              [actionLabel]="'Ver catálogo'"
+              [actionMode]="'link'"
+              [actionRoute]="['/businesses', restaurant.id]"
+            />
       }
     </div>
   }
-</app-restaurants-page-container>
+</app-businesses-page-container>

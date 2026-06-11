@@ -68,7 +68,7 @@ export abstract class AuthSessionStore {
       case 'Admin':
         return '/admin/dashboard';
       case 'Customer':
-        return '/restaurants';
+        return '/businesses';
       default:
         return '/login';
     }

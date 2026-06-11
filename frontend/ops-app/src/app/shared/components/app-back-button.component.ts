@@ -20,7 +20,7 @@ import { AppNavigationService } from '../../core/services/app-navigation.service
 export class AppBackButtonComponent {
   private readonly navigation = inject(AppNavigationService);
 
-  readonly fallbackUrl = input('/restaurants');
+  readonly fallbackUrl = input('/businesses');
   readonly label = input('Volver');
   readonly arrowLeftIcon = ArrowLeft;
 

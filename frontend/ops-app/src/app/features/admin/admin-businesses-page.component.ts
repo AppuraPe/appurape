@@ -15,8 +15,8 @@ import {
   Users,
 } from 'lucide-angular';
 import { debounceTime } from 'rxjs';
-import { AdminRestaurantListItemResponse } from '../../core/models/admin.models';
-import { AdminApiService } from '../../core/services/admin-api.service';
+import { AdminBusinessListItemResponse } from '../../core/models/admin-business.models';
+import { AdminBusinessesApiService } from '../../core/services/admin-businesses-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
@@ -26,7 +26,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 
 @Component({
-  selector: 'app-admin-restaurants-page',
+  selector: 'app-admin-businesses-page',
   standalone: true,
   imports: [
     DatePipe,
@@ -232,9 +232,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     </section>
   `,
 })
-export class AdminRestaurantsPageComponent {
+export class AdminBusinessesPageComponent {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly adminApi = inject(AdminApiService);
+  private readonly adminBusinessesApi = inject(AdminBusinessesApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly searchIcon = Search;
@@ -246,7 +246,7 @@ export class AdminRestaurantsPageComponent {
   readonly usersIcon = Users;
   readonly calendarClockIcon = CalendarClock;
 
-  readonly restaurants = signal<AdminRestaurantListItemResponse[]>([]);
+  readonly restaurants = signal<AdminBusinessListItemResponse[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
   readonly activeRestaurantsCount = computed(() => this.restaurants().filter((restaurant) => restaurant.isActive).length);
@@ -273,8 +273,8 @@ export class AdminRestaurantsPageComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    this.adminApi
-      .getRestaurants({
+    this.adminBusinessesApi
+      .getBusinesses({
         q: filters.q,
         approvalStatus: filters.approvalStatus || undefined,
         isActive: this.toOptionalBoolean(filters.isActive),
@@ -318,3 +318,4 @@ export class AdminRestaurantsPageComponent {
     return null;
   }
 }
+

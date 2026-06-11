@@ -21,7 +21,7 @@ export class AppNavigationService {
   readonly canGoBack = computed(() => this.previousUrl() !== null);
 
   constructor() {
-    this.routeStack.set([this.router.url || '/restaurants']);
+    this.routeStack.set([this.router.url || '/businesses']);
 
     this.router.events
       .pipe(
@@ -38,7 +38,7 @@ export class AppNavigationService {
       });
   }
 
-  goBack(fallbackUrl = '/restaurants'): void {
+  goBack(fallbackUrl = '/businesses'): void {
     if (this.previousUrl()) {
       this.location.back();
       return;

@@ -14,10 +14,10 @@ import {
 } from 'lucide-angular';
 import { debounceTime, forkJoin } from 'rxjs';
 import {
-  MenuCategoryResponse,
-  MenuItemResponse,
-} from '../../core/models/restaurant.models';
-import { MyMenuApiService } from '../../core/services/my-menu-api.service';
+  CatalogCategoryResponse,
+  CatalogItemResponse,
+} from '../../core/models/business.model';
+import { MyCatalogApiService } from '../../core/services/my-catalog-api.service';
 import { validateImageFile } from '../../core/utils/file-upload.utils';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
@@ -28,7 +28,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 
 @Component({
-  selector: 'app-restaurant-items-page',
+  selector: 'app-business-items-page',
   standalone: true,
   imports: [
     PageHeaderComponent,
@@ -294,9 +294,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     </section>
   `,
 })
-export class RestaurantItemsPageComponent {
+export class BusinessItemsPageComponent {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly myMenuApi = inject(MyMenuApiService);
+  private readonly myCatalogApi = inject(MyCatalogApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly packageIcon = PackageSearch;
@@ -307,9 +307,9 @@ export class RestaurantItemsPageComponent {
   readonly tagsIcon = Tags;
   readonly layersIcon = Layers3;
 
-  readonly categories = signal<MenuCategoryResponse[]>([]);
-  readonly items = signal<MenuItemResponse[]>([]);
-  readonly editingItem = signal<MenuItemResponse | null>(null);
+  readonly categories = signal<CatalogCategoryResponse[]>([]);
+  readonly items = signal<CatalogItemResponse[]>([]);
+  readonly editingItem = signal<CatalogItemResponse | null>(null);
   readonly isLoading = signal(true);
   readonly isSubmitting = signal(false);
   readonly availabilityItemId = signal<string | null>(null);
@@ -357,8 +357,8 @@ export class RestaurantItemsPageComponent {
     this.errorMessage.set('');
 
     forkJoin({
-      categories: this.myMenuApi.getCategories(),
-      items: this.myMenuApi.getItems(this.buildItemFilters()),
+      categories: this.myCatalogApi.getCategories(),
+      items: this.myCatalogApi.getItems(this.buildItemFilters()),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -378,7 +378,7 @@ export class RestaurantItemsPageComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    this.myMenuApi
+    this.myCatalogApi
       .getItems(this.buildItemFilters())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -406,7 +406,7 @@ export class RestaurantItemsPageComponent {
     this.loadItems();
   }
 
-  startEdit(item: MenuItemResponse): void {
+  startEdit(item: CatalogItemResponse): void {
     this.editingItem.set(item);
     this.successMessage.set('');
     this.errorMessage.set('');
@@ -479,7 +479,7 @@ export class RestaurantItemsPageComponent {
 
     if (editingItem) {
       const request = this.buildUpdateFormData(raw);
-      this.myMenuApi
+      this.myCatalogApi
         .updateItem(editingItem.id, request)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
@@ -499,7 +499,7 @@ export class RestaurantItemsPageComponent {
     }
 
     const request = this.buildCreateFormData(raw);
-    this.myMenuApi
+    this.myCatalogApi
       .createItem(request)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -516,12 +516,12 @@ export class RestaurantItemsPageComponent {
       });
   }
 
-  toggleAvailability(item: MenuItemResponse): void {
+  toggleAvailability(item: CatalogItemResponse): void {
     this.availabilityItemId.set(item.id);
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    this.myMenuApi
+    this.myCatalogApi
       .updateItemAvailability(item.id, { isAvailable: !item.isAvailable })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -615,3 +615,4 @@ export class RestaurantItemsPageComponent {
     return null;
   }
 }
+
