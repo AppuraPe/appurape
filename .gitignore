@@ -30,6 +30,9 @@ pnpm-debug.log*
 .env.*
 appsettings.Local.json
 appsettings.*.local.json
+backend/src/IquitosDelivery.Api/appsettings.json
+backend/src/IquitosDelivery.Api/appsettings.Development.json
+backend/src/IquitosDelivery.Api/appsettings.Testing.json
 
 # IDEs / editors
 .idea/
