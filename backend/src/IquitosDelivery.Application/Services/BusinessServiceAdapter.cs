@@ -1,4 +1,5 @@
 using IquitosDelivery.Application.Interfaces;
+using IquitosDelivery.Application.DTOs.Businesses;
 
 namespace IquitosDelivery.Application.Services;
 
@@ -16,6 +17,11 @@ public class BusinessServiceAdapter : IBusinessService
         CancellationToken cancellationToken = default)
     {
         return _restaurantService.GetPublicRestaurantsAsync(filters, cancellationToken);
+    }
+
+    public Task<PublicBusinessMobileHomeResponse> GetPublicBusinessMobileHomeAsync(CancellationToken cancellationToken = default)
+    {
+        return _restaurantService.GetPublicBusinessMobileHomeAsync(cancellationToken);
     }
 
     public Task<BusinessDetailResponse> GetPublicBusinessDetailAsync(Guid businessId, CancellationToken cancellationToken = default)

@@ -13,6 +13,7 @@ import {
 } from '../../core/models/businesses.models';
 import { CatalogItemResponse } from '../../core/models/catalog.models';
 import { AuthService } from '../../core/services/auth.service';
+import { AppNavigationService } from '../../core/services/app-navigation.service';
 import { BusinessesApiService } from '../../core/services/businesses-api.service';
 import { CheckoutDrawerUiService } from '../../core/services/checkout-drawer-ui.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
@@ -57,6 +58,7 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   };
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly navigation = inject(AppNavigationService);
   private readonly document = inject(DOCUMENT);
   private readonly formBuilder = inject(FormBuilder);
   private readonly businessesApi = inject(BusinessesApiService);
@@ -438,6 +440,10 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
 
   closeCheckoutDrawer(): void {
     this.checkoutDrawerUi.close();
+  }
+
+  goBackToBusinesses(): void {
+    this.navigation.goBack('/businesses');
   }
 
   submitOrder(): void {

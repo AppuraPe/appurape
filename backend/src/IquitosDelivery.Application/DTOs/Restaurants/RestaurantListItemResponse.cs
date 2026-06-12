@@ -22,6 +22,10 @@ public class RestaurantListItemResponse
 
     public string? BusinessTypeName { get; set; }
 
+    public string? BusinessTypeSlug { get; set; }
+
+    public string? BusinessTypeIconKey { get; set; }
+
     public TimeSpan OpenTime { get; set; }
 
     public TimeSpan CloseTime { get; set; }

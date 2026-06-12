@@ -1,17 +1,96 @@
-﻿<app-businesses-hero-section
-  [title]="'Explorar negocios sin perder tiempo'"
-  [subtitle]="isSearchMode() ? searchSummary() : browseSummary()"
-  [primaryChipLabel]="'Buscar'"
-  [secondaryChipLabel]="'Filtrar'"
-  [backgroundImageUrl]="heroBackgroundImageUrl"
-  [overlayStrength]="'soft'"
-/>
+<div class="hidden lg:block">
+  <app-businesses-hero-section
+    [title]="'Explorar negocios sin perder tiempo'"
+    [subtitle]="isDesktopSearchResults() ? searchSummary() : browseSummary()"
+    [primaryChipLabel]="'Buscar'"
+    [secondaryChipLabel]="'Filtrar'"
+    [backgroundImageUrl]="heroBackgroundImageUrl"
+    [overlayStrength]="'soft'"
+  />
+</div>
+
 <app-businesses-page-container>
-  <section class="relative pb-1 md:pb-4">
+  <section class="lg:hidden">
+    <app-mobile-explore-header
+      [form]="searchForm"
+      (openFilters)="openFilterSheet()"
+    />
+
+    <div class="lg:hidden">
+      <button
+        type="button"
+        class="mt-1.5 flex h-9 items-center gap-2 px-4 text-sm font-semibold text-slate-900"
+        (click)="openFilterSheet()"
+      >
+        <lucide-angular class="h-4.5 w-4.5 text-red-500" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
+        <span class="truncate">{{ mobileLocationLabel() }}</span>
+        <lucide-angular class="h-4 w-4 text-slate-500" [img]="chevronDownIcon" aria-hidden="true"></lucide-angular>
+      </button>
+    </div>
+
+    <div class="mt-2 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
+      <button
+        type="button"
+        class="flex h-10 shrink-0 snap-start items-center gap-2 rounded-full border px-4 text-[13px] font-medium shadow-sm active:scale-95"
+        [class.border-red-200]="searchForm.controls.openNow.getRawValue()"
+        [class.bg-red-50]="searchForm.controls.openNow.getRawValue()"
+        [class.text-red-600]="searchForm.controls.openNow.getRawValue()"
+        [class.border-slate-200]="!searchForm.controls.openNow.getRawValue()"
+        [class.bg-white]="!searchForm.controls.openNow.getRawValue()"
+        [class.text-slate-700]="!searchForm.controls.openNow.getRawValue()"
+        (click)="toggleOpenNow()"
+      >
+        <lucide-angular class="h-[18px] w-[18px]" [img]="flameIcon" aria-hidden="true"></lucide-angular>
+        Abiertos ahora
+      </button>
+
+      <button
+        type="button"
+        class="flex h-10 shrink-0 snap-start items-center gap-2 rounded-full border px-4 text-[13px] font-medium shadow-sm active:scale-95"
+        [class.border-red-200]="isSortActive('popular')"
+        [class.bg-red-50]="isSortActive('popular')"
+        [class.text-red-600]="isSortActive('popular')"
+        [class.border-slate-200]="!isSortActive('popular')"
+        [class.bg-white]="!isSortActive('popular')"
+        [class.text-slate-700]="!isSortActive('popular')"
+        (click)="setSort('popular')"
+      >
+        <lucide-angular class="h-[18px] w-[18px]" [img]="sparklesIcon" aria-hidden="true"></lucide-angular>
+        Más buscados
+      </button>
+
+      <button
+        type="button"
+        class="flex h-10 shrink-0 snap-start items-center gap-2 rounded-full border px-4 text-[13px] font-medium shadow-sm active:scale-95"
+        [class.border-red-200]="isSortActive('recent')"
+        [class.bg-red-50]="isSortActive('recent')"
+        [class.text-red-600]="isSortActive('recent')"
+        [class.border-slate-200]="!isSortActive('recent')"
+        [class.bg-white]="!isSortActive('recent')"
+        [class.text-slate-700]="!isSortActive('recent')"
+        (click)="setSort('recent')"
+      >
+        <lucide-angular class="h-[18px] w-[18px]" [img]="clockIcon" aria-hidden="true"></lucide-angular>
+        Recientes
+      </button>
+    </div>
+
+    <app-business-filter-sheet
+      [isOpen]="isFilterSheetOpen()"
+      [form]="searchForm"
+      [zones]="zones()"
+      [categories]="businessTypes()"
+      [isLoadingZones]="isLoadingZones()"
+      (close)="closeFilterSheet()"
+      (clearFilters)="clearFilters()"
+    />
+  </section>
+
+  <section class="relative hidden pb-1 md:pb-4 lg:block">
     <app-businesses-filters-card
       [form]="searchForm"
       [zones]="zones()"
-      [isSearchMode]="isSearchMode()"
+      [isSearchMode]="isDesktopSearchResults()"
       [isLoadingZones]="isLoadingZones()"
       [hasActiveFilters]="hasActiveFilters()"
       [zonesErrorMessage]="zonesErrorMessage()"
@@ -22,133 +101,149 @@
   @if (isLoading()) {
     <app-state-card [containerClass]="'border-[#ead8d2] bg-white/95 text-text-muted'">
       <span class="inline-flex rounded-full bg-primary-100 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-primary-700">
-        {{ isSearchMode() ? 'Buscando' : 'Cargando' }}
+        {{ hasActiveFilters() ? 'Buscando' : 'Cargando' }}
       </span>
       <div class="mt-4 h-3 w-2/5 animate-pulse rounded-full bg-[#f3e2de]"></div>
       <div class="mt-3 h-3 w-3/5 animate-pulse rounded-full bg-[#f3e2de]"></div>
       <div class="mt-3 h-3 w-full animate-pulse rounded-full bg-[#f3e2de]"></div>
     </app-state-card>
-  } @else if (isSearchMode()) {
-    @if (!foods().length && !relatedRestaurants().length) {
-      <app-state-card
-        title="Sin resultados"
-        [message]="searchEmptyMessage()"
-        containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted"
-      >
-        <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearSearch()">Quitar bÃºsqueda</button>
-      </app-state-card>
-    } @else {
-      <app-section-header [title]="'Resultados para ' + appliedQuery()" [subtitle]="searchSummary()" badge="Busqueda" badgeClass="bg-primary-100 text-primary-700" />
-
-      <section class="space-y-4">
-        <app-section-header title="Productos" [subtitle]="'Productos relacionados con tu bÃºsqueda.'" [badge]="'' + foods().length" badgeClass="bg-[#ffe6e3] text-primary-700" />
-
-        @if (!foods().length) {
-          <app-state-card title="Sin productos" message="No encontramos productos visibles para esta bÃºsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
-        } @else {
-          <div class="grid gap-4 md:grid-cols-2">
-            @for (food of foods(); track food.menuItemId) {
-              <app-menu-card
-                [title]="food.name"
-                [subtitle]="food.restaurantName"
-                [description]="food.categoryName || ''"
-                [imageUrl]="food.imageUrl"
-                [leftChip]="food.zoneName || ''"
-                [rightChip]="food.categoryName || ''"
-                [rightChipTone]="'muted'"
-                [priceLabel]="'' + (food.price | currency: 'PEN' : 'symbol' : '1.2-2')"
-                [actionLabel]="'Ver negocio'"
-                [actionMode]="'link'"
-                [actionRoute]="['/businesses', food.restaurantId]"
-                [actionQueryParams]="{ menuSearch: appliedQuery(), searchSource: 'global', matchedItemId: food.menuItemId, matchedCategoryName: food.categoryName || null }"
-              />
-            }
-          </div>
-        }
-      </section>
-
-      <section class="space-y-4">
-        <app-section-header title="Negocios" [subtitle]="'Negocios que coinciden con tu bÃºsqueda.'" [badge]="'' + relatedRestaurants().length" badgeClass="bg-[#e8eef7] text-[#23456a]" />
-
-        @if (!relatedRestaurants().length) {
-          <app-state-card title="Sin negocios" message="No encontramos negocios visibles para esta bÃºsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
-        } @else {
-          <div class="grid gap-4 md:grid-cols-2">
-            @for (restaurant of relatedRestaurants(); track restaurant.restaurantId) {
-              <app-menu-card
-                [title]="restaurant.name"
-                [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
-                [description]="'Disponible para explorar su catÃ¡logo y pedir desde la app.'"
-                [imageUrl]="restaurant.logoUrl"
-                [leftChip]="restaurant.zoneName || ''"
-                [rightChip]="''"
-                [actionLabel]="'Ver catÃ¡logo'"
-                [actionMode]="'link'"
-                [actionRoute]="['/businesses', restaurant.restaurantId]"
-              />
-            }
-          </div>
-        }
-      </section>
-    }
-  } @else if (!restaurants().length && !errorMessage()) {
-    <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted">
-      @if (hasActiveFilters()) {
-        <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearFilters()">Quitar filtros</button>
-      }
-    </app-state-card>
   } @else {
-    <div class="flex w-full min-w-0 items-center justify-between gap-3 overflow-x-clip sm:hidden">
-      <h2 class="text-[1.6rem] font-black tracking-[-0.05em] text-loreto-carbon">Negocios</h2>
-      <a routerLink="/businesses" class="inline-flex items-center gap-2 text-[0.98rem] font-semibold text-primary-600 no-underline">
-        Ver todos
-        <lucide-angular class="h-5 w-5" [img]="arrowRightIcon" aria-hidden="true"></lucide-angular>
-      </a>
-    </div>
+    @if (showMobileHome()) {
+      @if (!popularCategories().length && !homeSections().length) {
+        <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted" />
+      } @else {
+        <app-popular-category-carousel [categories]="popularCategories()" (selectCategory)="selectCategory($event)" />
 
-    <div class="flex w-full min-w-0 flex-col gap-3 sm:hidden">
-      @for (restaurant of restaurants(); track restaurant.id) {
-        <app-businesses-business-card
-          [name]="restaurant.name"
-          [categoryLabel]="restaurant.businessTypeName || restaurant.description || ''"
-          [zoneName]="restaurant.zoneName"
-          [isOpenNowLabel]="restaurant.isOpenNow ? 'Abierto' : 'Cerrado'"
-          [scheduleLabel]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
-          [imageUrl]="restaurant.logoUrl"
-          [actionLabel]="'Ver negocio'"
-          [actionRoute]="['/businesses', restaurant.id]"
-        />
+        <div class="grid gap-4 lg:hidden">
+          @for (section of homeSections(); track section.category.id) {
+            <app-business-category-section [section]="section" (viewAll)="viewAllCategory($event)" />
+          }
+        </div>
       }
-    </div>
+    } @else if (showFilteredList()) {
+      @if (!restaurants().length && !errorMessage()) {
+        <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted">
+          @if (hasActiveFilters()) {
+            <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearFilters()">Quitar filtros</button>
+          }
+        </app-state-card>
+      } @else {
+        <div class="flex items-center justify-between gap-3 px-4 lg:hidden">
+          <div class="grid gap-1">
+            <h2 class="mb-0 text-[22px] font-extrabold leading-tight tracking-tight text-slate-950">Resultados</h2>
+            <p class="text-sm text-slate-500">{{ browseSummary() }}</p>
+          </div>
+          @if (hasActiveFilters()) {
+            <button type="button" class="flex shrink-0 items-center gap-1 text-sm font-semibold text-red-500" (click)="clearFilters()">
+              Limpiar
+              <lucide-angular class="h-4 w-4" [img]="chevronRightIcon" aria-hidden="true"></lucide-angular>
+            </button>
+          }
+        </div>
 
-    <div class="hidden min-h-8 items-center justify-between gap-4 lg:flex lg:my-[6px]">
-      <div class="grid min-w-0 gap-1">
-        <h2 class="text-balance font-display text-[2rem] font-black tracking-[-0.05em] text-loreto-carbon lg:text-[28px] lg:leading-none">
-          Negocios
-        </h2>
-        <p class="max-w-3xl text-sm leading-6 text-text-muted lg:text-[0.98rem]">
-          {{ browseSummary() }}
-        </p>
-      </div>
-      <a routerLink="/businesses" class="inline-flex items-center gap-2 text-[1.02rem] font-semibold text-primary-600 no-underline">
-        Ver todos
-        <lucide-angular class="h-5 w-5" [img]="arrowRightIcon" aria-hidden="true"></lucide-angular>
-      </a>
-    </div>
+        <app-filtered-business-list [businesses]="restaurants()" />
+      }
+    }
 
-    <div class="hidden gap-4 lg:grid lg:grid-cols-2 xl:grid-cols-3">
-      @for (restaurant of restaurants(); track restaurant.id) {
-        <app-businesses-business-card
-          [name]="restaurant.name"
-          [categoryLabel]="restaurant.businessTypeName || restaurant.description || restaurant.zoneName"
-          [zoneName]="restaurant.zoneName"
-          [imageUrl]="restaurant.logoUrl"
-          [actionLabel]="'Ver negocio'"
-          [actionRoute]="['/businesses', restaurant.id]"
-        />
+    <div class="hidden lg:block">
+      @if (isDesktopSearchResults()) {
+        @if (!foods().length && !relatedRestaurants().length) {
+          <app-state-card
+            title="Sin resultados"
+            [message]="searchEmptyMessage()"
+            containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted"
+          >
+            <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearSearch()">Quitar búsqueda</button>
+          </app-state-card>
+        } @else {
+          <app-section-header [title]="'Resultados para ' + appliedQuery()" [subtitle]="searchSummary()" badge="Búsqueda" badgeClass="bg-primary-100 text-primary-700" />
+
+          <section class="space-y-4">
+            <app-section-header title="Productos" [subtitle]="'Productos relacionados con tu búsqueda.'" [badge]="'' + foods().length" badgeClass="bg-[#ffe6e3] text-primary-700" />
+
+            @if (!foods().length) {
+              <app-state-card title="Sin productos" message="No encontramos productos visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+            } @else {
+              <div class="grid gap-4 md:grid-cols-2">
+                @for (food of foods(); track food.menuItemId) {
+                  <app-menu-card
+                    [title]="food.name"
+                    [subtitle]="food.restaurantName"
+                    [description]="food.categoryName || ''"
+                    [imageUrl]="food.imageUrl"
+                    [leftChip]="food.zoneName || ''"
+                    [rightChip]="food.categoryName || ''"
+                    [rightChipTone]="'muted'"
+                    [priceLabel]="'' + (food.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                    [actionLabel]="'Ver negocio'"
+                    [actionMode]="'link'"
+                    [actionRoute]="['/businesses', food.restaurantId]"
+                    [actionQueryParams]="{ menuSearch: appliedQuery(), searchSource: 'global', matchedItemId: food.menuItemId, matchedCategoryName: food.categoryName || null }"
+                  />
+                }
+              </div>
+            }
+          </section>
+
+          <section class="space-y-4">
+            <app-section-header title="Negocios" [subtitle]="'Negocios que coinciden con tu búsqueda.'" [badge]="'' + relatedRestaurants().length" badgeClass="bg-[#e8eef7] text-[#23456a]" />
+
+            @if (!relatedRestaurants().length) {
+              <app-state-card title="Sin negocios" message="No encontramos negocios visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+            } @else {
+              <div class="grid gap-4 md:grid-cols-2">
+                @for (restaurant of relatedRestaurants(); track restaurant.restaurantId) {
+                  <app-menu-card
+                    [title]="restaurant.name"
+                    [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
+                    [description]="'Disponible para explorar su catálogo y pedir desde la app.'"
+                    [imageUrl]="restaurant.logoUrl"
+                    [leftChip]="restaurant.zoneName || ''"
+                    [rightChip]="''"
+                    [actionLabel]="'Ver catálogo'"
+                    [actionMode]="'link'"
+                    [actionRoute]="['/businesses', restaurant.restaurantId]"
+                  />
+                }
+              </div>
+            }
+          </section>
+        }
+      } @else if (!restaurants().length && !errorMessage()) {
+        <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted">
+          @if (hasActiveFilters()) {
+            <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearFilters()">Quitar filtros</button>
+          }
+        </app-state-card>
+      } @else {
+        <div class="hidden min-h-8 items-center justify-between gap-4 lg:flex lg:my-[6px]">
+          <div class="grid min-w-0 gap-1">
+            <h2 class="text-balance font-display text-[2rem] font-black tracking-[-0.05em] text-loreto-carbon lg:text-[28px] lg:leading-none">
+              Negocios
+            </h2>
+            <p class="max-w-3xl text-sm leading-6 text-text-muted lg:text-[0.98rem]">
+              {{ browseSummary() }}
+            </p>
+          </div>
+          <a routerLink="/businesses" class="inline-flex items-center gap-2 text-[1.02rem] font-semibold text-primary-600 no-underline">
+            Ver todos
+            <lucide-angular class="h-5 w-5" [img]="arrowRightIcon" aria-hidden="true"></lucide-angular>
+          </a>
+        </div>
+
+        <div class="hidden gap-4 lg:grid lg:grid-cols-2 xl:grid-cols-3">
+          @for (restaurant of restaurants(); track restaurant.id) {
+            <app-businesses-business-card
+              [name]="restaurant.name"
+              [categoryLabel]="restaurant.businessTypeName || restaurant.description || restaurant.zoneName"
+              [zoneName]="restaurant.zoneName"
+              [imageUrl]="restaurant.logoUrl"
+              [actionLabel]="'Ver negocio'"
+              [actionRoute]="['/businesses', restaurant.id]"
+            />
+          }
+        </div>
       }
     </div>
   }
 </app-businesses-page-container>
-
-

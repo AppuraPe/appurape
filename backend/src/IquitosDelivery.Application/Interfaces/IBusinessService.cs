@@ -6,6 +6,9 @@ public interface IBusinessService
         PublicBusinessFilterRequest filters,
         CancellationToken cancellationToken = default);
 
+    Task<IquitosDelivery.Application.DTOs.Businesses.PublicBusinessMobileHomeResponse> GetPublicBusinessMobileHomeAsync(
+        CancellationToken cancellationToken = default);
+
     Task<BusinessDetailResponse> GetPublicBusinessDetailAsync(Guid businessId, CancellationToken cancellationToken = default);
 
     Task<MyBusinessResponse> GetMyBusinessAsync(CancellationToken cancellationToken = default);

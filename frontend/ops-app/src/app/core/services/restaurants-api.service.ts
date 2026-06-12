@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  BusinessBrowseFilters,
   BusinessDetailResponse,
   BusinessListItemResponse,
   CatalogResponse,
@@ -12,8 +13,8 @@ import { BusinessesApiService } from './businesses-api.service';
 export class RestaurantsApiService {
   private readonly businessesApi = inject(BusinessesApiService);
 
-  getRestaurants(q?: string, zoneId?: string): Observable<BusinessListItemResponse[]> {
-    return this.businessesApi.getBusinesses(q, zoneId);
+  getRestaurants(filters: BusinessBrowseFilters = {}): Observable<BusinessListItemResponse[]> {
+    return this.businessesApi.getBusinesses(filters);
   }
 
   getRestaurant(id: string): Observable<BusinessDetailResponse> {

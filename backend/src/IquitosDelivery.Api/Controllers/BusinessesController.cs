@@ -1,4 +1,5 @@
 using IquitosDelivery.Application.Interfaces;
+using IquitosDelivery.Application.DTOs.Businesses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IquitosDelivery.Api.Controllers;
@@ -23,6 +24,14 @@ public class BusinessesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var response = await _businessService.GetPublicBusinessesAsync(filters, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpGet("mobile-home")]
+    [ProducesResponseType(typeof(PublicBusinessMobileHomeResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PublicBusinessMobileHomeResponse>> GetMobileHome(CancellationToken cancellationToken)
+    {
+        var response = await _businessService.GetPublicBusinessMobileHomeAsync(cancellationToken);
         return Ok(response);
     }
 

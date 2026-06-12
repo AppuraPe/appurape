@@ -11,6 +11,10 @@ public static class AppDbContextSeeder
     private const string AdminEmail = "admin@iquitosdelivery.local";
     private const string AdminPassword = "Admin123*";
     private static readonly Guid RestaurantBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F15");
+    private static readonly Guid HardwareBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F16");
+    private static readonly Guid GroceryBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F17");
+    private static readonly Guid PharmacyBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F18");
+    private static readonly Guid ClothingBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F19");
     private static readonly Guid CommercialBusinessCommissionRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F101");
     private static readonly Guid CommercialDeliveryCommissionRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F102");
     private static readonly Guid CommercialServiceFeeRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F103");
@@ -87,25 +91,60 @@ public static class AppDbContextSeeder
 
     private static async Task SeedBusinessTypesAsync(AppDbContext dbContext, CancellationToken cancellationToken)
     {
-        var businessType = await dbContext.BusinessTypes.FirstOrDefaultAsync(x => x.Code == "Restaurant", cancellationToken);
+        await UpsertBusinessTypeAsync(
+            dbContext,
+            RestaurantBusinessTypeId,
+            "Restaurant",
+            "Restaurantes",
+            "restaurantes",
+            "utensils",
+            10,
+            "Negocios de comida y bebida preparados para pedidos desde la app.",
+            cancellationToken);
 
-        if (businessType is null)
-        {
-            dbContext.BusinessTypes.Add(new BusinessType
-            {
-                Id = RestaurantBusinessTypeId,
-                Code = "Restaurant",
-                Name = "Restaurant",
-                Description = "Legacy-compatible business type for the current restaurant marketplace.",
-                IsActive = true
-            });
-        }
-        else
-        {
-            businessType.Name = "Restaurant";
-            businessType.Description = "Legacy-compatible business type for the current restaurant marketplace.";
-            businessType.IsActive = true;
-        }
+        await UpsertBusinessTypeAsync(
+            dbContext,
+            HardwareBusinessTypeId,
+            "Hardware",
+            "Ferreterías",
+            "ferreterias",
+            "hammer",
+            20,
+            "Tiendas de herramientas, materiales y artículos ferreteros.",
+            cancellationToken);
+
+        await UpsertBusinessTypeAsync(
+            dbContext,
+            GroceryBusinessTypeId,
+            "Groceries",
+            "Tiendas de alimentos",
+            "tiendas-de-alimentos",
+            "shopping-cart",
+            30,
+            "Mercados, bodegas y tiendas con productos de consumo diario.",
+            cancellationToken);
+
+        await UpsertBusinessTypeAsync(
+            dbContext,
+            PharmacyBusinessTypeId,
+            "Pharmacy",
+            "Farmacias",
+            "farmacias",
+            "cross",
+            40,
+            "Negocios enfocados en salud, cuidado personal y medicamentos.",
+            cancellationToken);
+
+        await UpsertBusinessTypeAsync(
+            dbContext,
+            ClothingBusinessTypeId,
+            "Clothing",
+            "Ropa",
+            "ropa",
+            "shirt",
+            50,
+            "Tiendas de prendas, accesorios y vestimenta.",
+            cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -118,7 +157,7 @@ public static class AppDbContextSeeder
             return;
         }
 
-        var resolvedBusinessTypeId = businessType?.Id ?? RestaurantBusinessTypeId;
+        var resolvedBusinessTypeId = RestaurantBusinessTypeId;
 
         foreach (var restaurant in uncategorizedRestaurants)
         {
@@ -126,6 +165,44 @@ public static class AppDbContextSeeder
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task UpsertBusinessTypeAsync(
+        AppDbContext dbContext,
+        Guid id,
+        string code,
+        string name,
+        string slug,
+        string iconKey,
+        int sortOrder,
+        string description,
+        CancellationToken cancellationToken)
+    {
+        var businessType = await dbContext.BusinessTypes.FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+
+        if (businessType is null)
+        {
+            dbContext.BusinessTypes.Add(new BusinessType
+            {
+                Id = id,
+                Code = code,
+                Name = name,
+                Slug = slug,
+                IconKey = iconKey,
+                SortOrder = sortOrder,
+                Description = description,
+                IsActive = true
+            });
+
+            return;
+        }
+
+        businessType.Name = name;
+        businessType.Slug = slug;
+        businessType.IconKey = iconKey;
+        businessType.SortOrder = sortOrder;
+        businessType.Description = description;
+        businessType.IsActive = true;
     }
 
     private static async Task SeedCommissionRulesAsync(AppDbContext dbContext, CancellationToken cancellationToken)

@@ -9,6 +9,8 @@ export interface RestaurantListItemResponse {
   businessTypeId?: string | null;
   businessTypeCode?: string | null;
   businessTypeName?: string | null;
+  businessTypeSlug?: string | null;
+  businessTypeIconKey?: string | null;
   openTime: string;
   closeTime: string;
   logoUrl?: string | null;
@@ -62,6 +64,8 @@ export interface RestaurantDetailResponse {
   businessTypeId?: string | null;
   businessTypeCode?: string | null;
   businessTypeName?: string | null;
+  businessTypeSlug?: string | null;
+  businessTypeIconKey?: string | null;
   openTime: string;
   closeTime: string;
   logoUrl?: string | null;

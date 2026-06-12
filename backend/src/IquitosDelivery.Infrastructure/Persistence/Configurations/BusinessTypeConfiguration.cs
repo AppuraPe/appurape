@@ -14,10 +14,14 @@ public class BusinessTypeConfiguration : IEntityTypeConfiguration<BusinessType>
 
         builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Slug).HasMaxLength(120).IsRequired();
+        builder.Property(x => x.IconKey).HasMaxLength(80);
+        builder.Property(x => x.SortOrder).IsRequired();
         builder.Property(x => x.Description).HasMaxLength(500);
         builder.Property(x => x.IsActive).IsRequired();
 
         builder.HasIndex(x => x.Code).IsUnique();
         builder.HasIndex(x => x.Name).IsUnique();
+        builder.HasIndex(x => x.Slug).IsUnique();
     }
 }

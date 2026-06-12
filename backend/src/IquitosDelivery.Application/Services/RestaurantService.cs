@@ -1,5 +1,6 @@
 using FluentValidation;
 using IquitosDelivery.Application.Common;
+using IquitosDelivery.Application.DTOs.Businesses;
 using IquitosDelivery.Application.DTOs.Restaurants;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
@@ -11,6 +12,10 @@ namespace IquitosDelivery.Application.Services;
 
 public class RestaurantService : IRestaurantService
 {
+    private const int DefaultPage = 1;
+    private const int DefaultPageSize = 24;
+    private const int MaxPageSize = 60;
+    private const int MobileHomeSectionSize = 12;
     private const string LegacyRestaurantBusinessTypeCode = "Restaurant";
     private const string LegacyRestaurantBusinessTypeName = "Restaurant";
     private const string LimaWindowsTimeZoneId = "SA Pacific Standard Time";
@@ -35,12 +40,20 @@ public class RestaurantService : IRestaurantService
         CancellationToken cancellationToken = default)
     {
         var searchTerm = SearchQuery.Normalize(filters.Q);
+        var normalizedSort = NormalizeSort(filters.Sort);
+        var page = NormalizePage(filters.Page);
+        var pageSize = NormalizePageSize(filters.PageSize);
         var query = _dbContext.Restaurants
             .Where(x => x.ApprovalStatus == ApprovalStatus.Approved && x.IsActive);
 
         if (filters.ZoneId.HasValue)
         {
             query = query.Where(x => x.ZoneId == filters.ZoneId.Value);
+        }
+
+        if (filters.BusinessTypeId.HasValue)
+        {
+            query = query.Where(x => x.BusinessTypeId == filters.BusinessTypeId.Value);
         }
 
         if (searchTerm is not null)
@@ -51,8 +64,19 @@ public class RestaurantService : IRestaurantService
                 x.Zone.Name.ToLower().Contains(searchTerm));
         }
 
+        if (filters.OpenNow == true)
+        {
+            var now = GetLimaNow().TimeOfDay;
+            query = query.Where(x =>
+                (x.CloseTime >= x.OpenTime && now >= x.OpenTime && now <= x.CloseTime) ||
+                (x.CloseTime < x.OpenTime && (now >= x.OpenTime || now <= x.CloseTime)));
+        }
+
+        query = ApplySort(query, normalizedSort);
+
         var restaurants = await query
-            .OrderBy(x => x.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(x => new RestaurantListItemResponse
             {
                 Id = x.Id,
@@ -65,6 +89,8 @@ public class RestaurantService : IRestaurantService
                 BusinessTypeId = x.BusinessTypeId,
                 BusinessTypeCode = x.BusinessType != null ? x.BusinessType.Code : LegacyRestaurantBusinessTypeCode,
                 BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : LegacyRestaurantBusinessTypeName,
+                BusinessTypeSlug = x.BusinessType != null ? x.BusinessType.Slug : "restaurantes",
+                BusinessTypeIconKey = x.BusinessType != null ? x.BusinessType.IconKey : "utensils",
                 OpenTime = x.OpenTime,
                 CloseTime = x.CloseTime,
                 LogoUrl = x.LogoUrl
@@ -77,6 +103,106 @@ public class RestaurantService : IRestaurantService
         }
 
         return restaurants;
+    }
+
+    public async Task<PublicBusinessMobileHomeResponse> GetPublicBusinessMobileHomeAsync(CancellationToken cancellationToken = default)
+    {
+        var categories = await _dbContext.BusinessTypes
+            .Where(x => x.IsActive)
+            .Select(x => new BusinessTypeListItemResponse
+            {
+                Id = x.Id,
+                Code = x.Code,
+                Name = x.Name,
+                Slug = x.Slug,
+                IconKey = x.IconKey,
+                SortOrder = x.SortOrder,
+                BusinessCount = x.Restaurants.Count(r => r.ApprovalStatus == ApprovalStatus.Approved && r.IsActive)
+            })
+            .Where(x => x.BusinessCount > 0)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+
+        var popularCategories = categories
+            .OrderByDescending(x => x.BusinessCount)
+            .ThenBy(x => x.SortOrder)
+            .ThenBy(x => x.Name)
+            .Take(10)
+            .ToList();
+
+        var sectionCategories = categories
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Name)
+            .ToList();
+
+        var categoryIds = sectionCategories.Select(x => x.Id).ToList();
+
+        var businesses = await _dbContext.Restaurants
+            .Where(x =>
+                x.ApprovalStatus == ApprovalStatus.Approved &&
+                x.IsActive &&
+                x.BusinessTypeId.HasValue &&
+                categoryIds.Contains(x.BusinessTypeId.Value))
+            .Select(x => new
+            {
+                Restaurant = new RestaurantListItemResponse
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Description = x.Description,
+                    Address = x.Address,
+                    Reference = x.Reference,
+                    ZoneId = x.ZoneId,
+                    ZoneName = x.Zone.Name,
+                    BusinessTypeId = x.BusinessTypeId,
+                    BusinessTypeCode = x.BusinessType != null ? x.BusinessType.Code : LegacyRestaurantBusinessTypeCode,
+                    BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : LegacyRestaurantBusinessTypeName,
+                    BusinessTypeSlug = x.BusinessType != null ? x.BusinessType.Slug : "restaurantes",
+                    BusinessTypeIconKey = x.BusinessType != null ? x.BusinessType.IconKey : "utensils",
+                    OpenTime = x.OpenTime,
+                    CloseTime = x.CloseTime,
+                    LogoUrl = x.LogoUrl
+                },
+                BusinessTypeId = x.BusinessTypeId!.Value,
+                OrdersCount = x.Orders.Count,
+                CreatedAtUtc = x.CreatedAtUtc
+            })
+            .OrderByDescending(x => x.OrdersCount)
+            .ThenByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Restaurant.Name)
+            .ToListAsync(cancellationToken);
+
+        foreach (var entry in businesses)
+        {
+            entry.Restaurant.IsOpenNow = IsRestaurantOpen(entry.Restaurant.OpenTime, entry.Restaurant.CloseTime, true);
+        }
+
+        var sections = sectionCategories
+            .Select(category =>
+            {
+                var categoryBusinesses = businesses
+                    .Where(x => x.BusinessTypeId == category.Id)
+                    .Select(x => x.Restaurant)
+                    .Take(MobileHomeSectionSize)
+                    .ToList();
+
+                return new BusinessCategorySectionResponse
+                {
+                    Category = category,
+                    TotalBusinesses = category.BusinessCount,
+                    Businesses = categoryBusinesses
+                };
+            })
+            .Where(x => x.Businesses.Count > 0)
+            .ToList();
+
+        return new PublicBusinessMobileHomeResponse
+        {
+            Categories = categories,
+            PopularCategories = popularCategories,
+            Sections = sections
+        };
     }
 
     public async Task<RestaurantDetailResponse> GetPublicRestaurantDetailAsync(Guid restaurantId, CancellationToken cancellationToken = default)
@@ -95,6 +221,8 @@ public class RestaurantService : IRestaurantService
                 BusinessTypeId = x.BusinessTypeId,
                 BusinessTypeCode = x.BusinessType != null ? x.BusinessType.Code : LegacyRestaurantBusinessTypeCode,
                 BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : LegacyRestaurantBusinessTypeName,
+                BusinessTypeSlug = x.BusinessType != null ? x.BusinessType.Slug : "restaurantes",
+                BusinessTypeIconKey = x.BusinessType != null ? x.BusinessType.IconKey : "utensils",
                 OpenTime = x.OpenTime,
                 CloseTime = x.CloseTime,
                 LogoUrl = x.LogoUrl,
@@ -239,5 +367,42 @@ public class RestaurantService : IRestaurantService
                 return DateTime.UtcNow;
             }
         }
+    }
+
+    private static IQueryable<Restaurant> ApplySort(IQueryable<Restaurant> query, string sort)
+    {
+        return sort switch
+        {
+            "recent" => query.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Name),
+            "popular" => query.OrderByDescending(x => x.Orders.Count).ThenByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Name),
+            _ => query.OrderBy(x => x.Name)
+        };
+    }
+
+    private static string NormalizeSort(string? sort)
+    {
+        return sort?.Trim().ToLowerInvariant() switch
+        {
+            "recent" => "recent",
+            "popular" => "popular",
+            _ => "alphabetical"
+        };
+    }
+
+    private static int NormalizePage(int? page)
+    {
+        var normalized = page.GetValueOrDefault(DefaultPage);
+        return normalized < 1 ? DefaultPage : normalized;
+    }
+
+    private static int NormalizePageSize(int? pageSize)
+    {
+        var normalized = pageSize.GetValueOrDefault(DefaultPageSize);
+        if (normalized < 1)
+        {
+            return DefaultPageSize;
+        }
+
+        return Math.Min(normalized, MaxPageSize);
     }
 }

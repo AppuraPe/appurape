@@ -27,6 +27,7 @@ export class PublicLayoutComponent {
   readonly branding = this.platformSettingsApi.settings;
   readonly currentRole = computed(() => this.authService.currentRole());
   readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
+  readonly hasNotificationInbox = false;
   readonly displayName = computed(
     () => this.authService.currentUser()?.fullName || this.authService.currentUser()?.email || 'Usuario',
   );
@@ -62,9 +63,15 @@ export class PublicLayoutComponent {
     return '/businesses';
   });
   readonly shouldShowMobileBack = computed(() => {
-    const path = this.currentPath();
+    const path = this.normalizedPath();
     return path.startsWith('/businesses/') || path.startsWith('/restaurants/') || path.startsWith('/orders/') || path.startsWith('/community/requests/') || path.startsWith('/favors/') || path === '/register';
   });
+  readonly shouldHideMobileHeader = computed(() => {
+    const path = this.normalizedPath();
+    return path === '/businesses' || path === '/restaurants' || path.startsWith('/businesses/') || path.startsWith('/restaurants/');
+  });
+  readonly shouldHideMobileBottomNav = computed(() => this.normalizedPath() === '/register');
+  readonly shouldShowNotificationBell = computed(() => this.isAuthenticated() && this.hasNotificationInbox);
   readonly bellIcon = Bell;
   readonly homeIcon = House;
   readonly heartIcon = Heart;
@@ -128,5 +135,9 @@ export class PublicLayoutComponent {
     this.closeNavbar();
     this.closeUserDropdown();
     this.checkoutDrawerUi.close();
+  }
+
+  private normalizedPath(): string {
+    return this.currentPath().split('?')[0]?.split('#')[0] || '/';
   }
 }

@@ -18,7 +18,7 @@ interface NavItem {
     <div class="grid min-h-screen xl:grid-cols-[304px_minmax(0,1fr)]">
       <aside class="z-20 flex flex-col gap-4 border-b border-[#eddad4] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f5_100%)] p-3 xl:sticky xl:top-0 xl:h-screen xl:justify-between xl:gap-5 xl:overflow-y-auto xl:border-r xl:border-b-0 xl:bg-[radial-gradient(circle_at_top_left,rgba(229,27,35,0.14),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fff3f2_100%)] xl:p-4">
         <div class="grid gap-3 xl:gap-4">
-          <a class="flex items-center text-primary-900 no-underline" [routerLink]="defaultRoute()">
+          <a class="hidden items-center text-primary-900 no-underline md:flex" [routerLink]="defaultRoute()">
             @if (branding()?.logoUrl) {
               <img class="block h-16 w-auto max-w-[260px] object-contain xl:h-20 xl:max-w-[320px]" [src]="branding()!.logoUrl!" [alt]="branding()?.appName || 'AppuraPe'" />
             } @else {
