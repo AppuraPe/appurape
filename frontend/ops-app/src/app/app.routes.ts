@@ -184,6 +184,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/admin/admin-community-dashboard-page.component').then((m) => m.AdminCommunityDashboardPageComponent),
           },
           {
+            path: 'settings/branding',
+            loadComponent: () => import('./features/admin/admin-branding-page.component').then((m) => m.AdminBrandingPageComponent),
+          },
+          {
             path: 'restaurants/pending',
             loadComponent: () => import('./features/admin/admin-pending-businesses-page.component').then((m) => m.AdminPendingBusinessesPageComponent),
           },

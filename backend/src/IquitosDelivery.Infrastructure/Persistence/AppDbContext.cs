@@ -32,6 +32,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<BusinessType> BusinessTypes => Set<BusinessType>();
 
+    public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
+
     public DbSet<CommissionRule> CommissionRules => Set<CommissionRule>();
 
     public DbSet<FinancialMovement> FinancialMovements => Set<FinancialMovement>();
@@ -75,6 +77,8 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<CommunityCollaborator> IAppDbContext.CommunityCollaborators => CommunityCollaborators;
 
     IQueryable<BusinessType> IAppDbContext.BusinessTypes => BusinessTypes;
+
+    IQueryable<PlatformSettings> IAppDbContext.PlatformSettings => PlatformSettings;
 
     IQueryable<CommissionRule> IAppDbContext.CommissionRules => CommissionRules;
 

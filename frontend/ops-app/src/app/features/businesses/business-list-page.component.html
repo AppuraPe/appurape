@@ -1,4 +1,4 @@
-<app-businesses-hero-section
+﻿<app-businesses-hero-section
   [title]="'Explorar negocios sin perder tiempo'"
   [subtitle]="isSearchMode() ? searchSummary() : browseSummary()"
   [primaryChipLabel]="'Buscar'"
@@ -7,7 +7,7 @@
   [overlayStrength]="'soft'"
 />
 <app-businesses-page-container>
-  <section class="relative pb-2 md:pb-4">
+  <section class="relative pb-1 md:pb-4">
     <app-businesses-filters-card
       [form]="searchForm"
       [zones]="zones()"
@@ -35,16 +35,16 @@
         [message]="searchEmptyMessage()"
         containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted"
       >
-        <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearSearch()">Quitar búsqueda</button>
+        <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearSearch()">Quitar bÃºsqueda</button>
       </app-state-card>
     } @else {
       <app-section-header [title]="'Resultados para ' + appliedQuery()" [subtitle]="searchSummary()" badge="Busqueda" badgeClass="bg-primary-100 text-primary-700" />
 
       <section class="space-y-4">
-        <app-section-header title="Productos" [subtitle]="'Productos relacionados con tu búsqueda.'" [badge]="'' + foods().length" badgeClass="bg-[#ffe6e3] text-primary-700" />
+        <app-section-header title="Productos" [subtitle]="'Productos relacionados con tu bÃºsqueda.'" [badge]="'' + foods().length" badgeClass="bg-[#ffe6e3] text-primary-700" />
 
         @if (!foods().length) {
-          <app-state-card title="Sin productos" message="No encontramos productos visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+          <app-state-card title="Sin productos" message="No encontramos productos visibles para esta bÃºsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
         } @else {
           <div class="grid gap-4 md:grid-cols-2">
             @for (food of foods(); track food.menuItemId) {
@@ -68,21 +68,21 @@
       </section>
 
       <section class="space-y-4">
-        <app-section-header title="Negocios" [subtitle]="'Negocios que coinciden con tu búsqueda.'" [badge]="'' + relatedRestaurants().length" badgeClass="bg-[#e8eef7] text-[#23456a]" />
+        <app-section-header title="Negocios" [subtitle]="'Negocios que coinciden con tu bÃºsqueda.'" [badge]="'' + relatedRestaurants().length" badgeClass="bg-[#e8eef7] text-[#23456a]" />
 
         @if (!relatedRestaurants().length) {
-          <app-state-card title="Sin negocios" message="No encontramos negocios visibles para esta búsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
+          <app-state-card title="Sin negocios" message="No encontramos negocios visibles para esta bÃºsqueda." containerClass="border-blue-200 bg-blue-50 text-blue-700" />
         } @else {
           <div class="grid gap-4 md:grid-cols-2">
             @for (restaurant of relatedRestaurants(); track restaurant.restaurantId) {
               <app-menu-card
                 [title]="restaurant.name"
                 [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
-                [description]="'Disponible para explorar su catálogo y pedir desde la app.'"
+                [description]="'Disponible para explorar su catÃ¡logo y pedir desde la app.'"
                 [imageUrl]="restaurant.logoUrl"
                 [leftChip]="restaurant.zoneName || ''"
                 [rightChip]="''"
-                [actionLabel]="'Ver catálogo'"
+                [actionLabel]="'Ver catÃ¡logo'"
                 [actionMode]="'link'"
                 [actionRoute]="['/businesses', restaurant.restaurantId]"
               />
@@ -98,23 +98,57 @@
       }
     </app-state-card>
   } @else {
-      <app-section-header title="Negocios" [subtitle]="browseSummary()" [badge]="hasZoneFilter() ? 'Zona' : ''" badgeClass="bg-[#e8eef7] text-[#23456a]" />
+    <div class="flex w-full min-w-0 items-center justify-between gap-3 overflow-x-clip sm:hidden">
+      <h2 class="text-[1.6rem] font-black tracking-[-0.05em] text-loreto-carbon">Negocios</h2>
+      <a routerLink="/businesses" class="inline-flex items-center gap-2 text-[0.98rem] font-semibold text-primary-600 no-underline">
+        Ver todos
+        <lucide-angular class="h-5 w-5" [img]="arrowRightIcon" aria-hidden="true"></lucide-angular>
+      </a>
+    </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="flex w-full min-w-0 flex-col gap-3 sm:hidden">
       @for (restaurant of restaurants(); track restaurant.id) {
-            <app-menu-card
-              [title]="restaurant.name"
-              [subtitle]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
-              [description]="'Explora el catálogo y arma tu pedido sin salir del flujo móvil.'"
-              [imageUrl]="restaurant.logoUrl"
-              [leftChip]="restaurant.zoneName || ''"
-              [rightChip]="restaurant.isOpenNow ? 'Abierto' : 'Cerrado'"
-              [rightChipTone]="restaurant.isOpenNow ? 'success' : 'warning'"
-              [actionLabel]="'Ver catálogo'"
-              [actionMode]="'link'"
-              [actionRoute]="['/businesses', restaurant.id]"
-            />
+        <app-businesses-business-card
+          [name]="restaurant.name"
+          [categoryLabel]="restaurant.businessTypeName || restaurant.description || ''"
+          [zoneName]="restaurant.zoneName"
+          [isOpenNowLabel]="restaurant.isOpenNow ? 'Abierto' : 'Cerrado'"
+          [scheduleLabel]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
+          [imageUrl]="restaurant.logoUrl"
+          [actionLabel]="'Ver negocio'"
+          [actionRoute]="['/businesses', restaurant.id]"
+        />
+      }
+    </div>
+
+    <div class="hidden min-h-8 items-center justify-between gap-4 lg:flex lg:my-[6px]">
+      <div class="grid min-w-0 gap-1">
+        <h2 class="text-balance font-display text-[2rem] font-black tracking-[-0.05em] text-loreto-carbon lg:text-[28px] lg:leading-none">
+          Negocios
+        </h2>
+        <p class="max-w-3xl text-sm leading-6 text-text-muted lg:text-[0.98rem]">
+          {{ browseSummary() }}
+        </p>
+      </div>
+      <a routerLink="/businesses" class="inline-flex items-center gap-2 text-[1.02rem] font-semibold text-primary-600 no-underline">
+        Ver todos
+        <lucide-angular class="h-5 w-5" [img]="arrowRightIcon" aria-hidden="true"></lucide-angular>
+      </a>
+    </div>
+
+    <div class="hidden gap-4 lg:grid lg:grid-cols-2 xl:grid-cols-3">
+      @for (restaurant of restaurants(); track restaurant.id) {
+        <app-businesses-business-card
+          [name]="restaurant.name"
+          [categoryLabel]="restaurant.businessTypeName || restaurant.description || restaurant.zoneName"
+          [zoneName]="restaurant.zoneName"
+          [imageUrl]="restaurant.logoUrl"
+          [actionLabel]="'Ver negocio'"
+          [actionRoute]="['/businesses', restaurant.id]"
+        />
       }
     </div>
   }
 </app-businesses-page-container>
+
+

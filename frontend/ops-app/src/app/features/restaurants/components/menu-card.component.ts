@@ -11,9 +11,9 @@ export type MenuCardStatusTone = 'success' | 'warning' | 'muted';
   standalone: true,
   imports: [RouterLink, LucideAngularModule],
   template: `
-    <article class="group grid min-h-full min-w-0 gap-3 rounded-[24px] border border-[#ead8d2] bg-white p-3.5 shadow-[0_8px_20px_rgba(6,25,43,0.06)] transition duration-200 sm:p-4">
+    <article class="group grid min-h-full min-w-0 gap-2.5 rounded-[20px] border border-[#ead8d2] bg-white p-3 shadow-[0_8px_16px_rgba(6,25,43,0.05)] transition duration-200 sm:rounded-[24px] sm:gap-3 sm:p-4">
       <div class="relative overflow-hidden rounded-[18px] bg-surface-soft">
-        <img class="h-40 w-full object-cover sm:h-44" [src]="resolvedImageUrl()" [alt]="'Imagen de ' + title()" loading="lazy" />
+        <img class="h-28 w-full object-cover sm:h-44" [src]="resolvedImageUrl()" [alt]="'Imagen de ' + title()" loading="lazy" (error)="onImageError($event)" />
         <div class="absolute left-3 top-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2">
           @if (hasTextValue(leftChip())) {
             <span class="inline-flex max-w-full rounded-full bg-white/92 px-2.5 py-1 text-[0.64rem] font-black uppercase tracking-[0.12em] text-primary-700">
@@ -28,25 +28,25 @@ export type MenuCardStatusTone = 'success' | 'warning' | 'muted';
         </div>
       </div>
 
-      <div class="grid min-w-0 gap-3">
-        <div class="grid min-w-0 gap-1.5">
-          <h3 class="line-clamp-2 min-w-0 text-balance font-display text-[1.15rem] font-black leading-tight tracking-[-0.03em] text-loreto-carbon sm:text-[1.25rem]">
+      <div class="grid min-w-0 gap-2.5">
+        <div class="grid min-w-0 gap-1">
+          <h3 class="line-clamp-2 min-w-0 text-balance font-display text-[1.05rem] font-black leading-tight tracking-[-0.03em] text-loreto-carbon sm:text-[1.25rem]">
             {{ title() }}
           </h3>
 
           @if (hasTextValue(subtitle())) {
-            <div class="flex min-w-0 items-center gap-2 text-sm text-text-muted">
+            <div class="flex min-w-0 items-center gap-1.5 text-[0.83rem] text-text-muted sm:text-sm">
               <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="subtitleIcon()" aria-hidden="true"></lucide-angular>
               <p class="line-clamp-1 min-w-0">{{ subtitle() }}</p>
             </div>
           }
 
           @if (hasTextValue(description())) {
-            <p class="line-clamp-2 text-sm leading-5.5 text-text-muted">{{ description() }}</p>
+            <p class="line-clamp-2 text-[0.92rem] leading-5 text-text-muted sm:text-sm">{{ description() }}</p>
           }
         </div>
 
-        <div class="mt-auto grid gap-2.5">
+        <div class="mt-auto grid gap-2">
           <div class="flex items-center justify-between gap-3">
             @if (hasTextValue(priceLabel())) {
               <strong class="min-w-0 text-lg font-black tracking-[-0.03em] text-primary-700">{{ priceLabel() }}</strong>
@@ -60,7 +60,7 @@ export type MenuCardStatusTone = 'success' | 'warning' | 'muted';
 
           @if (actionMode() === 'link') {
             <a
-              class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600"
+              class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600"
               [routerLink]="actionRoute()"
               [queryParams]="actionQueryParams()"
             >
@@ -69,7 +69,7 @@ export type MenuCardStatusTone = 'success' | 'warning' | 'muted';
             </a>
           } @else {
             <button
-              class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
               [disabled]="actionDisabled()"
               [attr.aria-label]="actionAriaLabel()"
@@ -121,6 +121,15 @@ export class MenuCardComponent {
     return hasText(this.imageUrl() ?? '') ? this.imageUrl()! : '/img/banner1.png';
   }
 
+  onImageError(event: Event): void {
+    const image = event.target as HTMLImageElement | null;
+    if (!image || image.src.endsWith('/img/banner1.png')) {
+      return;
+    }
+
+    image.src = '/img/banner1.png';
+  }
+
   subtitleIcon() {
     return this.priceLabel() ? this.storeIcon : this.clockIcon;
   }
@@ -141,3 +150,4 @@ export class MenuCardComponent {
     return 'bg-white/92 text-loreto-carbon';
   }
 }
+

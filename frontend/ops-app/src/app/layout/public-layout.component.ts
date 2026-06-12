@@ -2,15 +2,17 @@ import { NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Bell, Heart, House, LucideAngularModule, User, UserPlus } from 'lucide-angular';
 import { filter } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { AppNavigationService } from '../core/services/app-navigation.service';
 import { CheckoutDrawerUiService } from '../core/services/checkout-drawer-ui.service';
+import { PlatformSettingsApiService } from '../core/services/platform-settings-api.service';
 
 @Component({
   selector: 'app-public-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgIf, NgTemplateOutlet],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgIf, NgTemplateOutlet, LucideAngularModule],
   templateUrl: './public-layout.component.html',
 })
 export class PublicLayoutComponent {
@@ -18,9 +20,11 @@ export class PublicLayoutComponent {
   private readonly router = inject(Router);
   private readonly navigation = inject(AppNavigationService);
   private readonly hostElement = inject(ElementRef<HTMLElement>);
+  private readonly platformSettingsApi = inject(PlatformSettingsApiService);
   readonly checkoutDrawerUi = inject(CheckoutDrawerUiService);
 
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
+  readonly branding = this.platformSettingsApi.settings;
   readonly currentRole = computed(() => this.authService.currentRole());
   readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
   readonly displayName = computed(
@@ -61,8 +65,15 @@ export class PublicLayoutComponent {
     const path = this.currentPath();
     return path.startsWith('/businesses/') || path.startsWith('/restaurants/') || path.startsWith('/orders/') || path.startsWith('/community/requests/') || path.startsWith('/favors/') || path === '/register';
   });
+  readonly bellIcon = Bell;
+  readonly homeIcon = House;
+  readonly heartIcon = Heart;
+  readonly userIcon = User;
+  readonly userPlusIcon = UserPlus;
 
   constructor() {
+    void this.platformSettingsApi.ensureLoaded();
+
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),

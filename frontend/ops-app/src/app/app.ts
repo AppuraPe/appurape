@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AppNavigationService } from './core/services/app-navigation.service';
 import { CheckoutDrawerUiService } from './core/services/checkout-drawer-ui.service';
+import { PlatformSettingsApiService } from './core/services/platform-settings-api.service';
 
 @Component({
   selector: 'app-root',
@@ -13,8 +14,10 @@ export class App {
   private readonly checkoutDrawerUi = inject(CheckoutDrawerUiService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly platformSettingsApi = inject(PlatformSettingsApiService);
 
   constructor() {
+    void this.platformSettingsApi.ensureLoaded();
     void this.initializeNativeBackButton();
   }
 

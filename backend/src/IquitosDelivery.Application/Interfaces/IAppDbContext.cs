@@ -22,6 +22,8 @@ public interface IAppDbContext
 
     IQueryable<BusinessType> BusinessTypes { get; }
 
+    IQueryable<PlatformSettings> PlatformSettings { get; }
+
     IQueryable<CommissionRule> CommissionRules { get; }
 
     IQueryable<FinancialMovement> FinancialMovements { get; }

@@ -2,7 +2,8 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ArrowRight, Clock3, LucideAngularModule, MapPin, ShoppingBag, Star } from 'lucide-angular';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -15,6 +16,7 @@ import { ZonesApiService } from '../../core/services/zones-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
 import { BusinessesFiltersCardComponent } from './businesses-filters-card.component';
+import { BusinessesBusinessCardComponent } from './businesses-business-card.component';
 import { BusinessesHeroSectionComponent } from './businesses-hero-section.component';
 import { BusinessesPageContainerComponent } from './businesses-page-container.component';
 import { MenuCardComponent } from '../restaurants/components/menu-card.component';
@@ -40,10 +42,13 @@ type RestaurantListViewState = BrowseResultsState | SearchResultsState;
     BusinessesPageContainerComponent,
     BusinessesHeroSectionComponent,
     BusinessesFiltersCardComponent,
+    BusinessesBusinessCardComponent,
     SectionHeaderComponent,
     StateCardComponent,
     MenuCardComponent,
     CurrencyPipe,
+    RouterLink,
+    LucideAngularModule,
   ],
   templateUrl: './business-list-page.component.html',
 })
@@ -100,6 +105,11 @@ export class BusinessListPageComponent {
     return `${foodsLabel} y ${restaurantsLabel} relacionados encontrados.`;
   });
   readonly heroBackgroundImageUrl = this.buildHeroBackgroundImageUrl();
+  readonly starIcon = Star;
+  readonly clockIcon = Clock3;
+  readonly mapPinIcon = MapPin;
+  readonly shoppingBagIcon = ShoppingBag;
+  readonly arrowRightIcon = ArrowRight;
 
   constructor() {
     this.loadZones();

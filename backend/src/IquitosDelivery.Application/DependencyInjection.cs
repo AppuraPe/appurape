@@ -21,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.IDriverOrderService, Services.DriverOrderService>();
         services.AddScoped<Interfaces.IAdminRestaurantService, Services.AdminRestaurantService>();
         services.AddScoped<Interfaces.IAdminBusinessService, Services.AdminBusinessServiceAdapter>();
+        services.AddScoped<Interfaces.IPlatformSettingsService, Services.PlatformSettingsService>();
+        services.AddScoped<Interfaces.IAdminPlatformSettingsService, Services.PlatformSettingsService>();
         services.AddScoped<Interfaces.IAdminDriverService, Services.AdminDriverService>();
         services.AddScoped<Interfaces.IAdminFinanceService, Services.AdminFinanceService>();
         services.AddScoped<Interfaces.ICommunityService, Services.CommunityService>();

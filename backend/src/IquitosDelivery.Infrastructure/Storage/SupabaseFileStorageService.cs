@@ -44,7 +44,16 @@ public class SupabaseFileStorageService : IFileStorageService
         streamContent.Headers.ContentLength = contentLength;
         request.Content = streamContent;
 
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.SendAsync(request, cancellationToken);
+        }
+        catch (HttpRequestException exception)
+        {
+            throw new AppException($"Supabase storage is unreachable. Check Storage:Supabase:Url. Details: {exception.Message}");
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             var details = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -73,7 +82,16 @@ public class SupabaseFileStorageService : IFileStorageService
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _storageSettings.Supabase.ServiceKey.Trim());
         request.Headers.Add("apikey", _storageSettings.Supabase.ServiceKey.Trim());
 
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.SendAsync(request, cancellationToken);
+        }
+        catch (HttpRequestException exception)
+        {
+            throw new AppException($"Supabase storage is unreachable. Check Storage:Supabase:Url. Details: {exception.Message}");
+        }
+
         if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.NotFound)
         {
             var details = await response.Content.ReadAsStringAsync(cancellationToken);
