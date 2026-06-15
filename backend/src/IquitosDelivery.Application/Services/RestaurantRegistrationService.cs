@@ -11,7 +11,6 @@ namespace IquitosDelivery.Application.Services;
 public class RestaurantRegistrationService
     : EmailRegistrationServiceBase<PendingRestaurantRegistration>, IRestaurantRegistrationService
 {
-    private const string DefaultRestaurantBusinessTypeCode = "Restaurant";
     private readonly IValidator<StartRestaurantRegistrationRequest> _startValidator;
     private readonly IValidator<VerifyRestaurantRegistrationCodeRequest> _verifyValidator;
     private readonly IValidator<CompleteRestaurantRegistrationRequest> _completeValidator;
@@ -187,29 +186,19 @@ public class RestaurantRegistrationService
 
     private async Task<Guid> ResolveRestaurantBusinessTypeIdAsync(Guid? businessTypeId, CancellationToken cancellationToken)
     {
-        if (businessTypeId.HasValue)
+        if (!businessTypeId.HasValue || businessTypeId.Value == Guid.Empty)
         {
-            var requestedTypeExists = await DbContext.BusinessTypes
-                .AnyAsync(x => x.Id == businessTypeId.Value && x.IsActive, cancellationToken);
-
-            if (!requestedTypeExists)
-            {
-                throw new NotFoundException("The selected business type was not found.");
-            }
-
-            return businessTypeId.Value;
+            throw new NotFoundException("The selected business type was not found.");
         }
 
-        var defaultBusinessTypeId = await DbContext.BusinessTypes
-            .Where(x => x.Code == DefaultRestaurantBusinessTypeCode && x.IsActive)
-            .Select(x => (Guid?)x.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var requestedTypeExists = await DbContext.BusinessTypes
+            .AnyAsync(x => x.Id == businessTypeId.Value && x.IsActive, cancellationToken);
 
-        if (!defaultBusinessTypeId.HasValue)
+        if (!requestedTypeExists)
         {
-            throw new NotFoundException("The default restaurant business type was not found.");
+            throw new NotFoundException("The selected business type was not found.");
         }
 
-        return defaultBusinessTypeId.Value;
+        return businessTypeId.Value;
     }
 }

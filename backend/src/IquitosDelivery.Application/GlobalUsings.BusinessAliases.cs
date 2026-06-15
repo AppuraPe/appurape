@@ -21,6 +21,7 @@ global using PendingBusinessResponse = IquitosDelivery.Application.DTOs.Restaura
 global using PublicBusinessFilterRequest = IquitosDelivery.Application.DTOs.Restaurants.PublicRestaurantFilterRequest;
 global using PublicCatalogCategoryResponse = IquitosDelivery.Application.DTOs.Menu.PublicMenuCategoryResponse;
 global using UpdateBusinessActivationRequest = IquitosDelivery.Application.DTOs.Restaurants.UpdateRestaurantActivationRequest;
+global using UpdateBusinessTypeRequest = IquitosDelivery.Application.DTOs.Admin.UpdateAdminRestaurantBusinessTypeRequest;
 global using UpdateBusinessStatusRequest = IquitosDelivery.Application.DTOs.Admin.UpdateAdminEntityStatusRequest;
 global using UpdateCatalogCategoryRequest = IquitosDelivery.Application.DTOs.Menu.UpdateMenuCategoryRequest;
 global using UpdateCatalogItemRequest = IquitosDelivery.Application.DTOs.Menu.UpdateMenuItemRequest;

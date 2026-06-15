@@ -159,6 +159,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     </div>
                     <div class="grid gap-1">
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant.name }}</strong>
+                      <span class="text-sm text-text-muted">Categoría: {{ restaurant.businessTypeName || 'Sin categoría' }}</span>
                       <span class="text-sm text-text-muted">Owner: {{ restaurant.ownerFullName }}</span>
                       <span class="text-sm text-text-muted">{{ restaurant.ownerEmail }}</span>
                     </div>

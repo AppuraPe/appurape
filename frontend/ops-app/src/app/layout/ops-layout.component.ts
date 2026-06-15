@@ -119,6 +119,7 @@ export class OpsLayoutComponent {
           { label: 'Dashboard', path: '/admin/dashboard', helper: 'Pendientes clave' },
           { label: 'Comunidad', path: '/admin/community', helper: 'Colaboradores y métricas' },
           { label: 'Branding', path: '/admin/settings/branding', helper: 'Logo, icono y splash' },
+          { label: 'Categorías de negocios', path: '/admin/business-types', helper: 'Tipos, iconos y estado' },
           { label: 'Negocios pendientes', path: '/admin/restaurants/pending', helper: 'Aprobar o rechazar' },
           { label: 'Drivers pendientes', path: '/admin/drivers/pending', helper: 'Aprobar o rechazar' },
           { label: 'Todos los negocios', path: '/admin/restaurants', helper: 'Estados y detalle' },

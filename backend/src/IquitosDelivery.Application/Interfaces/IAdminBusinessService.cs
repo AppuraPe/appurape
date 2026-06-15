@@ -8,6 +8,8 @@ public interface IAdminBusinessService
 
     Task<AdminBusinessDetailResponse> UpdateBusinessStatusAsync(Guid businessId, UpdateBusinessStatusRequest request, CancellationToken cancellationToken = default);
 
+    Task<AdminBusinessDetailResponse> UpdateBusinessTypeAsync(Guid businessId, UpdateBusinessTypeRequest request, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PendingBusinessResponse>> GetPendingBusinessesAsync(CancellationToken cancellationToken = default);
 
     Task<PendingBusinessResponse> ApproveBusinessAsync(Guid businessId, CancellationToken cancellationToken = default);

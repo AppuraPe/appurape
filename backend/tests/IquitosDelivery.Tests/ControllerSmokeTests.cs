@@ -2,6 +2,7 @@ using IquitosDelivery.Api.Controllers;
 using IquitosDelivery.Api.Controllers.Requests.Auth;
 using IquitosDelivery.Application.DTOs.Admin;
 using IquitosDelivery.Application.DTOs.Auth;
+using IquitosDelivery.Application.DTOs.Businesses;
 using IquitosDelivery.Application.DTOs.Drivers;
 using IquitosDelivery.Application.DTOs.Menu;
 using IquitosDelivery.Application.DTOs.Orders;
@@ -188,6 +189,32 @@ public class ControllerSmokeTests
         Assert.IsType<OkObjectResult>((await controller.UpdateStatus(driverId, new UpdateAdminEntityStatusRequest(), CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.Approve(driverId, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.Reject(driverId, CancellationToken.None)).Result);
+    }
+
+    [Fact]
+    public async Task AdminBusinessTypesController_CrudEndpoints_ReturnOk()
+    {
+        var service = new Mock<IAdminBusinessTypeService>(MockBehavior.Strict);
+        service
+            .Setup(x => x.GetBusinessTypesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AdminBusinessTypeResponse>());
+        service
+            .Setup(x => x.CreateBusinessTypeAsync(It.IsAny<UpsertAdminBusinessTypeRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdminBusinessTypeResponse());
+        service
+            .Setup(x => x.UpdateBusinessTypeAsync(It.IsAny<Guid>(), It.IsAny<UpsertAdminBusinessTypeRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdminBusinessTypeResponse());
+        service
+            .Setup(x => x.UpdateBusinessTypeStatusAsync(It.IsAny<Guid>(), It.IsAny<UpdateBusinessTypeStatusRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdminBusinessTypeResponse());
+
+        var controller = new AdminBusinessTypesController(service.Object);
+        var businessTypeId = Guid.NewGuid();
+
+        Assert.IsType<OkObjectResult>((await controller.GetBusinessTypes(CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.CreateBusinessType(new UpsertAdminBusinessTypeRequest(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.UpdateBusinessType(businessTypeId, new UpsertAdminBusinessTypeRequest(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.UpdateBusinessTypeStatus(businessTypeId, new UpdateBusinessTypeStatusRequest(), CancellationToken.None)).Result);
     }
 
     [Fact]

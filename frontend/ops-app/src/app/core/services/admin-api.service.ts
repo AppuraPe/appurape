@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AdminBusinessTypeResponse,
   AdminDriverDetailResponse,
   AdminDriverFilters,
   AdminDriverListItemResponse,
@@ -11,6 +12,8 @@ import {
   AdminRestaurantListItemResponse,
   AdminStatusAction,
   PendingRestaurantResponse,
+  UpdateBusinessTypeStatusRequest,
+  UpsertAdminBusinessTypeRequest,
 } from '../models/admin.models';
 import { PendingDriverResponse } from '../models/driver.models';
 import { AdminBusinessesApiService } from './admin-businesses-api.service';
@@ -19,6 +22,7 @@ import { AdminBusinessesApiService } from './admin-businesses-api.service';
 export class AdminApiService {
   private readonly http = inject(HttpClient);
   private readonly adminBusinessesApi = inject(AdminBusinessesApiService);
+  private readonly businessTypesBaseUrl = `${environment.apiBaseUrl}/api/admin/business-types`;
   private readonly driversBaseUrl = `${environment.apiBaseUrl}/api/admin/drivers`;
 
   getRestaurants(filters: AdminRestaurantFilters = {}): Observable<AdminRestaurantListItemResponse[]> {
@@ -43,6 +47,22 @@ export class AdminApiService {
 
   rejectRestaurant(id: string): Observable<PendingRestaurantResponse> {
     return this.adminBusinessesApi.rejectBusiness(id);
+  }
+
+  getBusinessTypes(): Observable<AdminBusinessTypeResponse[]> {
+    return this.http.get<AdminBusinessTypeResponse[]>(this.businessTypesBaseUrl);
+  }
+
+  createBusinessType(request: UpsertAdminBusinessTypeRequest): Observable<AdminBusinessTypeResponse> {
+    return this.http.post<AdminBusinessTypeResponse>(this.businessTypesBaseUrl, request);
+  }
+
+  updateBusinessType(id: string, request: UpsertAdminBusinessTypeRequest): Observable<AdminBusinessTypeResponse> {
+    return this.http.put<AdminBusinessTypeResponse>(`${this.businessTypesBaseUrl}/${id}`, request);
+  }
+
+  updateBusinessTypeStatus(id: string, request: UpdateBusinessTypeStatusRequest): Observable<AdminBusinessTypeResponse> {
+    return this.http.patch<AdminBusinessTypeResponse>(`${this.businessTypesBaseUrl}/${id}/status`, request);
   }
 
   getDrivers(filters: AdminDriverFilters = {}): Observable<AdminDriverListItemResponse[]> {

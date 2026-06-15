@@ -7,6 +7,7 @@ import {
   AdminBusinessFilters,
   AdminBusinessListItemResponse,
   PendingBusinessResponse,
+  UpdateAdminBusinessTypeRequest,
   UpdateAdminBusinessStatusAction,
 } from '../models/admin-business.models';
 
@@ -27,6 +28,10 @@ export class AdminBusinessesApiService {
 
   updateBusinessStatus(id: string, action: UpdateAdminBusinessStatusAction): Observable<AdminBusinessDetailResponse> {
     return this.http.patch<AdminBusinessDetailResponse>(`${this.baseUrl}/${id}/status`, { action });
+  }
+
+  updateBusinessType(id: string, request: UpdateAdminBusinessTypeRequest): Observable<AdminBusinessDetailResponse> {
+    return this.http.patch<AdminBusinessDetailResponse>(`${this.baseUrl}/${id}/business-type`, request);
   }
 
   getPendingBusinesses(): Observable<PendingBusinessResponse[]> {

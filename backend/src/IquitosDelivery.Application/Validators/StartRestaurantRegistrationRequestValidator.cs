@@ -15,6 +15,9 @@ public class StartRestaurantRegistrationRequestValidator : AbstractValidator<Sta
         RuleFor(x => x.Description).NotEmpty().MaximumLength(1000);
         RuleFor(x => x.Address).NotEmpty().MaximumLength(300);
         RuleFor(x => x.Reference).NotEmpty().MaximumLength(300);
+        RuleFor(x => x.BusinessTypeId)
+            .NotEmpty()
+            .WithMessage("Debes seleccionar un tipo de negocio.");
         RuleFor(x => x.ZoneId).NotEmpty();
         RuleFor(x => x.OpenTime).NotEmpty();
         RuleFor(x => x.CloseTime)

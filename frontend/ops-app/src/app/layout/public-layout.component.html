@@ -177,13 +177,13 @@
   <router-outlet />
 </main>
 
-<nav class="fixed inset-x-0 bottom-0 z-50 w-full border-t border-slate-200 bg-white px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_18px_rgba(15,23,42,0.08)] lg:hidden" [class.hidden]="shouldHideMobileBottomNav()" aria-label="Navegación principal móvil">
+<nav class="pointer-events-auto fixed inset-x-0 bottom-0 z-[100] w-full border-t border-slate-200 bg-white px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_18px_rgba(15,23,42,0.08)] lg:hidden" [class.hidden]="shouldHideMobileBottomNav()" aria-label="Navegación principal móvil">
   <div class="grid w-full grid-cols-4 gap-1">
     <a
       routerLink="/businesses"
       routerLinkActive="text-primary-700"
       [routerLinkActiveOptions]="{ exact: false }"
-      class="flex min-h-12 min-w-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline transition"
+      class="relative z-[101] flex min-h-12 min-w-14 cursor-pointer touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline pointer-events-auto transition"
     >
       <lucide-angular class="h-5 w-5" [img]="homeIcon" aria-hidden="true"></lucide-angular>
       Explorar
@@ -192,7 +192,7 @@
       routerLink="/favors"
       routerLinkActive="text-primary-700"
       [routerLinkActiveOptions]="{ exact: false }"
-      class="flex min-h-12 min-w-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline transition"
+      class="relative z-[101] flex min-h-12 min-w-14 cursor-pointer touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline pointer-events-auto transition"
     >
       <lucide-angular class="h-5 w-5" [img]="heartIcon" aria-hidden="true"></lucide-angular>
       Favores
@@ -202,14 +202,14 @@
         [routerLink]="primaryDestinationRoute()"
         routerLinkActive="text-primary-700"
         [routerLinkActiveOptions]="{ exact: false }"
-        class="flex min-h-12 min-w-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline transition"
+        class="relative z-[101] flex min-h-12 min-w-14 cursor-pointer touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline pointer-events-auto transition"
       >
         <lucide-angular class="h-5 w-5" [img]="userIcon" aria-hidden="true"></lucide-angular>
         Pedidos
       </a>
       <button
         type="button"
-        class="flex min-h-12 min-w-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 transition"
+        class="relative z-[101] flex min-h-12 min-w-14 cursor-pointer touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 pointer-events-auto transition"
         (click)="logout()"
       >
         <lucide-angular class="h-5 w-5" [img]="userPlusIcon" aria-hidden="true"></lucide-angular>
@@ -220,7 +220,7 @@
         routerLink="/login"
         routerLinkActive="text-primary-700"
         [routerLinkActiveOptions]="{ exact: true }"
-        class="flex min-h-12 min-w-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline transition"
+        class="relative z-[101] flex min-h-12 min-w-14 cursor-pointer touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline pointer-events-auto transition"
       >
         <lucide-angular class="h-5 w-5" [img]="userIcon" aria-hidden="true"></lucide-angular>
         Login
@@ -229,7 +229,7 @@
         routerLink="/register"
         routerLinkActive="text-primary-700"
         [routerLinkActiveOptions]="{ exact: false }"
-        class="flex min-h-12 min-w-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline transition"
+        class="relative z-[101] flex min-h-12 min-w-14 cursor-pointer touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline pointer-events-auto transition"
       >
         <lucide-angular class="h-5 w-5" [img]="userPlusIcon" aria-hidden="true"></lucide-angular>
         Registro

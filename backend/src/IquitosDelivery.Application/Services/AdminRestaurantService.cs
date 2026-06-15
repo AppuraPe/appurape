@@ -17,11 +17,16 @@ public class AdminRestaurantService : IAdminRestaurantService
     private const string LegacyRestaurantBusinessTypeName = "Restaurant";
     private readonly IAppDbContext _dbContext;
     private readonly IValidator<UpdateAdminEntityStatusRequest> _statusValidator;
+    private readonly IValidator<UpdateAdminRestaurantBusinessTypeRequest> _businessTypeValidator;
 
-    public AdminRestaurantService(IAppDbContext dbContext, IValidator<UpdateAdminEntityStatusRequest> statusValidator)
+    public AdminRestaurantService(
+        IAppDbContext dbContext,
+        IValidator<UpdateAdminEntityStatusRequest> statusValidator,
+        IValidator<UpdateAdminRestaurantBusinessTypeRequest> businessTypeValidator)
     {
         _dbContext = dbContext;
         _statusValidator = statusValidator;
+        _businessTypeValidator = businessTypeValidator;
     }
 
     public async Task<IReadOnlyList<AdminRestaurantListItemResponse>> GetRestaurantsAsync(
@@ -109,6 +114,30 @@ public class AdminRestaurantService : IAdminRestaurantService
         return await GetRestaurantByIdAsync(restaurantId, cancellationToken);
     }
 
+    public async Task<AdminRestaurantDetailResponse> UpdateRestaurantBusinessTypeAsync(
+        Guid restaurantId,
+        UpdateAdminRestaurantBusinessTypeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await _businessTypeValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        var restaurant = await GetRestaurantForModerationAsync(restaurantId, cancellationToken);
+        var businessTypeId = request.BusinessTypeId!.Value;
+
+        var businessTypeExists = await _dbContext.BusinessTypes
+            .AnyAsync(x => x.Id == businessTypeId && x.IsActive, cancellationToken);
+
+        if (!businessTypeExists)
+        {
+            throw new NotFoundException("The selected business type was not found.");
+        }
+
+        restaurant.BusinessTypeId = businessTypeId;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetRestaurantByIdAsync(restaurantId, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<PendingRestaurantResponse>> GetPendingRestaurantsAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.Restaurants
@@ -118,6 +147,8 @@ public class AdminRestaurantService : IAdminRestaurantService
             {
                 Id = x.Id,
                 Name = x.Name,
+                BusinessTypeId = x.BusinessTypeId,
+                BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : null,
                 OwnerUserId = x.OwnerUserId,
                 OwnerFullName = x.OwnerUser.FirstName + " " + x.OwnerUser.LastName,
                 Email = x.OwnerUser.Email,
@@ -209,6 +240,8 @@ public class AdminRestaurantService : IAdminRestaurantService
             {
                 Id = x.Id,
                 Name = x.Name,
+                BusinessTypeId = x.BusinessTypeId,
+                BusinessTypeName = x.BusinessType != null ? x.BusinessType.Name : null,
                 OwnerUserId = x.OwnerUserId,
                 OwnerFullName = x.OwnerUser.FirstName + " " + x.OwnerUser.LastName,
                 Email = x.OwnerUser.Email,

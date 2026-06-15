@@ -6,6 +6,10 @@ public class PendingRestaurantResponse
 
     public string Name { get; set; } = string.Empty;
 
+    public Guid? BusinessTypeId { get; set; }
+
+    public string? BusinessTypeName { get; set; }
+
     public Guid OwnerUserId { get; set; }
 
     public string OwnerFullName { get; set; } = string.Empty;

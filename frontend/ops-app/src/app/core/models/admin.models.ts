@@ -1,8 +1,31 @@
 export type AdminStatusAction = 'approve' | 'reject' | 'suspend' | 'reactivate' | 'trust' | 'verify';
 
+export interface AdminBusinessTypeResponse {
+  id: string;
+  name: string;
+  slug: string;
+  iconKey?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  businessCount: number;
+}
+
+export interface UpsertAdminBusinessTypeRequest {
+  name: string;
+  slug: string;
+  iconKey?: string | null;
+  sortOrder: number;
+}
+
+export interface UpdateBusinessTypeStatusRequest {
+  isActive: boolean;
+}
+
 export interface PendingRestaurantResponse {
   id: string;
   name: string;
+  businessTypeId?: string | null;
+  businessTypeName?: string | null;
   ownerUserId: string;
   ownerFullName: string;
   email: string;
@@ -55,6 +78,10 @@ export interface AdminRestaurantDetailResponse {
   logoUrl?: string | null;
   createdAtUtc: string;
   updatedAtUtc?: string | null;
+}
+
+export interface UpdateAdminBusinessTypeRequest {
+  businessTypeId: string;
 }
 
 export interface AdminDriverListItemResponse {

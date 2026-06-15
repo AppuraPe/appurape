@@ -53,6 +53,17 @@ public class AdminBusinessesController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPatch("{id:guid}/business-type")]
+    [ProducesResponseType(typeof(AdminBusinessDetailResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdminBusinessDetailResponse>> UpdateBusinessType(
+        Guid id,
+        [FromBody] UpdateBusinessTypeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _adminBusinessService.UpdateBusinessTypeAsync(id, request, cancellationToken);
+        return Ok(response);
+    }
+
     [HttpPatch("{id:guid}/approve")]
     [ProducesResponseType(typeof(PendingBusinessResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<PendingBusinessResponse>> Approve(Guid id, CancellationToken cancellationToken)

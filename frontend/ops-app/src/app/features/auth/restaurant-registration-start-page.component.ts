@@ -3,9 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { StartBusinessRegistrationRequest } from '../../core/models/business.model';
+import { BusinessTypeListItemResponse } from '../../core/models/businesses.models';
 import { ZoneResponse } from '../../core/models/zone.models';
 import { AuthApiService } from '../../core/services/auth-api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { BusinessesApiService } from '../../core/services/businesses-api.service';
 import { ZoneApiService } from '../../core/services/zone-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { validateImageFile } from '../../core/utils/file-upload.utils';
@@ -19,7 +21,15 @@ import { setRegistrationState } from './registration-flow.storage';
 @Component({
   selector: 'app-restaurant-registration-start-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AppBackButtonComponent, PageHeaderComponent, AppNoticeComponent, AppButtonComponent, AppSurfaceCardComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    AppBackButtonComponent,
+    PageHeaderComponent,
+    AppNoticeComponent,
+    AppButtonComponent,
+    AppSurfaceCardComponent,
+  ],
   template: `
     <section class="px-4 py-4 sm:px-6 sm:py-6">
       <div class="mx-auto grid w-full max-w-[1040px] gap-3">
@@ -31,9 +41,9 @@ import { setRegistrationState } from './registration-flow.storage';
             <span class="inline-flex w-fit items-center rounded-full bg-primary-100 px-3 py-1 text-[0.7rem] font-black uppercase tracking-[0.18em] text-primary-700">
               Paso 1 de 3
             </span>
-            <h1 class="text-3xl font-black tracking-[-0.05em] sm:text-[2.2rem]">Tu restaurante empieza aquí</h1>
+            <h1 class="text-3xl font-black tracking-[-0.05em] sm:text-[2.2rem]">Tu negocio empieza aquí</h1>
             <p class="text-sm leading-6 text-text-muted">
-              Completa los datos base, sube tu logo y continúa con la verificación del correo.
+              Completa los datos base, elige la categoría del negocio, sube tu logo y continúa con la verificación del correo.
             </p>
           </div>
 
@@ -47,7 +57,7 @@ import { setRegistrationState } from './registration-flow.storage';
         <app-surface-card variant="page" extraClass="w-full p-5 sm:p-6">
           <app-page-header
             eyebrow="Registro"
-            title="Registrar restaurante"
+            title="Registrar negocio"
             subtitle="Pantalla compacta, sin bloques decorativos y lista para usarse desde el celular."
           />
 
@@ -61,6 +71,19 @@ import { setRegistrationState } from './registration-flow.storage';
 
           @if (isLoadingZones()) {
             <div class="message">Cargando zonas...</div>
+          }
+
+          @if (isLoadingBusinessTypes()) {
+            <div class="message">Cargando categorías...</div>
+          }
+
+          @if (businessTypesLoadError()) {
+            <div class="message error">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span>{{ businessTypesLoadError() }}</span>
+                <app-button type="button" variant="ghost" size="sm" (click)="loadBusinessTypes()">Reintentar</app-button>
+              </div>
+            </div>
           }
 
           <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
@@ -86,18 +109,39 @@ import { setRegistrationState } from './registration-flow.storage';
               </div>
 
               <div class="field">
-                <label for="restaurantName">Nombre del restaurante</label>
+                <label for="restaurantName">Nombre del negocio</label>
                 <input id="restaurantName" type="text" formControlName="restaurantName" />
               </div>
 
               <div class="field">
                 <label for="zoneId">Zona</label>
-                <select id="zoneId" formControlName="zoneId">
+                <select id="zoneId" formControlName="zoneId" class="min-h-12 w-full">
                   <option value="">Selecciona una zona</option>
                   @for (zone of zones(); track zone.id) {
                     <option [value]="zone.id">{{ zone.name }}</option>
                   }
                 </select>
+              </div>
+
+              <div class="field md:col-span-2">
+                <label for="businessTypeId">Tipo de negocio</label>
+                <select
+                  id="businessTypeId"
+                  formControlName="businessTypeId"
+                  class="min-h-12 w-full"
+                  [attr.aria-invalid]="showBusinessTypeError()"
+                >
+                  <option value="">Selecciona una categoría</option>
+                  @for (businessType of businessTypes(); track businessType.id) {
+                    <option [value]="businessType.id">{{ businessType.name }}</option>
+                  }
+                </select>
+                @if (showBusinessTypeError()) {
+                  <small class="text-sm font-medium text-danger">Selecciona una categoría para continuar.</small>
+                }
+                @if (!isLoadingBusinessTypes() && !businessTypesLoadError() && !businessTypes().length) {
+                  <small class="text-sm text-text-muted">No hay categorías disponibles en este momento.</small>
+                }
               </div>
 
               <div class="field">
@@ -123,7 +167,7 @@ import { setRegistrationState } from './registration-flow.storage';
 
             <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
               <div class="field">
-                <label for="logoFile">Logo del restaurante</label>
+                <label for="logoFile">Logo del negocio</label>
                 <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
                 @if (logoFileName()) {
                   <small class="muted">Archivo seleccionado: {{ logoFileName() }}</small>
@@ -148,7 +192,12 @@ import { setRegistrationState } from './registration-flow.storage';
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">
-              <app-button type="submit" [disabled]="isSubmitting() || isLoadingZones()" size="lg" block>
+              <app-button
+                type="submit"
+                [disabled]="isSubmitting() || isLoadingZones() || isLoadingBusinessTypes() || !!businessTypesLoadError() || !businessTypes().length"
+                size="lg"
+                block
+              >
                 {{ isSubmitting() ? 'Enviando...' : 'Enviar código' }}
               </app-button>
               <app-button variant="ghost" routerLink="/login" block>Volver al login</app-button>
@@ -163,10 +212,14 @@ export class RestaurantRegistrationStartPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
   private readonly authService = inject(AuthService);
+  private readonly businessesApi = inject(BusinessesApiService);
   private readonly zoneApi = inject(ZoneApiService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly businessTypes = signal<BusinessTypeListItemResponse[]>([]);
+  readonly isLoadingBusinessTypes = signal(true);
+  readonly businessTypesLoadError = signal('');
   readonly zones = signal<ZoneResponse[]>([]);
   readonly isLoadingZones = signal(true);
   readonly isSubmitting = signal(false);
@@ -187,6 +240,7 @@ export class RestaurantRegistrationStartPageComponent {
     description: ['', [Validators.required]],
     address: ['', [Validators.required]],
     reference: [''],
+    businessTypeId: ['', [Validators.required]],
     zoneId: ['', [Validators.required]],
     openTime: ['', [Validators.required]],
     closeTime: ['', [Validators.required]],
@@ -204,6 +258,7 @@ export class RestaurantRegistrationStartPageComponent {
       }
     });
 
+    this.loadBusinessTypes();
     this.loadZones();
   }
 
@@ -223,6 +278,7 @@ export class RestaurantRegistrationStartPageComponent {
       description: raw.description.trim(),
       address: raw.address.trim(),
       reference: raw.reference.trim(),
+      businessTypeId: raw.businessTypeId,
       zoneId: raw.zoneId,
       openTime: this.toApiTimeValue(raw.openTime),
       closeTime: this.toApiTimeValue(raw.closeTime),
@@ -248,7 +304,7 @@ export class RestaurantRegistrationStartPageComponent {
           void this.router.navigateByUrl('/register/restaurant/verify');
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo iniciar el registro del restaurante.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo iniciar el registro del negocio.'));
           this.isSubmitting.set(false);
         },
       });
@@ -274,6 +330,30 @@ export class RestaurantRegistrationStartPageComponent {
     this.errorMessage.set('');
     this.logoFileName.set(file.name);
     this.replaceLogoPreview(file);
+  }
+
+  showBusinessTypeError(): boolean {
+    const control = this.form.controls.businessTypeId;
+    return control.invalid && (control.touched || control.dirty);
+  }
+
+  loadBusinessTypes(): void {
+    this.isLoadingBusinessTypes.set(true);
+    this.businessTypesLoadError.set('');
+
+    this.businessesApi
+      .getBusinessTypes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (businessTypes) => {
+          this.businessTypes.set(businessTypes.filter((businessType) => !!businessType.id));
+          this.isLoadingBusinessTypes.set(false);
+        },
+        error: (error) => {
+          this.businessTypesLoadError.set(getErrorMessage(error, 'No se pudieron cargar las categorías.'));
+          this.isLoadingBusinessTypes.set(false);
+        },
+      });
   }
 
   private loadZones(): void {
@@ -302,6 +382,7 @@ export class RestaurantRegistrationStartPageComponent {
     formData.append('Description', raw.description.trim());
     formData.append('Address', raw.address.trim());
     formData.append('Reference', raw.reference.trim());
+    formData.append('BusinessTypeId', raw.businessTypeId);
     formData.append('ZoneId', raw.zoneId);
     formData.append('OpenTime', this.toApiTimeValue(raw.openTime));
     formData.append('CloseTime', this.toApiTimeValue(raw.closeTime));

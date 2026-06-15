@@ -26,6 +26,11 @@ public class AdminBusinessServiceAdapter : IAdminBusinessService
         return _adminRestaurantService.UpdateRestaurantStatusAsync(businessId, request, cancellationToken);
     }
 
+    public Task<AdminBusinessDetailResponse> UpdateBusinessTypeAsync(Guid businessId, UpdateBusinessTypeRequest request, CancellationToken cancellationToken = default)
+    {
+        return _adminRestaurantService.UpdateRestaurantBusinessTypeAsync(businessId, request, cancellationToken);
+    }
+
     public Task<IReadOnlyList<PendingBusinessResponse>> GetPendingBusinessesAsync(CancellationToken cancellationToken = default)
     {
         return _adminRestaurantService.GetPendingRestaurantsAsync(cancellationToken);

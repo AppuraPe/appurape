@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   Building2,
@@ -10,11 +11,14 @@ import {
   Mail,
   MapPin,
   Phone,
+  RefreshCw,
   ShieldCheck,
   Store,
 } from 'lucide-angular';
+import { BusinessTypeListItemResponse } from '../../core/models/businesses.models';
 import { AdminBusinessDetailResponse, UpdateAdminBusinessStatusAction } from '../../core/models/admin-business.models';
 import { AdminBusinessesApiService } from '../../core/services/admin-businesses-api.service';
+import { BusinessesApiService } from '../../core/services/businesses-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
@@ -27,6 +31,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
   standalone: true,
   imports: [
     DatePipe,
+    ReactiveFormsModule,
     RouterLink,
     LucideAngularModule,
     PageHeaderComponent,
@@ -132,6 +137,13 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 </div>
                 <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
+                    <lucide-angular class="h-4 w-4" [img]="storeIcon" aria-hidden="true"></lucide-angular>
+                    Categoría
+                  </div>
+                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.businessTypeName || 'Sin categoría' }}</p>
+                </div>
+                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                     Zona
                   </div>
@@ -171,6 +183,41 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               </div>
 
               <div class="grid gap-3">
+                <form class="rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]" [formGroup]="businessTypeForm" (ngSubmit)="updateBusinessType()">
+                  <div class="grid gap-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                      <div class="grid gap-1">
+                        <span class="text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">Categoría del negocio</span>
+                        <p class="text-sm text-text-muted">Solo se permiten categorías activas como nueva selección.</p>
+                      </div>
+                      <app-button type="button" variant="ghost" size="sm" [disabled]="isLoadingBusinessTypes()" (click)="loadBusinessTypes()">
+                        <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
+                        Recargar
+                      </app-button>
+                    </div>
+
+                    @if (isLoadingBusinessTypes()) {
+                      <div class="text-sm font-semibold text-text-muted">Cargando categorías...</div>
+                    } @else {
+                      <label class="grid gap-2">
+                        <span class="text-sm font-semibold text-loreto-carbon">Tipo de negocio</span>
+                        <select id="businessTypeId" formControlName="businessTypeId" class="min-h-12 w-full">
+                          <option value="">Selecciona una categoría</option>
+                          @for (businessType of businessTypes(); track businessType.id) {
+                            <option [value]="businessType.id">{{ businessType.name }}</option>
+                          }
+                        </select>
+                      </label>
+                    }
+
+                    <div class="flex flex-wrap gap-3">
+                      <app-button type="submit" size="md" [disabled]="isSavingBusinessType() || isLoadingBusinessTypes() || businessTypeForm.invalid">
+                        {{ isSavingBusinessType() ? 'Guardando...' : 'Guardar categoría' }}
+                      </app-button>
+                    </div>
+                  </div>
+                </form>
+
                 <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
@@ -205,8 +252,10 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
   `,
 })
 export class AdminBusinessDetailPageComponent {
+  private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly adminBusinessesApi = inject(AdminBusinessesApiService);
+  private readonly businessesApi = inject(BusinessesApiService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly storeIcon = Store;
@@ -217,6 +266,7 @@ export class AdminBusinessDetailPageComponent {
   readonly shieldCheckIcon = ShieldCheck;
   readonly calendarIcon = CalendarClock;
   readonly clockIcon = Clock3;
+  readonly refreshIcon = RefreshCw;
 
   readonly actions: Array<{ label: string; value: UpdateAdminBusinessStatusAction }> = [
     { label: 'Approve', value: 'approve' },
@@ -226,15 +276,22 @@ export class AdminBusinessDetailPageComponent {
   ];
 
   readonly restaurant = signal<AdminBusinessDetailResponse | null>(null);
+  readonly businessTypes = signal<BusinessTypeListItemResponse[]>([]);
   readonly isLoading = signal(true);
+  readonly isLoadingBusinessTypes = signal(true);
+  readonly isSavingBusinessType = signal(false);
   readonly actionInProgress = signal<UpdateAdminBusinessStatusAction | null>(null);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
+  readonly businessTypeForm = this.formBuilder.nonNullable.group({
+    businessTypeId: ['', [Validators.required]],
+  });
 
   private readonly restaurantId = this.route.snapshot.paramMap.get('id') ?? '';
 
   constructor() {
     this.loadRestaurant();
+    this.loadBusinessTypes();
   }
 
   loadRestaurant(): void {
@@ -247,11 +304,31 @@ export class AdminBusinessDetailPageComponent {
       .subscribe({
         next: (restaurant) => {
           this.restaurant.set(restaurant);
+          this.businessTypeForm.patchValue({
+            businessTypeId: restaurant.businessTypeId ?? '',
+          });
           this.isLoading.set(false);
         },
         error: (error) => {
           this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el restaurante.'));
           this.isLoading.set(false);
+        },
+      });
+  }
+
+  loadBusinessTypes(): void {
+    this.isLoadingBusinessTypes.set(true);
+
+    this.businessesApi
+      .getBusinessTypes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (businessTypes) => {
+          this.businessTypes.set(businessTypes);
+          this.isLoadingBusinessTypes.set(false);
+        },
+        error: () => {
+          this.isLoadingBusinessTypes.set(false);
         },
       });
   }
@@ -273,6 +350,36 @@ export class AdminBusinessDetailPageComponent {
         error: (error) => {
           this.errorMessage.set(getErrorMessage(error, `No se pudo aplicar la accion ${action}.`));
           this.actionInProgress.set(null);
+        },
+      });
+  }
+
+  updateBusinessType(): void {
+    if (this.businessTypeForm.invalid) {
+      this.businessTypeForm.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.businessTypeForm.getRawValue();
+    this.isSavingBusinessType.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.adminBusinessesApi
+      .updateBusinessType(this.restaurantId, { businessTypeId: raw.businessTypeId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (restaurant) => {
+          this.restaurant.set(restaurant);
+          this.businessTypeForm.patchValue({
+            businessTypeId: restaurant.businessTypeId ?? '',
+          });
+          this.successMessage.set('Categoría actualizada correctamente.');
+          this.isSavingBusinessType.set(false);
+        },
+        error: (error) => {
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar la categoría del negocio.'));
+          this.isSavingBusinessType.set(false);
         },
       });
   }

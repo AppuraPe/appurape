@@ -11,6 +11,8 @@ public interface IAdminRestaurantService
 
     Task<AdminRestaurantDetailResponse> UpdateRestaurantStatusAsync(Guid restaurantId, UpdateAdminEntityStatusRequest request, CancellationToken cancellationToken = default);
 
+    Task<AdminRestaurantDetailResponse> UpdateRestaurantBusinessTypeAsync(Guid restaurantId, UpdateAdminRestaurantBusinessTypeRequest request, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PendingRestaurantResponse>> GetPendingRestaurantsAsync(CancellationToken cancellationToken = default);
 
     Task<PendingRestaurantResponse> ApproveRestaurantAsync(Guid restaurantId, CancellationToken cancellationToken = default);

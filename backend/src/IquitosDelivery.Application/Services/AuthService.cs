@@ -11,7 +11,6 @@ namespace IquitosDelivery.Application.Services;
 
 public class AuthService : IAuthService
 {
-    private const string DefaultRestaurantBusinessTypeCode = "Restaurant";
     private const int PasswordResetCodeExpirationMinutes = 10;
     private const int PasswordResetCodeLength = 6;
     private const int MaxPasswordResetVerifyAttempts = 5;
@@ -415,30 +414,20 @@ public class AuthService : IAuthService
 
     private async Task<Guid> ResolveRestaurantBusinessTypeIdAsync(Guid? businessTypeId, CancellationToken cancellationToken)
     {
-        if (businessTypeId.HasValue)
+        if (!businessTypeId.HasValue || businessTypeId.Value == Guid.Empty)
         {
-            var requestedTypeExists = await _dbContext.BusinessTypes
-                .AnyAsync(x => x.Id == businessTypeId.Value && x.IsActive, cancellationToken);
-
-            if (!requestedTypeExists)
-            {
-                throw new NotFoundException("The selected business type was not found.");
-            }
-
-            return businessTypeId.Value;
+            throw new NotFoundException("The selected business type was not found.");
         }
 
-        var defaultBusinessTypeId = await _dbContext.BusinessTypes
-            .Where(x => x.Code == DefaultRestaurantBusinessTypeCode && x.IsActive)
-            .Select(x => (Guid?)x.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var requestedTypeExists = await _dbContext.BusinessTypes
+            .AnyAsync(x => x.Id == businessTypeId.Value && x.IsActive, cancellationToken);
 
-        if (!defaultBusinessTypeId.HasValue)
+        if (!requestedTypeExists)
         {
-            throw new NotFoundException("The default restaurant business type was not found.");
+            throw new NotFoundException("The selected business type was not found.");
         }
 
-        return defaultBusinessTypeId.Value;
+        return businessTypeId.Value;
     }
 
     private User CreateUser(string firstName, string lastName, string phone, string email, string password, UserRole role, UserStatus status)
