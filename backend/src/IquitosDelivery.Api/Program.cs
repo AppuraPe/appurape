@@ -120,7 +120,11 @@ try
     var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
     await dbContext.Database.MigrateAsync();
-    await AppDbContextSeeder.SeedBaseDataAsync(dbContext, passwordHasher);
+    await AppDbContextSeeder.SeedBaseDataAsync(dbContext, passwordHasher, app.Configuration);
+    if (app.Environment.IsDevelopment())
+    {
+        await AppDbContextSeeder.SeedDevelopmentQaUsersAsync(dbContext, passwordHasher, app.Configuration);
+    }
 }
 catch (Exception exception)
 {

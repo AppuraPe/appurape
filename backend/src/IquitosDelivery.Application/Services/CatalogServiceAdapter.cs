@@ -19,6 +19,14 @@ public class CatalogServiceAdapter : ICatalogService
         return _menuService.GetPublicMenuAsync(businessId, filters, cancellationToken);
     }
 
+    public Task<PublicProductDetailResponse> GetPublicProductAsync(
+        Guid businessId,
+        Guid productId,
+        CancellationToken cancellationToken = default)
+    {
+        return _menuService.GetPublicProductAsync(businessId, productId, cancellationToken);
+    }
+
     public Task<IReadOnlyList<CatalogCategoryResponse>> GetMyCategoriesAsync(
         CatalogCategoryFilterRequest filters,
         CancellationToken cancellationToken = default)

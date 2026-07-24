@@ -56,6 +56,10 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Order> Orders => Set<Order>();
 
+    public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
+
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     public DbSet<OrderIncident> OrderIncidents => Set<OrderIncident>();
@@ -75,6 +79,8 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<CollaboratorProfile> IAppDbContext.CollaboratorProfiles => CollaboratorProfiles;
 
     IQueryable<CommunityCollaborator> IAppDbContext.CommunityCollaborators => CommunityCollaborators;
+
+    IQueryable<CustomerAddress> IAppDbContext.CustomerAddresses => CustomerAddresses;
 
     IQueryable<BusinessType> IAppDbContext.BusinessTypes => BusinessTypes;
 
@@ -99,6 +105,10 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<MenuItem> IAppDbContext.MenuItems => MenuItems;
 
     IQueryable<Order> IAppDbContext.Orders => Orders;
+
+    IQueryable<Payment> IAppDbContext.Payments => Payments;
+
+    IQueryable<UserDeviceToken> IAppDbContext.UserDeviceTokens => UserDeviceTokens;
 
     IQueryable<OrderItem> IAppDbContext.OrderItems => OrderItems;
 

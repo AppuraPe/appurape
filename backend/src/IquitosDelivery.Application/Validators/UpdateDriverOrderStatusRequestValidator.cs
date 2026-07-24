@@ -9,7 +9,7 @@ public class UpdateDriverOrderStatusRequestValidator : AbstractValidator<UpdateD
     public UpdateDriverOrderStatusRequestValidator()
     {
         RuleFor(x => x.Status)
-            .Must(status => status is OrderStatus.PickedUp or OrderStatus.Delivered)
+            .Must(status => status is OrderStatus.PickedUp or OrderStatus.OnTheWay or OrderStatus.Delivered)
             .WithMessage("Status is not allowed in this driver stage.");
     }
 }

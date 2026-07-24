@@ -218,6 +218,32 @@ public class ControllerSmokeTests
     }
 
     [Fact]
+    public async Task AdminPaymentsController_Endpoints_ReturnOk()
+    {
+        var service = new Mock<IAdminPaymentService>(MockBehavior.Strict);
+        service
+            .Setup(x => x.GetPendingPaymentsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AdminPaymentListItemResponse>());
+        service
+            .Setup(x => x.GetPaymentByOrderIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdminPaymentDetailResponse());
+        service
+            .Setup(x => x.ConfirmPaymentAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdminPaymentDetailResponse());
+        service
+            .Setup(x => x.RejectPaymentAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdminPaymentDetailResponse());
+
+        var controller = new AdminPaymentsController(service.Object);
+        var orderId = Guid.NewGuid();
+
+        Assert.IsType<OkObjectResult>((await controller.GetPending(CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetPayment(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.ConfirmPayment(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.RejectPayment(orderId, CancellationToken.None)).Result);
+    }
+
+    [Fact]
     public async Task RestaurantsController_GetRestaurants_ReturnsOkAndCallsService()
     {
         var restaurantService = new Mock<IRestaurantService>(MockBehavior.Strict);
@@ -272,6 +298,27 @@ public class ControllerSmokeTests
     }
 
     [Fact]
+    public async Task BusinessesController_GetPublicProduct_ReturnsOkAndCallsService()
+    {
+        var businessService = Mock.Of<IBusinessService>();
+        var catalogService = new Mock<ICatalogService>(MockBehavior.Strict);
+        var businessId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+
+        catalogService
+            .Setup(service => service.GetPublicProductAsync(businessId, productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PublicProductDetailResponse());
+
+        var controller = new BusinessesController(businessService, catalogService.Object);
+
+        var result = await controller.GetPublicProduct(businessId, productId, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
+        catalogService.Verify(service => service.GetPublicProductAsync(businessId, productId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task OrdersController_CreateOrder_ReturnsOkAndCallsService()
     {
         var orderService = new Mock<IOrderService>(MockBehavior.Strict);
@@ -283,6 +330,7 @@ public class ControllerSmokeTests
 
         var request = new CreateOrderRequest
         {
+            ClientRequestId = Guid.NewGuid().ToString("N"),
             RestaurantId = Guid.NewGuid(),
             ZoneId = Guid.NewGuid(),
             DeliveryAddress = "Av. Luna 123",
@@ -296,5 +344,84 @@ public class ControllerSmokeTests
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
         orderService.Verify(service => service.CreateOrderAsync(It.IsAny<CreateOrderRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task OrdersController_ValidateOrder_ReturnsOkAndCallsService()
+    {
+        var orderService = new Mock<IOrderService>(MockBehavior.Strict);
+        orderService
+            .Setup(service => service.ValidateOrderAsync(It.IsAny<CreateOrderRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidateOrderResponse());
+
+        var controller = new OrdersController(orderService.Object);
+
+        var request = new CreateOrderRequest
+        {
+            ClientRequestId = Guid.NewGuid().ToString("N"),
+            RestaurantId = Guid.NewGuid(),
+            ZoneId = Guid.NewGuid(),
+            DeliveryAddress = "Av. Luna 123",
+            DeliveryReference = "Porton azul",
+            PaymentMethod = IquitosDelivery.Domain.Enums.PaymentMethod.Cash,
+            Items = [new CreateOrderItemRequest { MenuItemId = Guid.NewGuid(), Quantity = 1, ClientUnitPrice = 15.5m }]
+        };
+
+        var result = await controller.ValidateOrder(request, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
+        orderService.Verify(service => service.ValidateOrderAsync(It.IsAny<CreateOrderRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RestaurantOrdersController_PaymentEndpoints_ReturnOkAndCallService()
+    {
+        var orderService = new Mock<IOrderService>(MockBehavior.Strict);
+        orderService
+            .Setup(service => service.GetRestaurantOrderPaymentAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RestaurantOrderPaymentResponse());
+        orderService
+            .Setup(service => service.ConfirmRestaurantOrderPaymentAsync(It.IsAny<Guid>(), It.IsAny<ConfirmRestaurantOrderPaymentRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RestaurantOrderPaymentResponse());
+        orderService
+            .Setup(service => service.RejectRestaurantOrderPaymentAsync(It.IsAny<Guid>(), It.IsAny<RejectRestaurantOrderPaymentRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RestaurantOrderPaymentResponse());
+
+        var controller = new RestaurantOrdersController(orderService.Object);
+        var orderId = Guid.NewGuid();
+
+        var getResult = await controller.GetPayment(orderId, CancellationToken.None);
+        var confirmResult = await controller.ConfirmPayment(orderId, new ConfirmRestaurantOrderPaymentRequest(), CancellationToken.None);
+        var rejectResult = await controller.RejectPayment(orderId, new RejectRestaurantOrderPaymentRequest { FailureReason = "No se encontro el pago." }, CancellationToken.None);
+
+        Assert.IsType<OkObjectResult>(getResult.Result);
+        Assert.IsType<OkObjectResult>(confirmResult.Result);
+        Assert.IsType<OkObjectResult>(rejectResult.Result);
+        orderService.Verify(service => service.GetRestaurantOrderPaymentAsync(orderId, It.IsAny<CancellationToken>()), Times.Once);
+        orderService.Verify(service => service.ConfirmRestaurantOrderPaymentAsync(orderId, It.IsAny<ConfirmRestaurantOrderPaymentRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        orderService.Verify(service => service.RejectRestaurantOrderPaymentAsync(orderId, It.IsAny<RejectRestaurantOrderPaymentRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task BusinessOrdersController_ListDetailAndStatusEndpoints_ReturnOkAndCallService()
+    {
+        var service = new Mock<IBusinessOrderService>(MockBehavior.Strict);
+        service
+            .Setup(x => x.GetBusinessOrdersAsync(It.IsAny<RestaurantOrderFilterRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<RestaurantOrderListItemResponse>());
+        service
+            .Setup(x => x.GetBusinessOrderByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RestaurantOrderDetailResponse());
+        service
+            .Setup(x => x.UpdateBusinessOrderStatusAsync(It.IsAny<Guid>(), It.IsAny<UpdateOrderStatusRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RestaurantOrderDetailResponse());
+
+        var controller = new BusinessOrdersController(service.Object);
+        var orderId = Guid.NewGuid();
+
+        Assert.IsType<OkObjectResult>((await controller.GetOrders(new RestaurantOrderFilterRequest(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetOrder(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.UpdateStatus(orderId, new UpdateOrderStatusRequest(), CancellationToken.None)).Result);
     }
 }

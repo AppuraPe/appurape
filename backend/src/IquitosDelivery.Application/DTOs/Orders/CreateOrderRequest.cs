@@ -4,7 +4,11 @@ namespace IquitosDelivery.Application.DTOs.Orders;
 
 public class CreateOrderRequest
 {
+    public string ClientRequestId { get; set; } = string.Empty;
+
     public Guid RestaurantId { get; set; }
+
+    public Guid? CustomerAddressId { get; set; }
 
     public Guid ZoneId { get; set; }
 

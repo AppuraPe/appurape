@@ -1,13 +1,12 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
 namespace IquitosDelivery.Infrastructure.Persistence;
 
 public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
-    private const string DefaultConnectionString =
-        "Host=localhost;Port=5432;Database=iquitos_delivery_db;Username=postgres;Password=postgres";
+    private const string ApiProjectUserSecretsId = "IquitosDelivery.Api-EmailProviders";
 
     public AppDbContext CreateDbContext(string[] args)
     {
@@ -21,31 +20,39 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 
     private static string ResolveConnectionString()
     {
-        var environmentConnectionString =
-            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+        var apiProjectPath = ResolveApiProjectPath();
+        var configurationBuilder = new ConfigurationBuilder()
+            .SetBasePath(apiProjectPath)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: false);
 
-        if (!string.IsNullOrWhiteSpace(environmentConnectionString))
+        var userSecretsPath = ResolveUserSecretsPath();
+        if (!string.IsNullOrWhiteSpace(userSecretsPath))
         {
-            return environmentConnectionString;
+            configurationBuilder.AddJsonFile(userSecretsPath, optional: true, reloadOnChange: false);
         }
 
+        var configuration = configurationBuilder
+            .AddEnvironmentVariables()
+            .Build();
+
+        return ConnectionStringResolver.ResolveForRuntime(configuration);
+    }
+
+    private static string ResolveApiProjectPath()
+    {
         var currentDirectory = Directory.GetCurrentDirectory();
-        var apiAppSettingsPath = Path.GetFullPath(Path.Combine(currentDirectory, "..", "IquitosDelivery.Api", "appsettings.json"));
+        return Path.GetFullPath(Path.Combine(currentDirectory, "..", "IquitosDelivery.Api"));
+    }
 
-        if (!File.Exists(apiAppSettingsPath))
+    private static string? ResolveUserSecretsPath()
+    {
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        if (string.IsNullOrWhiteSpace(appData))
         {
-            return DefaultConnectionString;
+            return null;
         }
 
-        using var document = JsonDocument.Parse(File.ReadAllText(apiAppSettingsPath));
-
-        if (document.RootElement.TryGetProperty("ConnectionStrings", out var connectionStrings) &&
-            connectionStrings.TryGetProperty("DefaultConnection", out var defaultConnection) &&
-            !string.IsNullOrWhiteSpace(defaultConnection.GetString()))
-        {
-            return defaultConnection.GetString()!;
-        }
-
-        return DefaultConnectionString;
+        return Path.Combine(appData, "Microsoft", "UserSecrets", ApiProjectUserSecretsId, "secrets.json");
     }
 }

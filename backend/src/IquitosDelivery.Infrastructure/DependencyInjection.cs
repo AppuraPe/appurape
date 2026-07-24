@@ -1,6 +1,7 @@
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Infrastructure.Email;
 using IquitosDelivery.Infrastructure.Persistence;
+using IquitosDelivery.Infrastructure.Push;
 using IquitosDelivery.Infrastructure.Security;
 using IquitosDelivery.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +19,7 @@ public static class DependencyInjection
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString =
-            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-            ?? configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException(
-                "Connection string 'DefaultConnection' was not found. Set ConnectionStrings__DefaultConnection in the hosting environment.");
+        var connectionString = ConnectionStringResolver.ResolveForRuntime(configuration);
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(connectionString));
@@ -68,10 +65,19 @@ public static class DependencyInjection
                     .GetSection("GoogleAuth:AllowedClientIds")
                     .Get<string[]>() ?? []
             }));
+        services.AddSingleton<IOptions<FirebasePushSettings>>(_ =>
+            Options.Create(new FirebasePushSettings
+            {
+                Enabled = bool.TryParse(configuration["Firebase:Enabled"], out var enabled) && enabled,
+                ProjectId = configuration["Firebase:ProjectId"] ?? string.Empty,
+                CredentialsPath = configuration["Firebase:CredentialsPath"] ?? string.Empty,
+                CredentialsJson = configuration["Firebase:CredentialsJson"] ?? string.Empty
+            }));
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
+        services.AddHttpClient<IPushNotificationSender, FirebasePushNotificationSender>();
         services.AddScoped<IEmailSender>(provider =>
         {
             var emailSettings = provider.GetRequiredService<IOptions<EmailSettings>>().Value;

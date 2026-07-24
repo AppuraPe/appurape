@@ -30,4 +30,6 @@ public class User : BaseEntity
     public CommunityCollaborator? CommunityCollaborator { get; set; }
 
     public ICollection<Restaurant> OwnedRestaurants { get; set; } = new List<Restaurant>();
+
+    public ICollection<UserDeviceToken> DeviceTokens { get; set; } = new List<UserDeviceToken>();
 }

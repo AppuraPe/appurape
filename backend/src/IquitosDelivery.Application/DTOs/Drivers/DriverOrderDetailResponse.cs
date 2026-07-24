@@ -10,6 +10,8 @@ public class DriverOrderDetailResponse
 
     public string RestaurantName { get; set; } = string.Empty;
 
+    public string RestaurantAddress { get; set; } = string.Empty;
+
     public Guid CustomerId { get; set; }
 
     public string CustomerName { get; set; } = string.Empty;
@@ -29,6 +31,8 @@ public class DriverOrderDetailResponse
     public string? Notes { get; set; }
 
     public string PaymentMethod { get; set; } = string.Empty;
+
+    public string PaymentStatus { get; set; } = string.Empty;
 
     public decimal Subtotal { get; set; }
 

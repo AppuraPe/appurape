@@ -7,5 +7,6 @@ public enum CommunityRequestStatus
     Accepted = 2,
     InProcess = 3,
     Delivered = 4,
-    Cancelled = 5
+    Confirmed = 5,
+    Cancelled = 6
 }

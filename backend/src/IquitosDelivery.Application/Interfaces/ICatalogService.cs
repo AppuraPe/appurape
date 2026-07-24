@@ -7,6 +7,11 @@ public interface ICatalogService
         CatalogFilterRequest filters,
         CancellationToken cancellationToken = default);
 
+    Task<PublicProductDetailResponse> GetPublicProductAsync(
+        Guid businessId,
+        Guid productId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<CatalogCategoryResponse>> GetMyCategoriesAsync(
         CatalogCategoryFilterRequest filters,
         CancellationToken cancellationToken = default);

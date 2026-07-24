@@ -1,6 +1,7 @@
 using FluentValidation;
 using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Community;
+using IquitosDelivery.Application.DTOs.Notifications;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Domain.Entities;
@@ -13,6 +14,7 @@ public class CommunityService : ICommunityService
 {
     private readonly IAppDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notificationService;
     private readonly IValidator<CreateCommunityRequestRequest> _createRequestValidator;
     private readonly IValidator<UpdateCommunityCollaboratorRequest> _updateCollaboratorValidator;
     private readonly IValidator<UpsertCommunityRouteRequest> _upsertRouteValidator;
@@ -22,6 +24,7 @@ public class CommunityService : ICommunityService
     public CommunityService(
         IAppDbContext dbContext,
         ICurrentUserService currentUserService,
+        INotificationService notificationService,
         IValidator<CreateCommunityRequestRequest> createRequestValidator,
         IValidator<UpdateCommunityCollaboratorRequest> updateCollaboratorValidator,
         IValidator<UpsertCommunityRouteRequest> upsertRouteValidator,
@@ -30,6 +33,7 @@ public class CommunityService : ICommunityService
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
+        _notificationService = notificationService;
         _createRequestValidator = createRequestValidator;
         _updateCollaboratorValidator = updateCollaboratorValidator;
         _upsertRouteValidator = upsertRouteValidator;
@@ -236,6 +240,7 @@ public class CommunityService : ICommunityService
         _dbContext.Add(communityRequest);
         CreateCommunityFinancialMovements(communityRequest);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyPublishedRequestAsync(communityRequest, cancellationToken);
 
         return await GetRequestByIdAsync(communityRequest.Id, cancellationToken);
     }
@@ -341,6 +346,7 @@ public class CommunityService : ICommunityService
         request.MatchScore = Math.Max(request.MatchScore, match.MatchScore);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyRequesterAboutApplicationAsync(request, collaborator, cancellationToken);
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
 
@@ -399,6 +405,7 @@ public class CommunityService : ICommunityService
 
         await RefreshCollaboratorMetricsAsync(selectedApplication.Collaborator, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCollaboratorSelectedAsync(communityRequest, selectedApplication.Collaborator.UserId, cancellationToken);
 
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
@@ -422,6 +429,7 @@ public class CommunityService : ICommunityService
         request.StartedAtUtc = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyRequesterAboutStartedRequestAsync(request, cancellationToken);
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
 
@@ -457,6 +465,7 @@ public class CommunityService : ICommunityService
 
         await RefreshCollaboratorMetricsAsync(collaborator, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyRequesterAboutDeliveredRequestAsync(communityRequest, cancellationToken);
 
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
@@ -475,11 +484,17 @@ public class CommunityService : ICommunityService
             throw new ForbiddenException("You cannot confirm this community request.");
         }
 
+        if (request.Status == CommunityRequestStatus.Confirmed && request.ClientConfirmedAtUtc.HasValue)
+        {
+            return await GetRequestByIdAsync(requestId, cancellationToken);
+        }
+
         if (request.Status != CommunityRequestStatus.Delivered)
         {
             throw new AppException("Community request must be delivered before confirmation.");
         }
 
+        request.Status = CommunityRequestStatus.Confirmed;
         request.ClientConfirmedAtUtc = DateTime.UtcNow;
         await MarkCommunityFinancialMovementsAvailableAsync(request.Id, cancellationToken);
 
@@ -489,6 +504,7 @@ public class CommunityService : ICommunityService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCollaboratorAboutConfirmationAsync(request, cancellationToken);
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
 
@@ -509,7 +525,9 @@ public class CommunityService : ICommunityService
             throw new ForbiddenException("You cannot cancel this community request.");
         }
 
-        if (communityRequest.Status == CommunityRequestStatus.Delivered || communityRequest.Status == CommunityRequestStatus.Cancelled)
+        if (communityRequest.Status == CommunityRequestStatus.Delivered ||
+            communityRequest.Status == CommunityRequestStatus.Confirmed ||
+            communityRequest.Status == CommunityRequestStatus.Cancelled)
         {
             throw new AppException("Community request can no longer be cancelled.");
         }
@@ -526,6 +544,7 @@ public class CommunityService : ICommunityService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCommunityCancellationAsync(communityRequest, user.Id, cancellationToken);
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
 
@@ -545,9 +564,9 @@ public class CommunityService : ICommunityService
             throw new ForbiddenException("Only the requester can rate the collaborator.");
         }
 
-        if (communityRequest.Status != CommunityRequestStatus.Delivered)
+        if (communityRequest.Status != CommunityRequestStatus.Confirmed || !communityRequest.ClientConfirmedAtUtc.HasValue)
         {
-            throw new AppException("Community request must be delivered before rating.");
+            throw new AppException("Community request must be confirmed before rating.");
         }
 
         communityRequest.CollaboratorRating = request.Rating;
@@ -559,6 +578,7 @@ public class CommunityService : ICommunityService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCollaboratorAboutRatingAsync(communityRequest, cancellationToken);
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
 
@@ -662,7 +682,7 @@ public class CommunityService : ICommunityService
             .Where(x => x.AssignedCollaboratorId == collaborator.Id)
             .ToListAsync(cancellationToken);
 
-        collaborator.CompletedCollaborations = requests.Count(x => x.Status == CommunityRequestStatus.Delivered && x.ClientConfirmedAtUtc.HasValue);
+        collaborator.CompletedCollaborations = requests.Count(x => x.ClientConfirmedAtUtc.HasValue);
         collaborator.CollaborationRating = requests
             .Where(x => x.CollaboratorRating.HasValue)
             .Select(x => (decimal?)x.CollaboratorRating)
@@ -900,5 +920,159 @@ public class CommunityService : ICommunityService
     private static string GenerateConfirmationCode()
     {
         return Random.Shared.Next(100000, 999999).ToString();
+    }
+
+    private async Task NotifyPublishedRequestAsync(CommunityRequest request, CancellationToken cancellationToken)
+    {
+        var collaboratorUserIds = await _dbContext.CommunityCollaborators
+            .Where(x =>
+                x.UserId != request.CreatedByUserId &&
+                x.User.Status == UserStatus.Active &&
+                x.IsAvailable &&
+                x.AvailabilityStatus == CommunityAvailabilityStatus.Available)
+            .Select(x => x.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        await _notificationService.SendToUsersAsync(
+            collaboratorUserIds,
+            new EventPushNotificationRequest
+            {
+                Title = "Nuevo favor disponible",
+                Body = request.Title,
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_published")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyRequesterAboutApplicationAsync(
+        CommunityRequest request,
+        CommunityCollaborator collaborator,
+        CancellationToken cancellationToken)
+    {
+        await _notificationService.SendToUserAsync(
+            request.CreatedByUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Nueva postulación",
+                Body = $"{collaborator.User.FirstName} {collaborator.User.LastName}".Trim() + " se postuló a tu favor.",
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_application_created")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCollaboratorSelectedAsync(
+        CommunityRequest request,
+        Guid collaboratorUserId,
+        CancellationToken cancellationToken)
+    {
+        await _notificationService.SendToUserAsync(
+            collaboratorUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Fuiste seleccionado",
+                Body = $"Te seleccionaron para el favor \"{request.Title}\".",
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_collaborator_selected")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyRequesterAboutStartedRequestAsync(CommunityRequest request, CancellationToken cancellationToken)
+    {
+        await _notificationService.SendToUserAsync(
+            request.CreatedByUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Favor iniciado",
+                Body = $"El colaborador ya inició \"{request.Title}\".",
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_started")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyRequesterAboutDeliveredRequestAsync(CommunityRequest request, CancellationToken cancellationToken)
+    {
+        await _notificationService.SendToUserAsync(
+            request.CreatedByUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Favor entregado",
+                Body = $"El colaborador marcó \"{request.Title}\" como entregado.",
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_delivered")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCollaboratorAboutConfirmationAsync(CommunityRequest request, CancellationToken cancellationToken)
+    {
+        var collaboratorUserId = request.AssignedCollaborator?.UserId;
+        if (!collaboratorUserId.HasValue)
+        {
+            return;
+        }
+
+        await _notificationService.SendToUserAsync(
+            collaboratorUserId.Value,
+            new EventPushNotificationRequest
+            {
+                Title = "Recepción confirmada",
+                Body = $"Confirmaron la recepción de \"{request.Title}\".",
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_confirmed")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCollaboratorAboutRatingAsync(CommunityRequest request, CancellationToken cancellationToken)
+    {
+        var collaboratorUserId = request.AssignedCollaborator?.UserId;
+        if (!collaboratorUserId.HasValue || !request.CollaboratorRating.HasValue)
+        {
+            return;
+        }
+
+        await _notificationService.SendToUserAsync(
+            collaboratorUserId.Value,
+            new EventPushNotificationRequest
+            {
+                Title = "Nueva calificación",
+                Body = $"Recibiste una calificación de {request.CollaboratorRating.Value}/5 en \"{request.Title}\".",
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_rated")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCommunityCancellationAsync(
+        CommunityRequest request,
+        Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        var recipients = new HashSet<Guid>();
+
+        if (request.CreatedByUserId != actorUserId)
+        {
+            recipients.Add(request.CreatedByUserId);
+        }
+
+        if (request.AssignedCollaborator?.UserId is Guid collaboratorUserId && collaboratorUserId != actorUserId)
+        {
+            recipients.Add(collaboratorUserId);
+        }
+
+        if (recipients.Count == 0)
+        {
+            return;
+        }
+
+        await _notificationService.SendToUsersAsync(
+            recipients,
+            new EventPushNotificationRequest
+            {
+                Title = "Favor cancelado",
+                Body = string.IsNullOrWhiteSpace(request.CancellationReason)
+                    ? $"El favor \"{request.Title}\" fue cancelado."
+                    : $"El favor \"{request.Title}\" fue cancelado: {request.CancellationReason}",
+                Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_cancelled")
+            },
+            cancellationToken);
     }
 }

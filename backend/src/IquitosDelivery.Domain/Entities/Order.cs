@@ -5,6 +5,8 @@ namespace IquitosDelivery.Domain.Entities;
 
 public class Order : BaseEntity
 {
+    public string? ClientRequestId { get; set; }
+
     public Guid CustomerId { get; set; }
 
     public CustomerProfile Customer { get; set; } = null!;
@@ -68,6 +70,8 @@ public class Order : BaseEntity
     public int? DriverRating { get; set; }
 
     public string? DriverFeedback { get; set; }
+
+    public Payment? Payment { get; set; }
 
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 

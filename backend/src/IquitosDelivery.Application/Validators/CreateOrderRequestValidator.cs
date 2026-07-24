@@ -7,7 +7,9 @@ public class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
 {
     public CreateOrderRequestValidator()
     {
+        RuleFor(x => x.ClientRequestId).NotEmpty().MaximumLength(80);
         RuleFor(x => x.RestaurantId).NotEmpty();
+        RuleFor(x => x.CustomerAddressId).NotEqual(Guid.Empty).When(x => x.CustomerAddressId.HasValue);
         RuleFor(x => x.ZoneId).NotEmpty();
         RuleFor(x => x.DeliveryAddress).NotEmpty().MaximumLength(300);
         RuleFor(x => x.DeliveryReference).NotEmpty().MaximumLength(300);

@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.ICustomerRegistrationService, Services.CustomerRegistrationService>();
         services.AddScoped<Interfaces.IRestaurantRegistrationService, Services.RestaurantRegistrationService>();
         services.AddScoped<Interfaces.IDriverRegistrationService, Services.DriverRegistrationService>();
+        services.AddScoped<Interfaces.ICustomerAddressService, Services.CustomerAddressService>();
         services.AddScoped<Interfaces.IRestaurantService, Services.RestaurantService>();
         services.AddScoped<Interfaces.IBusinessService, Services.BusinessServiceAdapter>();
         services.AddScoped<Interfaces.IMenuService, Services.MenuService>();
@@ -25,12 +26,15 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.IAdminPlatformSettingsService, Services.PlatformSettingsService>();
         services.AddScoped<Interfaces.IAdminDriverService, Services.AdminDriverService>();
         services.AddScoped<Interfaces.IAdminFinanceService, Services.AdminFinanceService>();
+        services.AddScoped<Interfaces.IAdminPaymentService, Services.AdminPaymentService>();
         services.AddScoped<Interfaces.IAdminBusinessTypeService, Services.AdminBusinessTypeService>();
         services.AddScoped<Interfaces.ICommunityService, Services.CommunityService>();
         services.AddScoped<Interfaces.IAdminCommunityService, Services.AdminCommunityService>();
         services.AddScoped<Interfaces.IZoneService, Services.ZoneService>();
         services.AddScoped<Interfaces.ISearchService, Services.SearchService>();
         services.AddScoped<Interfaces.IBusinessTypeService, Services.BusinessTypeService>();
+        services.AddScoped<Interfaces.IDeviceTokenService, Services.DeviceTokenService>();
+        services.AddScoped<Interfaces.INotificationService, Services.NotificationService>();
 
         return services;
     }

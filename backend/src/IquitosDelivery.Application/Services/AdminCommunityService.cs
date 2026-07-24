@@ -24,7 +24,9 @@ public class AdminCommunityService : IAdminCommunityService
                 .ThenInclude(x => x!.User)
             .ToListAsync(cancellationToken);
 
-        var deliveredCount = requests.Count(x => x.Status == CommunityRequestStatus.Delivered);
+        var deliveredCount = requests.Count(x =>
+            x.Status == CommunityRequestStatus.Delivered ||
+            x.Status == CommunityRequestStatus.Confirmed);
         var cancelledCount = requests.Count(x => x.Status == CommunityRequestStatus.Cancelled);
         var resolvedCount = deliveredCount + cancelledCount;
 

@@ -10,6 +10,10 @@ public interface IDriverOrderService
 
     Task<DriverOrderDetailResponse> GetAvailableOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
 
+    Task<DriverOrderDetailResponse?> GetActiveOrderAsync(CancellationToken cancellationToken = default);
+
+    Task<DriverOrderDetailResponse> GetDriverOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
+
     Task<DriverOrderDetailResponse> TakeOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<DriverAssignedOrderListItemResponse>> GetMyAssignedOrdersAsync(

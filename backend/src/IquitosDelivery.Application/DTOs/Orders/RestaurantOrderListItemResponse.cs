@@ -8,6 +8,8 @@ public class RestaurantOrderListItemResponse
 
     public string CustomerName { get; set; } = string.Empty;
 
+    public int ItemCount { get; set; }
+
     public string Status { get; set; } = string.Empty;
 
     public decimal BusinessNetAmount { get; set; }
@@ -17,6 +19,8 @@ public class RestaurantOrderListItemResponse
     public decimal Total { get; set; }
 
     public string PaymentMethod { get; set; } = string.Empty;
+
+    public string PaymentStatus { get; set; } = string.Empty;
 
     public Guid? AssignedCourierUserId { get; set; }
 

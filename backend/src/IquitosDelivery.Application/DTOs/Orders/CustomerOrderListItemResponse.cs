@@ -32,6 +32,8 @@ public class CustomerOrderListItemResponse
 
     public string PaymentMethod { get; set; } = string.Empty;
 
+    public string PaymentStatus { get; set; } = string.Empty;
+
     public Guid? AssignedCourierUserId { get; set; }
 
     public string? AssignedCourierType { get; set; }

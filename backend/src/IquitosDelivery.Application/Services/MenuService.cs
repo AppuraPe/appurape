@@ -11,6 +11,10 @@ namespace IquitosDelivery.Application.Services;
 
 public class MenuService : IMenuService
 {
+    private const string LegacyRestaurantBusinessTypeName = "Restaurant";
+    private const string LimaWindowsTimeZoneId = "SA Pacific Standard Time";
+    private const string LimaIanaTimeZoneId = "America/Lima";
+
     private readonly IAppDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<CreateMenuCategoryRequest> _createCategoryValidator;
@@ -110,6 +114,59 @@ public class MenuService : IMenuService
         }
 
         return restaurant;
+    }
+
+    public async Task<PublicProductDetailResponse> GetPublicProductAsync(
+        Guid restaurantId,
+        Guid productId,
+        CancellationToken cancellationToken = default)
+    {
+        var now = GetLimaNow().TimeOfDay;
+
+        var product = await _dbContext.MenuItems
+            .AsNoTracking()
+            .Where(x =>
+                x.Id == productId &&
+                x.RestaurantId == restaurantId &&
+                x.IsActive &&
+                x.IsAvailable &&
+                x.Restaurant.ApprovalStatus == ApprovalStatus.Approved &&
+                x.Restaurant.IsActive &&
+                x.Category.IsActive)
+            .Select(x => new PublicProductDetailResponse
+            {
+                Id = x.Id,
+                BusinessId = x.RestaurantId,
+                BusinessName = x.Restaurant.Name,
+                BusinessTypeName = x.Restaurant.BusinessType != null ? x.Restaurant.BusinessType.Name : LegacyRestaurantBusinessTypeName,
+                ZoneName = x.Restaurant.Zone.Name,
+                BusinessLogoUrl = x.Restaurant.LogoUrl,
+                BusinessIsActive = x.Restaurant.IsActive,
+                BusinessIsOpen =
+                    (x.Restaurant.CloseTime >= x.Restaurant.OpenTime && now >= x.Restaurant.OpenTime && now <= x.Restaurant.CloseTime) ||
+                    (x.Restaurant.CloseTime < x.Restaurant.OpenTime && (now >= x.Restaurant.OpenTime || now <= x.Restaurant.CloseTime)),
+                CategoryId = x.CategoryId,
+                CategoryName = x.Category.Name,
+                Name = x.Name,
+                Description = x.Description,
+                Price = x.Price,
+                ImageUrl = x.ImageUrl,
+                Sku = x.Sku,
+                UnitLabel = x.UnitLabel,
+                TrackStock = x.TrackStock,
+                StockQuantity = x.StockQuantity,
+                HasStock = !x.TrackStock || !x.StockQuantity.HasValue || x.StockQuantity.Value > 0,
+                IsAvailable = x.IsAvailable,
+                IsActive = x.IsActive
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (product is null)
+        {
+            throw new NotFoundException("Product is not available.");
+        }
+
+        return product;
     }
 
     public async Task<IReadOnlyList<MenuCategoryResponse>> GetMyCategoriesAsync(
@@ -419,5 +476,26 @@ public class MenuService : IMenuService
     private static bool HasStock(bool trackStock, int? stockQuantity)
     {
         return !trackStock || !stockQuantity.HasValue || stockQuantity.Value > 0;
+    }
+
+    private static DateTime GetLimaNow()
+    {
+        try
+        {
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById(LimaWindowsTimeZoneId);
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            try
+            {
+                var timeZone = TimeZoneInfo.FindSystemTimeZoneById(LimaIanaTimeZoneId);
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+            }
+            catch
+            {
+                return DateTime.UtcNow;
+            }
+        }
     }
 }

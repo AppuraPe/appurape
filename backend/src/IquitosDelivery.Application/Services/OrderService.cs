@@ -1,154 +1,216 @@
 using FluentValidation;
 using IquitosDelivery.Application.Common;
+using IquitosDelivery.Application.DTOs.Notifications;
 using IquitosDelivery.Application.DTOs.Orders;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Domain.Entities;
 using IquitosDelivery.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace IquitosDelivery.Application.Services;
 
 public class OrderService : IOrderService
 {
+    private sealed class ResolvedDeliveryAddress
+    {
+        public required Zone Zone { get; init; }
+
+        public required string DeliveryAddress { get; init; }
+
+        public required string DeliveryReference { get; init; }
+
+        public Guid? CustomerAddressId { get; init; }
+    }
+
+    private sealed class ValidatedOrderLine
+    {
+        public required MenuItem MenuItem { get; init; }
+
+        public required int Quantity { get; init; }
+
+        public required decimal UnitPrice { get; init; }
+    }
+
+    private sealed class ValidatedOrderContext
+    {
+        public required Restaurant Restaurant { get; init; }
+
+        public required Zone Zone { get; init; }
+
+        public Guid? CustomerAddressId { get; init; }
+
+        public required string DeliveryAddress { get; init; }
+
+        public required string DeliveryReference { get; init; }
+
+        public required List<ValidatedOrderLine> ValidLines { get; init; }
+
+        public required ValidateOrderResponse Response { get; init; }
+    }
+
     private readonly IAppDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notificationService;
     private readonly IValidator<CreateOrderRequest> _createOrderValidator;
+    private readonly IValidator<ConfirmRestaurantOrderPaymentRequest> _confirmRestaurantOrderPaymentValidator;
     private readonly IValidator<RateDriverRequest> _rateDriverValidator;
+    private readonly IValidator<RejectRestaurantOrderPaymentRequest> _rejectRestaurantOrderPaymentValidator;
     private readonly IValidator<UpdateOrderStatusRequest> _updateOrderStatusValidator;
 
     public OrderService(
         IAppDbContext dbContext,
         ICurrentUserService currentUserService,
+        INotificationService notificationService,
         IValidator<CreateOrderRequest> createOrderValidator,
+        IValidator<ConfirmRestaurantOrderPaymentRequest> confirmRestaurantOrderPaymentValidator,
         IValidator<RateDriverRequest> rateDriverValidator,
+        IValidator<RejectRestaurantOrderPaymentRequest> rejectRestaurantOrderPaymentValidator,
         IValidator<UpdateOrderStatusRequest> updateOrderStatusValidator)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
+        _notificationService = notificationService;
         _createOrderValidator = createOrderValidator;
+        _confirmRestaurantOrderPaymentValidator = confirmRestaurantOrderPaymentValidator;
         _rateDriverValidator = rateDriverValidator;
+        _rejectRestaurantOrderPaymentValidator = rejectRestaurantOrderPaymentValidator;
         _updateOrderStatusValidator = updateOrderStatusValidator;
+    }
+
+    public async Task<ValidateOrderResponse> ValidateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationContext = await ValidateOrderContextAsync(request, cancellationToken);
+        return validationContext.Response;
     }
 
     public async Task<CustomerOrderDetailResponse> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
     {
-        await _createOrderValidator.ValidateAndThrowAsync(request, cancellationToken);
-
         var customer = await GetCurrentCustomerAsync(cancellationToken);
+        var normalizedClientRequestId = request.ClientRequestId.Trim();
 
-        var restaurant = await _dbContext.Restaurants
-            .FirstOrDefaultAsync(
-                x => x.Id == request.RestaurantId &&
-                     x.ApprovalStatus == ApprovalStatus.Approved &&
-                     x.IsActive,
-                cancellationToken);
-
-        if (restaurant is null)
+        if (await TryGetExistingOrderAsync(customer.Id, normalizedClientRequestId, cancellationToken) is { } existingOrder)
         {
-            throw new NotFoundException("Restaurant is not available for orders.");
+            return existingOrder;
         }
 
-        var zone = await _dbContext.Zones
-            .FirstOrDefaultAsync(x => x.Id == request.ZoneId && x.IsActive, cancellationToken);
-
-        if (zone is null)
+        if (_dbContext is not DbContext dbContext)
         {
-            throw new NotFoundException("Zone was not found.");
+            throw new InvalidOperationException("Order transactions require a DbContext-backed implementation.");
         }
 
-        var requestedItemIds = request.Items.Select(x => x.MenuItemId).Distinct().ToList();
-        var menuItems = await _dbContext.MenuItems
-            .Where(x => requestedItemIds.Contains(x.Id))
-            .ToListAsync(cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
 
-        if (menuItems.Count != requestedItemIds.Count)
+        try
         {
-            throw new AppException("One or more products are invalid.");
-        }
-
-        foreach (var item in menuItems)
-        {
-            if (item.RestaurantId != restaurant.Id)
+            if (await TryGetExistingOrderAsync(customer.Id, normalizedClientRequestId, cancellationToken) is { } transactionalExistingOrder)
             {
-                throw new AppException("One or more products do not belong to the selected restaurant.");
+                await transaction.CommitAsync(cancellationToken);
+                return transactionalExistingOrder;
             }
 
-            if (!item.IsActive || !item.IsAvailable)
+            var validationContext = await ValidateOrderContextAsync(request, cancellationToken);
+
+            if (!validationContext.Response.CanCreateOrder)
             {
-                throw new AppException($"Product '{item.Name}' is not available for ordering.");
-            }
-        }
+                var firstIssue = validationContext.Response.Items.FirstOrDefault(x => x.Removed || x.QuantityAdjusted || x.PriceChanged)
+                    ?.Message;
 
-        var order = new Order
-        {
-            Id = Guid.NewGuid(),
-            CustomerId = customer.Id,
-            RestaurantId = restaurant.Id,
-            ZoneId = zone.Id,
-            Status = OrderStatus.Pending,
-            PaymentMethod = request.PaymentMethod,
-            DeliveryAddress = request.DeliveryAddress.Trim(),
-            DeliveryReference = request.DeliveryReference.Trim(),
-            Notes = NormalizeNotes(request.Notes)
-        };
-
-        foreach (var requestItem in request.Items)
-        {
-            var menuItem = menuItems.First(x => x.Id == requestItem.MenuItemId);
-
-            if (menuItem.TrackStock)
-            {
-                var availableStock = menuItem.StockQuantity ?? 0;
-                if (availableStock < requestItem.Quantity)
-                {
-                    throw new AppException($"Product '{menuItem.Name}' does not have enough stock.");
-                }
+                throw new AppException(firstIssue ?? "Your cart changed and must be reviewed before placing the order.");
             }
 
-            var itemSubtotal = menuItem.Price * requestItem.Quantity;
-
-            order.Items.Add(new OrderItem
+            var order = new Order
             {
                 Id = Guid.NewGuid(),
-                OrderId = order.Id,
-                MenuItemId = menuItem.Id,
-                ProductName = menuItem.Name,
-                UnitPrice = menuItem.Price,
-                Quantity = requestItem.Quantity,
-                Subtotal = itemSubtotal
-            });
+                ClientRequestId = normalizedClientRequestId,
+                CustomerId = customer.Id,
+                RestaurantId = validationContext.Restaurant.Id,
+                ZoneId = validationContext.Zone.Id,
+                Status = OrderStatus.Pending,
+                PaymentMethod = request.PaymentMethod,
+                DeliveryAddress = validationContext.DeliveryAddress,
+                DeliveryReference = validationContext.DeliveryReference,
+                Notes = NormalizeNotes(request.Notes)
+            };
 
-            if (menuItem.TrackStock)
+            foreach (var validatedLine in validationContext.ValidLines)
             {
-                menuItem.StockQuantity = (menuItem.StockQuantity ?? 0) - requestItem.Quantity;
-                if (menuItem.StockQuantity <= 0)
+                var menuItem = validatedLine.MenuItem;
+
+                if (menuItem.TrackStock)
                 {
-                    menuItem.StockQuantity = 0;
-                    menuItem.IsAvailable = false;
+                    var availableStock = menuItem.StockQuantity ?? 0;
+                    if (availableStock < validatedLine.Quantity)
+                    {
+                        throw new AppException($"Product '{menuItem.Name}' does not have enough stock.");
+                    }
+                }
+
+                var itemSubtotal = validatedLine.UnitPrice * validatedLine.Quantity;
+
+                order.Items.Add(new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    MenuItemId = menuItem.Id,
+                    ProductName = menuItem.Name,
+                    UnitPrice = validatedLine.UnitPrice,
+                    Quantity = validatedLine.Quantity,
+                    Subtotal = itemSubtotal
+                });
+
+                if (menuItem.TrackStock)
+                {
+                    menuItem.StockQuantity = (menuItem.StockQuantity ?? 0) - validatedLine.Quantity;
+                    if (menuItem.StockQuantity <= 0)
+                    {
+                        menuItem.StockQuantity = 0;
+                        menuItem.IsAvailable = false;
+                    }
                 }
             }
+
+            order.Subtotal = order.Items.Sum(x => x.Subtotal);
+            var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommercialOrder, cancellationToken);
+            var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(order.Subtotal, validationContext.Zone.DeliveryFee, commissionRules);
+            order.BusinessCommissionAmount = financialBreakdown.BusinessCommissionAmount;
+            order.BusinessNetAmount = financialBreakdown.BusinessNetAmount;
+            order.DeliveryFee = financialBreakdown.DeliveryFee;
+            order.DeliveryPlatformCommissionAmount = financialBreakdown.DeliveryPlatformCommissionAmount;
+            order.CourierEarningAmount = financialBreakdown.CourierEarningAmount;
+            order.ServiceFeeAmount = financialBreakdown.ServiceFeeAmount;
+            order.DiscountAmount = financialBreakdown.DiscountAmount;
+            order.PlatformRevenueAmount = financialBreakdown.PlatformRevenueAmount;
+            order.Total = financialBreakdown.Total;
+            order.PricingSnapshotJson = FinancialCalculator.SerializeCommercialSnapshot(financialBreakdown, commissionRules);
+            order.Payment = BuildInitialPayment(order);
+
+            _dbContext.Add(order);
+            CreateOrderFinancialMovements(order, validationContext.Restaurant.OwnerUserId);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            await NotifyBusinessAboutNewOrderAsync(order, validationContext.Restaurant.OwnerUserId, cancellationToken);
+
+            return await GetMyOrderByIdAsync(order.Id, cancellationToken);
         }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            dbContext.ChangeTracker.Clear();
+            if (await TryGetExistingOrderAsync(customer.Id, normalizedClientRequestId, cancellationToken) is { } idempotentOrder)
+            {
+                return idempotentOrder;
+            }
 
-        order.Subtotal = order.Items.Sum(x => x.Subtotal);
-        var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommercialOrder, cancellationToken);
-        var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(order.Subtotal, zone.DeliveryFee, commissionRules);
-        order.BusinessCommissionAmount = financialBreakdown.BusinessCommissionAmount;
-        order.BusinessNetAmount = financialBreakdown.BusinessNetAmount;
-        order.DeliveryFee = financialBreakdown.DeliveryFee;
-        order.DeliveryPlatformCommissionAmount = financialBreakdown.DeliveryPlatformCommissionAmount;
-        order.CourierEarningAmount = financialBreakdown.CourierEarningAmount;
-        order.ServiceFeeAmount = financialBreakdown.ServiceFeeAmount;
-        order.DiscountAmount = financialBreakdown.DiscountAmount;
-        order.PlatformRevenueAmount = financialBreakdown.PlatformRevenueAmount;
-        order.Total = financialBreakdown.Total;
-        order.PricingSnapshotJson = FinancialCalculator.SerializeCommercialSnapshot(financialBreakdown, commissionRules);
+            if (IsConcurrentOrderCreationFailure(ex))
+            {
+                throw new AppException("Some products changed while we were creating your order. Review your cart and try again.");
+            }
 
-        _dbContext.Add(order);
-        CreateOrderFinancialMovements(order, restaurant.OwnerUserId);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return await GetMyOrderByIdAsync(order.Id, cancellationToken);
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<CustomerOrderListItemResponse>> GetMyOrdersAsync(CancellationToken cancellationToken = default)
@@ -175,6 +237,7 @@ public class OrderService : IOrderService
                 PlatformRevenueAmount = x.PlatformRevenueAmount,
                 Total = x.Total,
                 PaymentMethod = x.PaymentMethod.ToString(),
+                PaymentStatus = x.Payment != null ? x.Payment.Status.ToString() : string.Empty,
                 AssignedCourierUserId = x.AssignedCourierUserId,
                 AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
                 CreatedAtUtc = x.CreatedAtUtc
@@ -198,6 +261,7 @@ public class OrderService : IOrderService
                 DeliveryReference = x.DeliveryReference,
                 Notes = x.Notes,
                 PaymentMethod = x.PaymentMethod.ToString(),
+                PaymentStatus = x.Payment != null ? x.Payment.Status.ToString() : string.Empty,
                 Subtotal = x.Subtotal,
                 BusinessCommissionAmount = x.BusinessCommissionAmount,
                 BusinessNetAmount = x.BusinessNetAmount,
@@ -267,6 +331,250 @@ public class OrderService : IOrderService
         return await GetMyOrderByIdAsync(order.Id, cancellationToken);
     }
 
+    private async Task<ValidatedOrderContext> ValidateOrderContextAsync(CreateOrderRequest request, CancellationToken cancellationToken)
+    {
+        await _createOrderValidator.ValidateAndThrowAsync(request, cancellationToken);
+        var customer = await GetCurrentCustomerAsync(cancellationToken);
+
+        if (request.PaymentMethod == PaymentMethod.Card)
+        {
+            throw new AppException("Los pagos con tarjeta todavía no están disponibles.");
+        }
+
+        var restaurant = await _dbContext.Restaurants
+            .FirstOrDefaultAsync(
+                x => x.Id == request.RestaurantId &&
+                     x.ApprovalStatus == ApprovalStatus.Approved &&
+                     x.IsActive,
+                cancellationToken);
+
+        if (restaurant is null)
+        {
+            throw new NotFoundException("Restaurant is not available for orders.");
+        }
+
+        var resolvedDeliveryAddress = await ResolveDeliveryAddressAsync(customer.Id, request, cancellationToken);
+
+        var normalizedItems = request.Items
+            .GroupBy(x => x.MenuItemId)
+            .Select(group => new CreateOrderItemRequest
+            {
+                MenuItemId = group.Key,
+                Quantity = group.Sum(x => x.Quantity),
+                ClientUnitPrice = group.Select(x => x.ClientUnitPrice).FirstOrDefault(x => x.HasValue)
+            })
+            .ToList();
+
+        var requestedItemIds = normalizedItems.Select(x => x.MenuItemId).Distinct().ToList();
+        var menuItems = await _dbContext.MenuItems
+            .Where(x => requestedItemIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+        var response = new ValidateOrderResponse();
+        var validLines = new List<ValidatedOrderLine>();
+
+        foreach (var requestedItem in normalizedItems)
+        {
+            if (!menuItems.TryGetValue(requestedItem.MenuItemId, out var menuItem))
+            {
+                response.HasChanges = true;
+                response.Items.Add(new ValidateOrderItemResponse
+                {
+                    MenuItemId = requestedItem.MenuItemId,
+                    ProductName = "Producto no disponible",
+                    RequestedQuantity = requestedItem.Quantity,
+                    ValidatedQuantity = 0,
+                    ClientUnitPrice = requestedItem.ClientUnitPrice,
+                    CurrentUnitPrice = 0m,
+                    Subtotal = 0m,
+                    Exists = false,
+                    BelongsToRestaurant = false,
+                    IsActive = false,
+                    IsAvailable = false,
+                    HasStock = false,
+                    QuantityAdjusted = false,
+                    PriceChanged = false,
+                    Removed = true,
+                    Message = "El producto ya no está disponible."
+                });
+                continue;
+            }
+
+            var belongsToRestaurant = menuItem.RestaurantId == restaurant.Id;
+            var isActive = menuItem.IsActive;
+            var isAvailable = menuItem.IsAvailable;
+            var hasStock = !menuItem.TrackStock || (menuItem.StockQuantity ?? 0) > 0;
+            var requestedQuantity = requestedItem.Quantity;
+            var validatedQuantity = requestedQuantity;
+
+            if (!belongsToRestaurant)
+            {
+                response.HasChanges = true;
+                response.Items.Add(BuildInvalidItemResponse(
+                    menuItem,
+                    requestedItem,
+                    belongsToRestaurant,
+                    isActive,
+                    isAvailable,
+                    hasStock,
+                    "El producto no pertenece a este negocio."));
+                continue;
+            }
+
+            if (!isActive || !isAvailable)
+            {
+                response.HasChanges = true;
+                response.Items.Add(BuildInvalidItemResponse(
+                    menuItem,
+                    requestedItem,
+                    belongsToRestaurant,
+                    isActive,
+                    isAvailable,
+                    hasStock,
+                    "El producto ya no está disponible."));
+                continue;
+            }
+
+            if (menuItem.TrackStock)
+            {
+                var availableStock = Math.Max(0, menuItem.StockQuantity ?? 0);
+
+                if (availableStock <= 0)
+                {
+                    response.HasChanges = true;
+                    response.Items.Add(BuildInvalidItemResponse(
+                        menuItem,
+                        requestedItem,
+                        belongsToRestaurant,
+                        isActive,
+                        isAvailable,
+                        false,
+                        "El producto se quedó sin stock."));
+                    continue;
+                }
+
+                if (availableStock < requestedQuantity)
+                {
+                    validatedQuantity = availableStock;
+                    response.HasChanges = true;
+                }
+            }
+
+            var priceChanged = requestedItem.ClientUnitPrice.HasValue && requestedItem.ClientUnitPrice.Value != menuItem.Price;
+            if (priceChanged)
+            {
+                response.HasChanges = true;
+            }
+
+            var quantityAdjusted = validatedQuantity != requestedQuantity;
+            var subtotal = menuItem.Price * validatedQuantity;
+
+            response.Items.Add(new ValidateOrderItemResponse
+            {
+                MenuItemId = menuItem.Id,
+                ProductName = menuItem.Name,
+                RequestedQuantity = requestedQuantity,
+                ValidatedQuantity = validatedQuantity,
+                ClientUnitPrice = requestedItem.ClientUnitPrice,
+                CurrentUnitPrice = menuItem.Price,
+                Subtotal = subtotal,
+                Exists = true,
+                BelongsToRestaurant = true,
+                IsActive = isActive,
+                IsAvailable = isAvailable,
+                HasStock = true,
+                QuantityAdjusted = quantityAdjusted,
+                PriceChanged = priceChanged,
+                Removed = false,
+                Message = BuildValidatedItemMessage(menuItem.Name, quantityAdjusted, validatedQuantity, priceChanged)
+            });
+
+            validLines.Add(new ValidatedOrderLine
+            {
+                MenuItem = menuItem,
+                Quantity = validatedQuantity,
+                UnitPrice = menuItem.Price
+            });
+        }
+
+        response.Subtotal = validLines.Sum(x => x.UnitPrice * x.Quantity);
+        var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommercialOrder, cancellationToken);
+        var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(response.Subtotal, resolvedDeliveryAddress.Zone.DeliveryFee, commissionRules);
+        response.BusinessCommissionAmount = financialBreakdown.BusinessCommissionAmount;
+        response.BusinessNetAmount = financialBreakdown.BusinessNetAmount;
+        response.DeliveryFee = financialBreakdown.DeliveryFee;
+        response.DeliveryPlatformCommissionAmount = financialBreakdown.DeliveryPlatformCommissionAmount;
+        response.CourierEarningAmount = financialBreakdown.CourierEarningAmount;
+        response.ServiceFeeAmount = financialBreakdown.ServiceFeeAmount;
+        response.DiscountAmount = financialBreakdown.DiscountAmount;
+        response.PlatformRevenueAmount = financialBreakdown.PlatformRevenueAmount;
+        response.Total = financialBreakdown.Total;
+        response.CanCreateOrder = validLines.Count > 0 && response.Items.All(x => !x.QuantityAdjusted && !x.Removed && !x.PriceChanged);
+
+        return new ValidatedOrderContext
+        {
+            Restaurant = restaurant,
+            Zone = resolvedDeliveryAddress.Zone,
+            CustomerAddressId = resolvedDeliveryAddress.CustomerAddressId,
+            DeliveryAddress = resolvedDeliveryAddress.DeliveryAddress,
+            DeliveryReference = resolvedDeliveryAddress.DeliveryReference,
+            ValidLines = validLines,
+            Response = response
+        };
+    }
+
+    private async Task<ResolvedDeliveryAddress> ResolveDeliveryAddressAsync(
+        Guid customerId,
+        CreateOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.CustomerAddressId.HasValue)
+        {
+            var customerAddress = await _dbContext.CustomerAddresses
+                .AsNoTracking()
+                .Include(x => x.Zone)
+                .FirstOrDefaultAsync(
+                    x => x.Id == request.CustomerAddressId.Value &&
+                         x.CustomerProfileId == customerId &&
+                         x.IsActive,
+                    cancellationToken);
+
+            if (customerAddress is null)
+            {
+                throw new NotFoundException("Customer address was not found.");
+            }
+
+            if (!customerAddress.Zone.IsActive)
+            {
+                throw new NotFoundException("Zone was not found.");
+            }
+
+            return new ResolvedDeliveryAddress
+            {
+                Zone = customerAddress.Zone,
+                CustomerAddressId = customerAddress.Id,
+                DeliveryAddress = customerAddress.AddressLine,
+                DeliveryReference = customerAddress.Reference
+            };
+        }
+
+        var zone = await _dbContext.Zones
+            .FirstOrDefaultAsync(x => x.Id == request.ZoneId && x.IsActive, cancellationToken);
+
+        if (zone is null)
+        {
+            throw new NotFoundException("Zone was not found.");
+        }
+
+        return new ResolvedDeliveryAddress
+        {
+            Zone = zone,
+            CustomerAddressId = null,
+            DeliveryAddress = request.DeliveryAddress.Trim(),
+            DeliveryReference = request.DeliveryReference.Trim()
+        };
+    }
+
     public async Task<IReadOnlyList<RestaurantOrderListItemResponse>> GetRestaurantOrdersAsync(
         RestaurantOrderFilterRequest filters,
         CancellationToken cancellationToken = default)
@@ -298,11 +606,13 @@ public class OrderService : IOrderService
                 Id = x.Id,
                 CustomerId = x.CustomerId,
                 CustomerName = x.Customer.User.FirstName + " " + x.Customer.User.LastName,
+                ItemCount = x.Items.Sum(i => i.Quantity),
                 Status = x.Status.ToString(),
                 BusinessNetAmount = x.BusinessNetAmount,
                 PlatformRevenueAmount = x.PlatformRevenueAmount,
                 Total = x.Total,
                 PaymentMethod = x.PaymentMethod.ToString(),
+                PaymentStatus = x.Payment != null ? x.Payment.Status.ToString() : string.Empty,
                 AssignedCourierUserId = x.AssignedCourierUserId,
                 AssignedCourierType = x.AssignedCourierType.HasValue ? x.AssignedCourierType.Value.ToString() : null,
                 CreatedAtUtc = x.CreatedAtUtc
@@ -310,12 +620,111 @@ public class OrderService : IOrderService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<RestaurantOrderPaymentResponse> GetRestaurantOrderPaymentAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var (_, payment) = await GetRestaurantOrderPaymentEntityAsync(orderId, cancellationToken);
+        return MapRestaurantOrderPayment(payment);
+    }
+
+    public async Task<RestaurantOrderPaymentResponse> ConfirmRestaurantOrderPaymentAsync(
+        Guid orderId,
+        ConfirmRestaurantOrderPaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await _confirmRestaurantOrderPaymentValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        var (_, payment) = await GetRestaurantOrderPaymentEntityAsync(orderId, cancellationToken);
+        EnsureManualBusinessPayment(payment);
+
+        if (payment.Status == PaymentStatus.Paid)
+        {
+            return MapRestaurantOrderPayment(payment);
+        }
+
+        if (payment.Status == PaymentStatus.Rejected)
+        {
+            throw new AppException("Este pago ya fue rechazado y no se puede confirmar.");
+        }
+
+        if (payment.Status != PaymentStatus.PendingConfirmation)
+        {
+            throw new AppException("Este pago no se puede confirmar en su estado actual.");
+        }
+
+        var confirmedAtUtc = DateTime.UtcNow;
+        payment.Status = PaymentStatus.Paid;
+        payment.ConfirmedByUserId = _currentUserService.UserId;
+        payment.ConfirmedAtUtc = confirmedAtUtc;
+        payment.PaidAtUtc = confirmedAtUtc;
+        payment.ManualReference = NormalizeOptionalValue(request.ManualReference);
+        payment.RejectedAtUtc = null;
+        payment.FailureReason = null;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCustomerAboutPaymentStatusAsync(payment, "Pago confirmado", "Tu pago fue confirmado y el negocio ya puede continuar con tu pedido.", cancellationToken);
+        return MapRestaurantOrderPayment(payment);
+    }
+
+    public async Task<RestaurantOrderPaymentResponse> RejectRestaurantOrderPaymentAsync(
+        Guid orderId,
+        RejectRestaurantOrderPaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await _rejectRestaurantOrderPaymentValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        var (_, payment) = await GetRestaurantOrderPaymentEntityAsync(orderId, cancellationToken);
+        EnsureManualBusinessPayment(payment);
+
+        if (payment.Status == PaymentStatus.Rejected)
+        {
+            return MapRestaurantOrderPayment(payment);
+        }
+
+        if (payment.Status == PaymentStatus.Paid)
+        {
+            throw new AppException("Este pago ya fue confirmado y no se puede rechazar.");
+        }
+
+        if (payment.Status != PaymentStatus.PendingConfirmation)
+        {
+            throw new AppException("Este pago no se puede rechazar en su estado actual.");
+        }
+
+        payment.Status = PaymentStatus.Rejected;
+        payment.ConfirmedByUserId = _currentUserService.UserId;
+        payment.RejectedAtUtc = DateTime.UtcNow;
+        payment.FailureReason = request.FailureReason.Trim();
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCustomerAboutPaymentStatusAsync(payment, "Pago rechazado", "Tu pago fue rechazado. Revisa el motivo en el detalle del pedido.", cancellationToken);
+        return MapRestaurantOrderPayment(payment);
+    }
+
     public async Task<RestaurantOrderDetailResponse> GetRestaurantOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
 
+        var orderOwner = await _dbContext.Orders
+            .AsNoTracking()
+            .Select(x => new
+            {
+                x.Id,
+                x.RestaurantId
+            })
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+        if (orderOwner is null)
+        {
+            throw new NotFoundException("Order was not found.");
+        }
+
+        if (orderOwner.RestaurantId != restaurant.Id)
+        {
+            throw new ForbiddenException("You do not have access to this order.");
+        }
+
         var order = await _dbContext.Orders
-            .Where(x => x.Id == orderId && x.RestaurantId == restaurant.Id)
+            .Where(x => x.Id == orderId)
             .Select(x => new RestaurantOrderDetailResponse
             {
                 Id = x.Id,
@@ -327,6 +736,7 @@ public class OrderService : IOrderService
                 DeliveryReference = x.DeliveryReference,
                 Notes = x.Notes,
                 PaymentMethod = x.PaymentMethod.ToString(),
+                PaymentStatus = x.Payment != null ? x.Payment.Status.ToString() : string.Empty,
                 Subtotal = x.Subtotal,
                 BusinessCommissionAmount = x.BusinessCommissionAmount,
                 BusinessNetAmount = x.BusinessNetAmount,
@@ -372,13 +782,23 @@ public class OrderService : IOrderService
 
         var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
         var order = await _dbContext.Orders
-            .FirstOrDefaultAsync(x => x.Id == orderId && x.RestaurantId == restaurant.Id, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
 
         if (order is null)
         {
             throw new NotFoundException("Order was not found.");
         }
 
+        if (order.RestaurantId != restaurant.Id)
+        {
+            throw new ForbiddenException("You do not have access to this order.");
+        }
+
+        var payment = await _dbContext.Payments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderId == order.Id, cancellationToken);
+
+        EnsurePaymentAllowsOperationalProgress(order, payment, request.Status);
         EnsureValidTransition(order.Status, request.Status);
 
         order.Status = request.Status;
@@ -394,8 +814,75 @@ public class OrderService : IOrderService
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyRestaurantOrderStatusChangedAsync(order, restaurant, request.Status, cancellationToken);
 
         return await GetRestaurantOrderByIdAsync(order.Id, cancellationToken);
+    }
+
+    private async Task<(Order order, Payment payment)> GetRestaurantOrderPaymentEntityAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
+
+        var order = await _dbContext.Orders
+            .AsNoTracking()
+            .Select(x => new Order
+            {
+                Id = x.Id,
+                RestaurantId = x.RestaurantId
+            })
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+        if (order is null)
+        {
+            throw new NotFoundException("Order was not found.");
+        }
+
+        if (order.RestaurantId != restaurant.Id)
+        {
+            throw new ForbiddenException("You do not have access to this order payment.");
+        }
+
+        var payment = await _dbContext.Payments
+            .FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
+
+        if (payment is null)
+        {
+            throw new NotFoundException("Payment was not found for this order.");
+        }
+
+        return (order, payment);
+    }
+
+    private static RestaurantOrderPaymentResponse MapRestaurantOrderPayment(Payment payment)
+    {
+        return new RestaurantOrderPaymentResponse
+        {
+            OrderId = payment.OrderId,
+            PaymentId = payment.Id,
+            Method = payment.Method.ToString(),
+            Status = payment.Status.ToString(),
+            Amount = payment.Amount,
+            Currency = payment.Currency,
+            ManualReference = payment.ManualReference,
+            ConfirmedAtUtc = payment.ConfirmedAtUtc,
+            RejectedAtUtc = payment.RejectedAtUtc,
+            FailureReason = payment.FailureReason
+        };
+    }
+
+    private void EnsureManualBusinessPayment(Payment payment)
+    {
+        if (payment.Method is PaymentMethod.Yape or PaymentMethod.Plin)
+        {
+            return;
+        }
+
+        throw new AppException("Solo los pagos Yape o Plin pueden gestionarse manualmente por el negocio.");
+    }
+
+    private static string? NormalizeOptionalValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private async Task<CustomerProfile> GetCurrentCustomerAsync(CancellationToken cancellationToken)
@@ -448,6 +935,270 @@ public class OrderService : IOrderService
         {
             throw new AppException($"Cannot change order status from {currentStatus} to {nextStatus}.");
         }
+    }
+
+    private static void EnsurePaymentAllowsOperationalProgress(Order order, Payment? payment, OrderStatus nextStatus)
+    {
+        if (nextStatus == OrderStatus.Cancelled || order.PaymentMethod == PaymentMethod.Cash)
+        {
+            return;
+        }
+
+        if (order.PaymentMethod is not (PaymentMethod.Yape or PaymentMethod.Plin))
+        {
+            return;
+        }
+
+        if (payment?.Status == PaymentStatus.Paid)
+        {
+            return;
+        }
+
+        if (payment?.Status == PaymentStatus.PendingConfirmation || payment is null)
+        {
+            throw new AppException("El pago aún no ha sido confirmado.");
+        }
+
+        if (payment.Status is PaymentStatus.Rejected or PaymentStatus.Failed or PaymentStatus.Refunded)
+        {
+            throw new AppException("El pedido no puede continuar porque el pago no está disponible.");
+        }
+    }
+
+    private async Task NotifyBusinessAboutNewOrderAsync(Order order, Guid businessOwnerUserId, CancellationToken cancellationToken)
+    {
+        if (order.PaymentMethod != PaymentMethod.Cash)
+        {
+            return;
+        }
+
+        await _notificationService.SendToUserAsync(
+            businessOwnerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Nuevo pedido en efectivo",
+                Body = $"Tienes un nuevo pedido #{order.Id.ToString("N")[..8]}.",
+                Data = NotificationPayloadFactory.BusinessOrder(order.Id, $"/business/orders/{order.Id}", "order_created_cash")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCustomerAboutPaymentStatusAsync(
+        Payment payment,
+        string title,
+        string body,
+        CancellationToken cancellationToken)
+    {
+        var customerUserId = await _dbContext.Orders
+            .Where(x => x.Id == payment.OrderId)
+            .Select(x => x.Customer.UserId)
+            .FirstAsync(cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            customerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = title,
+                Body = body,
+                Data = NotificationPayloadFactory.Order(payment.OrderId, $"/orders/{payment.OrderId}", payment.Status == PaymentStatus.Paid ? "payment_confirmed" : "payment_rejected")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyRestaurantOrderStatusChangedAsync(
+        Order order,
+        Restaurant restaurant,
+        OrderStatus nextStatus,
+        CancellationToken cancellationToken)
+    {
+        if (nextStatus == OrderStatus.Accepted)
+        {
+            var customerUserId = await _dbContext.Customers
+                .Where(x => x.Id == order.CustomerId)
+                .Select(x => x.UserId)
+                .FirstAsync(cancellationToken);
+
+            await _notificationService.SendToUserAsync(
+                customerUserId,
+                new EventPushNotificationRequest
+                {
+                    Title = "Pedido aceptado",
+                    Body = $"{restaurant.Name} aceptó tu pedido.",
+                    Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_accepted")
+                },
+                cancellationToken);
+            return;
+        }
+
+        if (nextStatus == OrderStatus.Cancelled)
+        {
+            var customerUserId = await _dbContext.Customers
+                .Where(x => x.Id == order.CustomerId)
+                .Select(x => x.UserId)
+                .FirstAsync(cancellationToken);
+
+            await _notificationService.SendToUserAsync(
+                customerUserId,
+                new EventPushNotificationRequest
+                {
+                    Title = "Pedido cancelado",
+                    Body = $"{restaurant.Name} canceló tu pedido.",
+                    Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_cancelled")
+                },
+                cancellationToken);
+            return;
+        }
+
+        if (nextStatus != OrderStatus.ReadyForPickup)
+        {
+            return;
+        }
+
+        var customerIdTask = _dbContext.Customers
+            .Where(x => x.Id == order.CustomerId)
+            .Select(x => x.UserId)
+            .FirstAsync(cancellationToken);
+
+        var driverUserIdsTask = _dbContext.Drivers
+            .Where(x =>
+                x.ZoneId == order.ZoneId &&
+                x.ApprovalStatus == ApprovalStatus.Approved &&
+                x.User.Status == UserStatus.Active &&
+                x.IsAvailable)
+            .Select(x => x.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        await Task.WhenAll(customerIdTask, driverUserIdsTask);
+
+        await _notificationService.SendToUserAsync(
+            customerIdTask.Result,
+            new EventPushNotificationRequest
+            {
+                Title = "Pedido listo",
+                Body = $"{restaurant.Name} indicó que tu pedido está listo para recoger.",
+                Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_ready_for_pickup")
+            },
+            cancellationToken);
+
+        await _notificationService.SendToUsersAsync(
+            driverUserIdsTask.Result,
+            new EventPushNotificationRequest
+            {
+                Title = "Pedido disponible",
+                Body = $"Hay un pedido listo para recoger en {restaurant.Name}.",
+                Data = NotificationPayloadFactory.DriverOrder(order.Id, $"/driver/orders/{order.Id}", "driver_order_available")
+            },
+            cancellationToken);
+    }
+
+    private static ValidateOrderItemResponse BuildInvalidItemResponse(
+        MenuItem menuItem,
+        CreateOrderItemRequest requestedItem,
+        bool belongsToRestaurant,
+        bool isActive,
+        bool isAvailable,
+        bool hasStock,
+        string message)
+    {
+        return new ValidateOrderItemResponse
+        {
+            MenuItemId = menuItem.Id,
+            ProductName = menuItem.Name,
+            RequestedQuantity = requestedItem.Quantity,
+            ValidatedQuantity = 0,
+            ClientUnitPrice = requestedItem.ClientUnitPrice,
+            CurrentUnitPrice = menuItem.Price,
+            Subtotal = 0m,
+            Exists = true,
+            BelongsToRestaurant = belongsToRestaurant,
+            IsActive = isActive,
+            IsAvailable = isAvailable,
+            HasStock = hasStock,
+            QuantityAdjusted = false,
+            PriceChanged = false,
+            Removed = true,
+            Message = message
+        };
+    }
+
+    private static string BuildValidatedItemMessage(string productName, bool quantityAdjusted, int validatedQuantity, bool priceChanged)
+    {
+        if (quantityAdjusted && priceChanged)
+        {
+            return $"Adjustments were applied to '{productName}'. Quantity updated to {validatedQuantity} and price refreshed.";
+        }
+
+        if (quantityAdjusted)
+        {
+            return $"Quantity for '{productName}' was adjusted to {validatedQuantity}.";
+        }
+
+        if (priceChanged)
+        {
+            return $"Price for '{productName}' was refreshed.";
+        }
+
+        return $"'{productName}' is ready to order.";
+    }
+
+    private async Task<CustomerOrderDetailResponse?> TryGetExistingOrderAsync(
+        Guid customerId,
+        string clientRequestId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(clientRequestId))
+        {
+            return null;
+        }
+
+        var orderId = await _dbContext.Orders
+            .Where(x => x.CustomerId == customerId && x.ClientRequestId == clientRequestId)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return orderId.HasValue
+            ? await GetMyOrderByIdAsync(orderId.Value, cancellationToken)
+            : null;
+    }
+
+    private static bool IsConcurrentOrderCreationFailure(Exception exception)
+    {
+        return HasPostgresSqlState(exception, "40001") || HasPostgresSqlState(exception, "40P01");
+    }
+
+    private static bool HasPostgresSqlState(Exception? exception, string expectedSqlState)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            var sqlStateProperty = current.GetType().GetProperty("SqlState");
+            if (sqlStateProperty?.GetValue(current) is string sqlState && sqlState == expectedSqlState)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Payment BuildInitialPayment(Order order)
+    {
+        var paymentStatus = order.PaymentMethod switch
+        {
+            PaymentMethod.Cash => PaymentStatus.Pending,
+            PaymentMethod.Yape or PaymentMethod.Plin => PaymentStatus.PendingConfirmation,
+            _ => throw new AppException("El método de pago no está soportado.")
+        };
+
+        return new Payment
+        {
+            Id = Guid.NewGuid(),
+            OrderId = order.Id,
+            Method = order.PaymentMethod,
+            Status = paymentStatus,
+            Amount = order.Total,
+            Currency = "PEN"
+        };
     }
 
     private static string? NormalizeNotes(string? notes)

@@ -61,7 +61,13 @@ public class RestaurantService : IRestaurantService
             query = query.Where(x =>
                 x.Name.ToLower().Contains(searchTerm) ||
                 x.Description.ToLower().Contains(searchTerm) ||
-                x.Zone.Name.ToLower().Contains(searchTerm));
+                x.Zone.Name.ToLower().Contains(searchTerm) ||
+                x.MenuItems.Any(item =>
+                    item.IsActive &&
+                    item.IsAvailable &&
+                    item.Category.IsActive &&
+                    (item.Name.ToLower().Contains(searchTerm) ||
+                     item.Description.ToLower().Contains(searchTerm))));
         }
 
         if (filters.OpenNow == true)

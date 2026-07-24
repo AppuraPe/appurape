@@ -45,7 +45,13 @@ public class SearchService : ISearchService
                 x.IsActive &&
                 (x.Name.ToLower().Contains(searchTerm) ||
                  x.Description.ToLower().Contains(searchTerm) ||
-                 x.Zone.Name.ToLower().Contains(searchTerm)));
+                 x.Zone.Name.ToLower().Contains(searchTerm) ||
+                 x.MenuItems.Any(item =>
+                     item.IsActive &&
+                     item.IsAvailable &&
+                     item.Category.IsActive &&
+                     (item.Name.ToLower().Contains(searchTerm) ||
+                      item.Description.ToLower().Contains(searchTerm)))));
 
         var foods = await foodsQuery
             .OrderBy(x =>
@@ -73,7 +79,12 @@ public class SearchService : ISearchService
         var restaurants = await restaurantsQuery
             .OrderBy(x =>
                 x.Name.ToLower().Contains(searchTerm) ? 0 :
-                x.Description.ToLower().Contains(searchTerm) ? 1 : 2)
+                x.Description.ToLower().Contains(searchTerm) ? 1 :
+                x.MenuItems.Any(item =>
+                    item.IsActive &&
+                    item.IsAvailable &&
+                    item.Category.IsActive &&
+                    item.Name.ToLower().Contains(searchTerm)) ? 2 : 3)
             .ThenBy(x => x.Name)
             .Select(x => new PublicSearchRestaurantItemResponse
             {

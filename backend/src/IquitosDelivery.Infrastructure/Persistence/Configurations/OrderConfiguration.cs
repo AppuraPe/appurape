@@ -12,6 +12,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.ClientRequestId).HasMaxLength(80);
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.PaymentMethod).IsRequired();
         builder.Property(x => x.Subtotal).HasPrecision(10, 2).IsRequired();
@@ -40,6 +41,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.DriverFeedback).HasMaxLength(1000);
 
         builder.HasIndex(x => x.AssignedCourierUserId);
+        builder.HasIndex(x => x.CustomerId);
+        builder.HasIndex(x => new { x.CustomerId, x.ClientRequestId })
+            .IsUnique()
+            .HasFilter("\"ClientRequestId\" IS NOT NULL");
 
         builder.HasOne(x => x.Customer)
             .WithMany(x => x.Orders)

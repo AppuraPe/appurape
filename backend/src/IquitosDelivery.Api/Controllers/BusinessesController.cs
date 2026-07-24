@@ -53,4 +53,16 @@ public class BusinessesController : ControllerBase
         var response = await _catalogService.GetPublicCatalogAsync(id, filters, cancellationToken);
         return Ok(response);
     }
+
+    [HttpGet("{businessId:guid}/products/{productId:guid}")]
+    [ProducesResponseType(typeof(PublicProductDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PublicProductDetailResponse>> GetPublicProduct(
+        Guid businessId,
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var response = await _catalogService.GetPublicProductAsync(businessId, productId, cancellationToken);
+        return Ok(response);
+    }
 }

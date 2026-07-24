@@ -17,6 +17,14 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
+    [HttpPost("validate")]
+    [ProducesResponseType(typeof(ValidateOrderResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ValidateOrderResponse>> ValidateOrder([FromBody] CreateOrderRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _orderService.ValidateOrderAsync(request, cancellationToken);
+        return Ok(response);
+    }
+
     [HttpPost]
     [ProducesResponseType(typeof(CustomerOrderDetailResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<CustomerOrderDetailResponse>> CreateOrder([FromBody] CreateOrderRequest request, CancellationToken cancellationToken)

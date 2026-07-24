@@ -35,6 +35,36 @@ public class RestaurantOrdersController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("{orderId:guid}/payment")]
+    [ProducesResponseType(typeof(RestaurantOrderPaymentResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RestaurantOrderPaymentResponse>> GetPayment(Guid orderId, CancellationToken cancellationToken)
+    {
+        var response = await _orderService.GetRestaurantOrderPaymentAsync(orderId, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("{orderId:guid}/payment/confirm")]
+    [ProducesResponseType(typeof(RestaurantOrderPaymentResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RestaurantOrderPaymentResponse>> ConfirmPayment(
+        Guid orderId,
+        [FromBody] ConfirmRestaurantOrderPaymentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _orderService.ConfirmRestaurantOrderPaymentAsync(orderId, request, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("{orderId:guid}/payment/reject")]
+    [ProducesResponseType(typeof(RestaurantOrderPaymentResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RestaurantOrderPaymentResponse>> RejectPayment(
+        Guid orderId,
+        [FromBody] RejectRestaurantOrderPaymentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _orderService.RejectRestaurantOrderPaymentAsync(orderId, request, cancellationToken);
+        return Ok(response);
+    }
+
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(typeof(RestaurantOrderDetailResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<RestaurantOrderDetailResponse>> UpdateStatus(Guid id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)

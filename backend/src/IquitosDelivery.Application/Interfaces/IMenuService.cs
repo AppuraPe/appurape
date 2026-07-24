@@ -9,6 +9,11 @@ public interface IMenuService
         PublicMenuFilterRequest filters,
         CancellationToken cancellationToken = default);
 
+    Task<PublicProductDetailResponse> GetPublicProductAsync(
+        Guid restaurantId,
+        Guid productId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<MenuCategoryResponse>> GetMyCategoriesAsync(
         MenuCategoryFilterRequest filters,
         CancellationToken cancellationToken = default);

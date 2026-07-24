@@ -20,6 +20,8 @@ public class RestaurantOrderDetailResponse
 
     public string PaymentMethod { get; set; } = string.Empty;
 
+    public string PaymentStatus { get; set; } = string.Empty;
+
     public decimal Subtotal { get; set; }
 
     public decimal BusinessCommissionAmount { get; set; }

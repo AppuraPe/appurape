@@ -4,6 +4,8 @@ namespace IquitosDelivery.Application.Interfaces;
 
 public interface IOrderService
 {
+    Task<ValidateOrderResponse> ValidateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default);
+
     Task<CustomerOrderDetailResponse> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<CustomerOrderListItemResponse>> GetMyOrdersAsync(CancellationToken cancellationToken = default);
@@ -14,6 +16,18 @@ public interface IOrderService
 
     Task<IReadOnlyList<RestaurantOrderListItemResponse>> GetRestaurantOrdersAsync(
         RestaurantOrderFilterRequest filters,
+        CancellationToken cancellationToken = default);
+
+    Task<RestaurantOrderPaymentResponse> GetRestaurantOrderPaymentAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+    Task<RestaurantOrderPaymentResponse> ConfirmRestaurantOrderPaymentAsync(
+        Guid orderId,
+        ConfirmRestaurantOrderPaymentRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<RestaurantOrderPaymentResponse> RejectRestaurantOrderPaymentAsync(
+        Guid orderId,
+        RejectRestaurantOrderPaymentRequest request,
         CancellationToken cancellationToken = default);
 
     Task<RestaurantOrderDetailResponse> GetRestaurantOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default);

@@ -20,6 +20,8 @@ public interface IAppDbContext
 
     IQueryable<CommunityCollaborator> CommunityCollaborators { get; }
 
+    IQueryable<CustomerAddress> CustomerAddresses { get; }
+
     IQueryable<BusinessType> BusinessTypes { get; }
 
     IQueryable<PlatformSettings> PlatformSettings { get; }
@@ -43,6 +45,10 @@ public interface IAppDbContext
     IQueryable<MenuItem> MenuItems { get; }
 
     IQueryable<Order> Orders { get; }
+
+    IQueryable<Payment> Payments { get; }
+
+    IQueryable<UserDeviceToken> UserDeviceTokens { get; }
 
     IQueryable<OrderItem> OrderItems { get; }
 
