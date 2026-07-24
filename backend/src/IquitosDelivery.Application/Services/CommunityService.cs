@@ -182,6 +182,7 @@ public class CommunityService : ICommunityService
     public async Task<CommunityRequestDetailResponse> GetRequestByIdAsync(Guid requestId, CancellationToken cancellationToken = default)
     {
         EnsureAuthenticated();
+        var currentUserId = _currentUserService.UserId!.Value;
         var request = await _dbContext.CommunityRequests
             .Include(x => x.CreatedByUser)
             .Include(x => x.AssignedCollaborator)
@@ -196,7 +197,7 @@ public class CommunityService : ICommunityService
             .FirstOrDefaultAsync(x => x.Id == requestId, cancellationToken)
             ?? throw new NotFoundException("Community request was not found.");
 
-        return MapRequestDetail(request, _currentUserService.UserId!.Value);
+        return MapRequestDetail(request, currentUserId);
     }
 
     public async Task<CommunityRequestDetailResponse> CreateRequestAsync(CreateCommunityRequestRequest request, CancellationToken cancellationToken = default)
@@ -248,9 +249,15 @@ public class CommunityService : ICommunityService
     public async Task<IReadOnlyList<CommunityRequestMatchResponse>> GetRequestMatchesAsync(Guid requestId, CancellationToken cancellationToken = default)
     {
         EnsureAuthenticated();
+        var currentUserId = _currentUserService.UserId!.Value;
         var request = await _dbContext.CommunityRequests
             .FirstOrDefaultAsync(x => x.Id == requestId, cancellationToken)
             ?? throw new NotFoundException("Community request was not found.");
+
+        if (request.CreatedByUserId != currentUserId)
+        {
+            throw new ForbiddenException("Only the requester can review collaborator matches.");
+        }
 
         var applications = await _dbContext.CommunityRequestApplications
             .Where(x => x.CommunityRequestId == requestId)
@@ -440,7 +447,7 @@ public class CommunityService : ICommunityService
         var collaborator = await GetOrCreateCollaboratorAsync(cancellationToken);
         var communityRequest = await GetAssignedRequestAsync(requestId, collaborator.Id, cancellationToken);
 
-        if (communityRequest.Status != CommunityRequestStatus.Accepted && communityRequest.Status != CommunityRequestStatus.InProcess)
+        if (communityRequest.Status != CommunityRequestStatus.InProcess)
         {
             throw new AppException("Community request cannot be completed from the current status.");
         }
@@ -567,6 +574,11 @@ public class CommunityService : ICommunityService
         if (communityRequest.Status != CommunityRequestStatus.Confirmed || !communityRequest.ClientConfirmedAtUtc.HasValue)
         {
             throw new AppException("Community request must be confirmed before rating.");
+        }
+
+        if (communityRequest.CollaboratorRating.HasValue)
+        {
+            throw new AppException("Community request has already been rated.");
         }
 
         communityRequest.CollaboratorRating = request.Rating;
@@ -752,6 +764,9 @@ public class CommunityService : ICommunityService
     private static CommunityRequestDetailResponse MapRequestDetail(CommunityRequest request, Guid currentUserId)
     {
         var isOwner = request.CreatedByUserId == currentUserId;
+        var visibleApplications = isOwner
+            ? request.Applications
+            : request.Applications.Where(x => x.Collaborator.UserId == currentUserId);
 
         return new CommunityRequestDetailResponse
         {
@@ -789,7 +804,7 @@ public class CommunityService : ICommunityService
             ClientConfirmedAtUtc = request.ClientConfirmedAtUtc,
             CancelledAtUtc = request.CancelledAtUtc,
             CancellationReason = request.CancellationReason,
-            Applications = request.Applications
+            Applications = visibleApplications
                 .OrderByDescending(x => x.Status == CommunityRequestApplicationStatus.Selected)
                 .ThenByDescending(x => x.MatchScore)
                 .ThenBy(x => x.AppliedAtUtc)

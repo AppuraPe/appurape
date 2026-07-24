@@ -129,6 +129,10 @@ public class CommunityServiceTests
         {
             Reason = "No me corresponde"
         }));
+        await Assert.ThrowsAsync<ForbiddenException>(() => outsiderService.GetRequestMatchesAsync(created.Id));
+
+        var outsiderDetail = await outsiderService.GetRequestByIdAsync(created.Id);
+        Assert.Empty(outsiderDetail.Applications);
     }
 
     [Fact]
@@ -159,6 +163,29 @@ public class CommunityServiceTests
             requesterService.CancelRequestAsync(created.Id, new CancelCommunityRequestRequest { Reason = "Tarde" }));
 
         Assert.Equal("Community request can no longer be cancelled.", cancelAfterConfirm.Message);
+    }
+
+    [Fact]
+    public async Task Collaborator_CannotCompleteRequest_BeforeStartingIt()
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedCommunityFixtureAsync(dbContext);
+        var requesterService = CreateCommunityService(dbContext, fixture.RequesterUserId, UserRole.Customer);
+        var collaboratorService = CreateCommunityService(dbContext, fixture.CollaboratorUserId, UserRole.Driver);
+        var created = await requesterService.CreateRequestAsync(CreateValidRequest());
+        var applied = await collaboratorService.ApplyToRequestAsync(created.Id);
+        var selected = await requesterService.SelectApplicationAsync(created.Id, new SelectCommunityRequestApplicationRequest
+        {
+            ApplicationId = Assert.Single(applied.Applications).ApplicationId
+        });
+
+        var completeBeforeStart = await Assert.ThrowsAsync<AppException>(() =>
+            collaboratorService.CompleteRequestAsync(created.Id, new CompleteCommunityRequestRequest
+            {
+                ConfirmationCode = selected.ConfirmationCode!
+            }, proofImageUrl: null));
+
+        Assert.Equal("Community request cannot be completed from the current status.", completeBeforeStart.Message);
     }
 
     [Fact]
@@ -286,6 +313,7 @@ public class CommunityServiceTests
             ApplicationId = Assert.Single(applied.Applications).ApplicationId
         });
 
+        await collaboratorService.StartRequestAsync(created.Id);
         await collaboratorService.CompleteRequestAsync(created.Id, new CompleteCommunityRequestRequest
         {
             ConfirmationCode = selected.ConfirmationCode!
@@ -296,6 +324,42 @@ public class CommunityServiceTests
             It.Is<EventPushNotificationRequest>(request => request.Data != null && request.Data["event"] == "community_delivered"),
             It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Requester_CannotRateCollaborator_Twice()
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedCommunityFixtureAsync(dbContext);
+        var requesterService = CreateCommunityService(dbContext, fixture.RequesterUserId, UserRole.Customer);
+        var collaboratorService = CreateCommunityService(dbContext, fixture.CollaboratorUserId, UserRole.Driver);
+        var created = await requesterService.CreateRequestAsync(CreateValidRequest());
+        var applied = await collaboratorService.ApplyToRequestAsync(created.Id);
+        var selected = await requesterService.SelectApplicationAsync(created.Id, new SelectCommunityRequestApplicationRequest
+        {
+            ApplicationId = Assert.Single(applied.Applications).ApplicationId
+        });
+
+        await collaboratorService.StartRequestAsync(created.Id);
+        await collaboratorService.CompleteRequestAsync(created.Id, new CompleteCommunityRequestRequest
+        {
+            ConfirmationCode = selected.ConfirmationCode!
+        }, proofImageUrl: null);
+        await requesterService.ConfirmRequestAsync(created.Id);
+        await requesterService.RateCollaboratorAsync(created.Id, new RateCommunityCollaboratorRequest
+        {
+            Rating = 5,
+            Comment = "Muy bien"
+        });
+
+        var secondRating = await Assert.ThrowsAsync<AppException>(() =>
+            requesterService.RateCollaboratorAsync(created.Id, new RateCommunityCollaboratorRequest
+            {
+                Rating = 4,
+                Comment = "No deberia reemplazar"
+            }));
+
+        Assert.Equal("Community request has already been rated.", secondRating.Message);
     }
 
     private static CommunityService CreateCommunityService(AppDbContext dbContext, Guid userId, UserRole role, INotificationService? notificationService = null)

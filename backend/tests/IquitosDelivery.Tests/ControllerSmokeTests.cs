@@ -3,6 +3,7 @@ using IquitosDelivery.Api.Controllers.Requests.Auth;
 using IquitosDelivery.Application.DTOs.Admin;
 using IquitosDelivery.Application.DTOs.Auth;
 using IquitosDelivery.Application.DTOs.Businesses;
+using IquitosDelivery.Application.DTOs.CustomerAddresses;
 using IquitosDelivery.Application.DTOs.Drivers;
 using IquitosDelivery.Application.DTOs.Menu;
 using IquitosDelivery.Application.DTOs.Orders;
@@ -375,6 +376,40 @@ public class ControllerSmokeTests
     }
 
     [Fact]
+    public async Task CustomerAddressesController_Endpoints_ReturnExpectedResults()
+    {
+        var service = new Mock<ICustomerAddressService>(MockBehavior.Strict);
+        service
+            .Setup(x => x.GetMyAddressesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CustomerAddressResponse>());
+        service
+            .Setup(x => x.GetMyAddressByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CustomerAddressResponse());
+        service
+            .Setup(x => x.CreateMyAddressAsync(It.IsAny<UpsertCustomerAddressRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CustomerAddressResponse { Id = Guid.NewGuid() });
+        service
+            .Setup(x => x.UpdateMyAddressAsync(It.IsAny<Guid>(), It.IsAny<UpsertCustomerAddressRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CustomerAddressResponse());
+        service
+            .Setup(x => x.DeleteMyAddressAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        service
+            .Setup(x => x.SetDefaultAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CustomerAddressResponse());
+
+        var controller = new CustomerAddressesController(service.Object);
+        var addressId = Guid.NewGuid();
+
+        Assert.IsType<OkObjectResult>((await controller.GetMyAddresses(CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetMyAddress(addressId, CancellationToken.None)).Result);
+        Assert.IsType<CreatedAtActionResult>((await controller.CreateMyAddress(new UpsertCustomerAddressRequest(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.UpdateMyAddress(addressId, new UpsertCustomerAddressRequest(), CancellationToken.None)).Result);
+        Assert.IsType<NoContentResult>(await controller.DeleteMyAddress(addressId, CancellationToken.None));
+        Assert.IsType<OkObjectResult>((await controller.SetDefault(addressId, CancellationToken.None)).Result);
+    }
+
+    [Fact]
     public async Task RestaurantOrdersController_PaymentEndpoints_ReturnOkAndCallService()
     {
         var orderService = new Mock<IOrderService>(MockBehavior.Strict);
@@ -423,5 +458,51 @@ public class ControllerSmokeTests
         Assert.IsType<OkObjectResult>((await controller.GetOrders(new RestaurantOrderFilterRequest(), CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.GetOrder(orderId, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.UpdateStatus(orderId, new UpdateOrderStatusRequest(), CancellationToken.None)).Result);
+    }
+
+    [Fact]
+    public async Task DriverOrdersController_CompatibilityEndpoints_ReturnOkAndCallServices()
+    {
+        var service = new Mock<IDriverOrderService>(MockBehavior.Strict);
+        service
+            .Setup(x => x.GetAvailableOrdersAsync(It.IsAny<DriverAvailableOrderFilterRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AvailableDriverOrderListItemResponse>());
+        service
+            .Setup(x => x.GetActiveOrderAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DriverOrderDetailResponse());
+        service
+            .Setup(x => x.GetAvailableOrderByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DriverOrderDetailResponse());
+        service
+            .Setup(x => x.GetDriverOrderByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DriverOrderDetailResponse());
+        service
+            .Setup(x => x.TakeOrderAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DriverOrderDetailResponse());
+        service
+            .Setup(x => x.GetMyAssignedOrdersAsync(It.IsAny<DriverAssignedOrderFilterRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<DriverAssignedOrderListItemResponse>());
+        service
+            .Setup(x => x.GetMyOrderByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DriverOrderDetailResponse());
+        service
+            .Setup(x => x.UpdateMyOrderStatusAsync(It.IsAny<Guid>(), It.IsAny<UpdateDriverOrderStatusRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DriverOrderDetailResponse());
+
+        var controller = new DriverOrdersController(service.Object);
+        var orderId = Guid.NewGuid();
+
+        Assert.IsType<OkObjectResult>((await controller.GetAvailableOrders(new DriverAvailableOrderFilterRequest(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetActiveOrder(CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetAvailableOrder(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetOrder(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.TakeOrder(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.AcceptOrder(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetMyOrders(new DriverAssignedOrderFilterRequest(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.GetMyOrder(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.UpdateMyOrderStatus(orderId, new UpdateDriverOrderStatusRequest(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.MarkPickedUp(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.MarkOnTheWay(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.MarkDelivered(orderId, CancellationToken.None)).Result);
     }
 }
