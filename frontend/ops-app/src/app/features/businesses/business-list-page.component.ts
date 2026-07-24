@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+﻿import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
@@ -25,6 +25,7 @@ import { BusinessesBusinessCardComponent } from './businesses-business-card.comp
 import { BusinessesHeroSectionComponent } from './businesses-hero-section.component';
 import { BusinessesPageContainerComponent } from './businesses-page-container.component';
 import { MenuCardComponent } from '../restaurants/components/menu-card.component';
+import { FoodResultCardComponent } from '../restaurants/components/food-result-card.component';
 import { SectionHeaderComponent } from '../restaurants/components/section-header.component';
 import { StateCardComponent } from '../restaurants/components/state-card.component';
 import { MobileExploreHeaderComponent } from './mobile-explore-header.component';
@@ -60,6 +61,7 @@ type RestaurantListViewState =
     SectionHeaderComponent,
     StateCardComponent,
     MenuCardComponent,
+    FoodResultCardComponent,
     CurrencyPipe,
     RouterLink,
     LucideAngularModule,
@@ -119,6 +121,7 @@ export class BusinessListPageComponent {
       hasText(this.appliedSort()),
   );
   readonly hasActiveFilters = computed(() => hasText(this.appliedQuery()) || this.hasStructuredFilters());
+  readonly isSearchResults = computed(() => hasText(this.appliedQuery()) && !this.hasStructuredFilters());
   readonly isDesktopSearchResults = computed(
     () => this.viewportMode() === 'desktop' && hasText(this.appliedQuery()) && !this.hasStructuredFilters(),
   );
@@ -200,6 +203,17 @@ export class BusinessListPageComponent {
 
   clearSearch(): void {
     this.searchForm.controls.q.setValue('');
+    this.notificationService.success('Búsqueda limpiada.');
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: null,
+        page: null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   selectCategory(categoryId: string): void {
@@ -360,7 +374,6 @@ export class BusinessListPageComponent {
             openNow: filters.openNow ? true : null,
             sort: filters.sort || null,
           },
-          replaceUrl: true,
         });
       });
   }
@@ -425,7 +438,7 @@ export class BusinessListPageComponent {
       );
     }
 
-    if (viewport === 'desktop' && hasText(filters.q) && !hasStructuredFilters) {
+    if (hasText(filters.q) && !hasStructuredFilters) {
       return this.businessesApi.searchPublic(filters.q).pipe(
         map((searchResults): RestaurantListViewState => ({ mode: 'search', searchResults })),
         catchError((error) => {
@@ -519,9 +532,11 @@ export class BusinessListPageComponent {
     const baseUrl = environment.storagePublicBaseUrl.trim();
 
     if (!baseUrl) {
-      return '/img/banner1.png';
+      return '/img/business-hero-illustration.svg';
     }
 
-    return `${baseUrl.replace(/\/$/, '')}/2026/banner1.png`;
+    return `${baseUrl.replace(/\/$/, '')}/img/business-hero-illustration.svg`;
   }
 }
+
+

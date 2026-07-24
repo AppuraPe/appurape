@@ -24,6 +24,10 @@ const businessOpsChildren: Routes = [
     path: 'orders',
     loadComponent: () => import('./features/business/business-orders-page.component').then((m) => m.BusinessOrdersPageComponent),
   },
+  {
+    path: 'orders/:orderId',
+    loadComponent: () => import('./features/business/business-order-detail-page.component').then((m) => m.BusinessOrderDetailPageComponent),
+  },
 ];
 
 export const routes: Routes = [
@@ -51,6 +55,10 @@ export const routes: Routes = [
       {
         path: 'businesses',
         loadComponent: () => import('./features/businesses/business-list-page.component').then((m) => m.BusinessListPageComponent),
+      },
+      {
+        path: 'businesses/:businessId/products/:productId',
+        loadComponent: () => import('./features/businesses/business-product-detail-page.component').then((m) => m.BusinessProductDetailPageComponent),
       },
       {
         path: 'restaurants/:id',
@@ -89,6 +97,11 @@ export const routes: Routes = [
         path: 'orders/:id',
         canActivate: [authGuard],
         loadComponent: () => import('./features/orders/my-order-detail-page.component').then((m) => m.MyOrderDetailPageComponent),
+      },
+      {
+        path: 'account/addresses',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/account/customer-addresses-page.component').then((m) => m.CustomerAddressesPageComponent),
       },
     ],
   },
@@ -160,12 +173,24 @@ export const routes: Routes = [
             loadComponent: () => import('./features/driver/driver-dashboard-page.component').then((m) => m.DriverDashboardPageComponent),
           },
           {
+            path: 'orders',
+            loadComponent: () => import('./features/driver/driver-available-orders-page.component').then((m) => m.DriverAvailableOrdersPageComponent),
+          },
+          {
+            path: 'active-order',
+            loadComponent: () => import('./features/driver/driver-active-order-page.component').then((m) => m.DriverActiveOrderPageComponent),
+          },
+          {
             path: 'orders/available',
             loadComponent: () => import('./features/driver/driver-available-orders-page.component').then((m) => m.DriverAvailableOrdersPageComponent),
           },
           {
             path: 'orders/my',
             loadComponent: () => import('./features/driver/driver-my-orders-page.component').then((m) => m.DriverMyOrdersPageComponent),
+          },
+          {
+            path: 'orders/:orderId',
+            loadComponent: () => import('./features/driver/driver-order-detail-page.component').then((m) => m.DriverOrderDetailPageComponent),
           },
         ],
       },
@@ -190,6 +215,14 @@ export const routes: Routes = [
           {
             path: 'business-types',
             loadComponent: () => import('./features/admin/admin-business-types-page.component').then((m) => m.AdminBusinessTypesPageComponent),
+          },
+          {
+            path: 'payments',
+            loadComponent: () => import('./features/admin/admin-payments-page.component').then((m) => m.AdminPaymentsPageComponent),
+          },
+          {
+            path: 'payments/:orderId',
+            loadComponent: () => import('./features/admin/admin-payment-detail-page.component').then((m) => m.AdminPaymentDetailPageComponent),
           },
           {
             path: 'restaurants/pending',

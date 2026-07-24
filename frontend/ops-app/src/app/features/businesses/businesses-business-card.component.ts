@@ -9,8 +9,8 @@ import { hasText } from '../../core/utils/api-utils';
   imports: [RouterLink, LucideAngularModule],
   template: `
     <article class="group w-full max-w-full min-w-0 box-border overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 sm:overflow-visible sm:rounded-none sm:bg-transparent sm:shadow-none sm:ring-0">
-      <div class="grid w-full min-w-0 grid-cols-[76px_minmax(0,1fr)_42px] overflow-hidden sm:hidden min-[375px]:grid-cols-[92px_minmax(0,1fr)_46px]">
-        <div class="h-full min-h-[96px] overflow-hidden bg-slate-50">
+      <div class="grid w-full min-w-0 grid-cols-[88px_minmax(0,1fr)_60px] overflow-hidden rounded-2xl sm:hidden min-[375px]:grid-cols-[96px_minmax(0,1fr)_64px]">
+        <div class="h-full min-h-[104px] overflow-hidden bg-slate-50">
           <img
             class="block h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.03]"
             [src]="resolvedImageUrl()"
@@ -20,12 +20,12 @@ import { hasText } from '../../core/utils/api-utils';
           />
         </div>
 
-        <div class="min-w-0 px-2.5 py-2.5">
-          <h3 class="line-clamp-2 min-w-0 break-words text-[13px] font-bold leading-[1.15] text-slate-950 min-[375px]:text-sm">
+        <div class="min-w-0 px-3 py-3">
+          <h3 class="line-clamp-2 min-w-0 break-words text-[13px] font-bold leading-[1.2] text-slate-950 min-[375px]:text-sm">
             {{ name() }}
           </h3>
           @if (hasTextValue(categoryLabel()) || hasTextValue(zoneName())) {
-            <p class="mt-1 truncate text-[11px] leading-tight text-slate-500">
+            <p class="mt-1.5 truncate text-[11px] leading-tight text-slate-500">
               @if (hasTextValue(categoryLabel())) {
                 <span>{{ categoryLabel() }}</span>
               }
@@ -38,7 +38,7 @@ import { hasText } from '../../core/utils/api-utils';
             </p>
           }
 
-          <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] leading-tight text-slate-500">
+          <div class="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px] leading-tight text-slate-500">
             @if (hasTextValue(ratingLabel())) {
               <span class="inline-flex items-center gap-1 text-[#f5b100]">
                 <lucide-angular class="h-3.5 w-3.5 shrink-0" [img]="starIcon" aria-hidden="true"></lucide-angular>
@@ -68,9 +68,9 @@ import { hasText } from '../../core/utils/api-utils';
           </div>
         </div>
 
-        <div class="flex items-center justify-center bg-red-50">
+        <div class="flex items-center justify-center bg-red-50/80 px-2">
           <a
-            class="flex h-9 w-9 items-center justify-center rounded-xl text-red-500 transition active:scale-95"
+            class="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-red-500 transition active:scale-95"
             [routerLink]="actionRoute()"
             [attr.aria-label]="actionLabel()"
           >

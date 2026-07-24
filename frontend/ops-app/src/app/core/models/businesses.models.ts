@@ -40,6 +40,30 @@ export interface PublicBusinessMobileHomeResponse {
   sections: BusinessCategorySectionResponse[];
 }
 
+export interface PublicBusinessProductDetailResponse {
+  id: string;
+  businessId: string;
+  businessName: string;
+  businessTypeName: string;
+  zoneName: string;
+  businessLogoUrl?: string | null;
+  businessIsActive: boolean;
+  businessIsOpen: boolean;
+  categoryId: string;
+  categoryName: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl?: string | null;
+  sku?: string | null;
+  unitLabel?: string | null;
+  trackStock: boolean;
+  stockQuantity?: number | null;
+  hasStock: boolean;
+  isAvailable: boolean;
+  isActive: boolean;
+}
+
 export interface BusinessBrowseFilters {
   q?: string;
   zoneId?: string;

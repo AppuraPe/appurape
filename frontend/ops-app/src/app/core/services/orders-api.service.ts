@@ -7,6 +7,7 @@ import {
   CustomerOrderDetailResponse,
   CustomerOrderListItemResponse,
   RateDriverRequest,
+  ValidateOrderResponse,
 } from '../models/orders.models';
 import { buildApiUrl } from '../utils/api-utils';
 
@@ -17,6 +18,10 @@ export class OrdersApiService {
 
   createOrder(request: CreateOrderRequest): Observable<CreateOrderResponse> {
     return this.http.post<CreateOrderResponse>(this.baseUrl, request);
+  }
+
+  validateOrder(request: CreateOrderRequest): Observable<ValidateOrderResponse> {
+    return this.http.post<ValidateOrderResponse>(`${this.baseUrl}/validate`, request);
   }
 
   getMyOrders(): Observable<CustomerOrderListItemResponse[]> {

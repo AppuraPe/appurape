@@ -5,6 +5,7 @@ import {
   BusinessBrowseFilters,
   BusinessDetailResponse,
   BusinessListItemResponse,
+  PublicBusinessProductDetailResponse,
   BusinessTypeListItemResponse,
   CatalogResponse,
   PublicBusinessMobileHomeResponse,
@@ -75,6 +76,10 @@ export class BusinessesApiService {
       : `${this.baseUrl}/${id}/catalog`;
 
     return this.http.get<CatalogResponse>(requestUrl);
+  }
+
+  getBusinessProduct(businessId: string, productId: string): Observable<PublicBusinessProductDetailResponse> {
+    return this.http.get<PublicBusinessProductDetailResponse>(`${this.baseUrl}/${businessId}/products/${productId}`);
   }
 
   searchPublic(q: string): Observable<PublicBusinessSearchResponse> {

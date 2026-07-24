@@ -9,15 +9,21 @@ export interface VehicleTypeOption {
 
 export interface AvailableDriverOrderListItemResponse {
   id: string;
+  orderCode: string;
   restaurantId: string;
   restaurantName: string;
+  pickupAddress: string;
   zoneId: string;
   zoneName: string;
+  customerName: string;
+  status: BusinessOrderStatus | string;
   deliveryAddress: string;
   deliveryReference: string;
   courierEarningAmount: number;
+  deliveryFee: number;
   total: number;
   paymentMethod: string;
+  paymentStatus: string;
   assignedCourierUserId?: string | null;
   assignedCourierType?: string | null;
   createdAtUtc: string;
@@ -26,16 +32,63 @@ export interface AvailableDriverOrderListItemResponse {
 
 export interface DriverAssignedOrderListItemResponse {
   id: string;
+  orderCode: string;
   restaurantName: string;
+  customerName: string;
   status: BusinessOrderStatus | string;
   courierEarningAmount: number;
+  deliveryFee: number;
   total: number;
   deliveryAddress: string;
+  paymentMethod: string;
+  paymentStatus: string;
   assignedCourierUserId?: string | null;
   assignedCourierType?: string | null;
   createdAtUtc: string;
   readyAtUtc?: string | null;
   pickedUpAtUtc?: string | null;
+}
+
+export interface DriverOrderDetailResponse {
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  restaurantAddress: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  zoneId: string;
+  zoneName: string;
+  status: BusinessOrderStatus | string;
+  deliveryAddress: string;
+  deliveryReference: string;
+  notes?: string | null;
+  paymentMethod: string;
+  paymentStatus: string;
+  subtotal: number;
+  businessCommissionAmount: number;
+  businessNetAmount: number;
+  deliveryFee: number;
+  deliveryPlatformCommissionAmount: number;
+  courierEarningAmount: number;
+  serviceFeeAmount: number;
+  discountAmount: number;
+  platformRevenueAmount: number;
+  total: number;
+  createdAtUtc: string;
+  acceptedAtUtc?: string | null;
+  readyAtUtc?: string | null;
+  pickedUpAtUtc?: string | null;
+  deliveredAtUtc?: string | null;
+  assignedCourierUserId?: string | null;
+  assignedCourierType?: string | null;
+  items: Array<{
+    productName: string;
+    imageUrl?: string | null;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+  }>;
 }
 
 export interface PendingDriverResponse {

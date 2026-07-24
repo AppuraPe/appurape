@@ -1,24 +1,17 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import {
-  Bike,
-  Bolt,
-  Compass,
-  LucideAngularModule,
-  RefreshCw,
-  ShieldCheck,
-  Star,
-} from 'lucide-angular';
+import { Bike, Bolt, Compass, LucideAngularModule, RefreshCw, ShieldCheck, Star } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { DriverOrdersApiService } from '../../core/services/driver-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
-import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
+import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
+import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
+import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
 @Component({
   selector: 'app-driver-dashboard-page',
@@ -26,117 +19,140 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
   imports: [
     RouterLink,
     LucideAngularModule,
-    PageHeaderComponent,
     AppNoticeComponent,
     AppButtonComponent,
-    AppMetricCardComponent,
     AppSurfaceCardComponent,
+    MobilePageShellComponent,
+    InternalPageSectionHeaderComponent,
+    UnifiedLoadingStateComponent,
   ],
   template: `
-    <section class="grid gap-6">
-      <app-surface-card variant="hero">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+      <app-surface-card variant="hero" extraClass="p-5">
         <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div class="grid gap-4">
-            <app-page-header
-              eyebrow="AppuraPe Driver"
+            <app-internal-page-section-header
+              eyebrow="Driver"
               title="Panel del driver"
-              subtitle="Tu operacion combina pedidos disponibles, reputacion y colaboracion comunitaria dentro de la misma red."
+              subtitle="Tu operación combina pedidos disponibles, reputación y colaboración comunitaria dentro de la misma red."
             />
 
             <div class="flex flex-wrap items-center gap-3">
-              <div class="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/90 px-4 py-2 text-sm font-semibold text-primary-900">
+              <div class="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900">
                 <lucide-angular class="h-4 w-4 text-primary-700" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
                 {{ trustLevelLabel() }}
               </div>
-              <div class="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/90 px-4 py-2 text-sm font-semibold text-primary-900">
+              <div class="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900">
                 <lucide-angular class="h-4 w-4 text-primary-700" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
                 Puntaje {{ trustScore() }}%
               </div>
             </div>
           </div>
 
-          <div class="grid min-w-[18rem] gap-3 rounded-[24px] border border-white/80 bg-white/85 p-5 shadow-[0_12px_28px_rgba(6,25,43,0.08)]">
+          <app-surface-card variant="page" extraClass="min-w-[18rem] p-5">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
               <lucide-angular class="h-4 w-4" [img]="compassIcon" aria-hidden="true"></lucide-angular>
               Estado operativo
             </div>
-            <p class="text-sm leading-6 text-text-muted">
+            <p class="mt-3 text-sm leading-6 text-slate-500">
               {{ trustLevelHint() }}
             </p>
-            <div class="flex flex-wrap gap-3">
-              <app-button [routerLink]="'/driver/orders/available'">Ver disponibles</app-button>
+            <div class="mt-4 flex flex-wrap gap-3">
+              <app-button [routerLink]="'/driver/orders'">Ver disponibles</app-button>
+              <app-button variant="secondary" [routerLink]="'/driver/active-order'">Pedido activo</app-button>
               <app-button variant="ghost" [routerLink]="'/community'">Ir a comunidad</app-button>
             </div>
-          </div>
+          </app-surface-card>
         </div>
       </app-surface-card>
 
-      <app-surface-card variant="page">
-        @if (errorMessage()) {
-          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {{ errorMessage() }}
-          </div>
-        } @else if (isLoading()) {
-          <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
-            Cargando resumen del driver...
-          </div>
-        } @else {
+      @if (errorMessage()) {
+        <app-notice tone="danger" [message]="errorMessage()" />
+      }
+
+      @if (isLoading()) {
+        <div class="grid gap-3">
+          <app-unified-loading-state label="Cargando resumen del driver" />
+          <app-unified-loading-state label="Preparando operación" />
+        </div>
+      } @else {
+        <app-surface-card variant="page" extraClass="p-5">
           <app-notice
             tone="info"
-            title="Operacion del driver"
-            message="Solo puedes tomar pedidos cuando tu cuenta esta aprobada y no tienes otro pedido activo. Si una accion falla, revisa el mensaje del backend."
+            title="Operación del driver"
+            message="Solo puedes tomar pedidos cuando tu cuenta está aprobada y no tienes otro pedido activo. Si una acción falla, revisa el mensaje del backend."
           />
 
-          <div class="stats-grid">
-            <app-metric-card label="Pedidos disponibles" [value]="availableOrdersCount()" helper="Oportunidades listas para tomar" />
-            <app-metric-card label="Mis pedidos" [value]="myOrdersCount()" helper="Pedidos bajo tu operacion ahora" />
-            <app-metric-card label="Nivel de confianza" [value]="trustLevelLabel()" [helper]="trustLevelHint()" />
-            <app-metric-card label="Puntaje" [value]="trustScore() + '%'" helper="Se calcula por entregas completadas" />
-          </div>
-        }
-      </app-surface-card>
-
-      <div class="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <app-surface-card variant="page">
-          <div class="grid gap-4">
-            <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
-              <lucide-angular class="h-4 w-4" [img]="boltIcon" aria-hidden="true"></lucide-angular>
-              Acciones rapidas
+          <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Pedidos disponibles</p>
+              <p class="mt-2 text-2xl font-black leading-none text-slate-950">{{ availableOrdersCount() }}</p>
+              <p class="mt-1 text-xs text-slate-500">Oportunidades listas para tomar</p>
             </div>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <app-button size="lg" [routerLink]="'/driver/orders/available'" block>
-                <lucide-angular class="h-4 w-4" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
-                Pedidos disponibles
-              </app-button>
-              <app-button variant="secondary" size="lg" [routerLink]="'/driver/orders/my'" block>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Mis pedidos</p>
+              <p class="mt-2 text-2xl font-black leading-none text-slate-950">{{ myOrdersCount() }}</p>
+              <p class="mt-1 text-xs text-slate-500">Pedidos bajo tu operación ahora</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Nivel de confianza</p>
+              <p class="mt-2 text-xl font-black leading-none text-slate-950">{{ trustLevelLabel() }}</p>
+              <p class="mt-1 text-xs text-slate-500">{{ trustLevelHint() }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Puntaje</p>
+              <p class="mt-2 text-2xl font-black leading-none text-primary-700">{{ trustScore() }}%</p>
+              <p class="mt-1 text-xs text-slate-500">Se calcula por entregas completadas</p>
+            </div>
+          </div>
+        </app-surface-card>
+
+        <div class="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <app-surface-card variant="page" extraClass="p-5">
+            <div class="grid gap-4">
+              <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
+                <lucide-angular class="h-4 w-4" [img]="boltIcon" aria-hidden="true"></lucide-angular>
+                Acciones rápidas
+              </div>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <app-button size="lg" [routerLink]="'/driver/orders'" block>
+                  <lucide-angular class="h-4 w-4" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
+                  Pedidos disponibles
+                </app-button>
+                <app-button variant="secondary" size="lg" [routerLink]="'/driver/active-order'" block>
+                  <lucide-angular class="h-4 w-4" [img]="starIcon" aria-hidden="true"></lucide-angular>
+                  Pedido activo
+                </app-button>
+                <app-button variant="secondary" size="lg" [routerLink]="'/driver/orders/my'" block>
+                  <lucide-angular class="h-4 w-4" [img]="starIcon" aria-hidden="true"></lucide-angular>
+                  Mis pedidos
+                </app-button>
+                <app-button variant="ghost" size="lg" [routerLink]="'/community'" block>
+                  <lucide-angular class="h-4 w-4" [img]="compassIcon" aria-hidden="true"></lucide-angular>
+                  Red comunitaria
+                </app-button>
+                <app-button variant="ghost" size="lg" type="button" [disabled]="isLoading()" (click)="loadDashboard()" block>
+                  <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
+                  Recargar
+                </app-button>
+              </div>
+            </div>
+          </app-surface-card>
+
+          <app-surface-card variant="page" extraClass="p-5">
+            <div class="grid gap-4">
+              <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
                 <lucide-angular class="h-4 w-4" [img]="starIcon" aria-hidden="true"></lucide-angular>
-                Mis pedidos
-              </app-button>
-              <app-button variant="ghost" size="lg" [routerLink]="'/community'" block>
-                <lucide-angular class="h-4 w-4" [img]="compassIcon" aria-hidden="true"></lucide-angular>
-                Red comunitaria
-              </app-button>
-              <app-button variant="ghost" size="lg" type="button" [disabled]="isLoading()" (click)="loadDashboard()" block>
-                <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
-                Recargar
-              </app-button>
+                Lectura rápida
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
+                Si tu nivel es <strong class="text-slate-950">De confianza</strong>, la red te prioriza mejor en escenarios comunitarios y operativos. Mantener buen cumplimiento te da más visibilidad y mejores coincidencias.
+              </div>
             </div>
-          </div>
-        </app-surface-card>
-
-        <app-surface-card variant="page">
-          <div class="grid gap-4">
-            <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
-              <lucide-angular class="h-4 w-4" [img]="starIcon" aria-hidden="true"></lucide-angular>
-              Lectura rapida
-            </div>
-            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-4 text-sm leading-6 text-text-muted">
-              Si tu nivel es <strong class="text-loreto-carbon">De confianza</strong>, la red te prioriza mejor en escenarios comunitarios y operativos. Mantener buen cumplimiento te da mas visibilidad y mejores coincidencias.
-            </div>
-          </div>
-        </app-surface-card>
-      </div>
-    </section>
+          </app-surface-card>
+        </div>
+      }
+    </app-mobile-page-shell>
   `,
 })
 export class DriverDashboardPageComponent {
@@ -185,7 +201,7 @@ export class DriverDashboardPageComponent {
       return 'Ya operas como colaborador aprobado dentro de AppuraPe.';
     }
 
-    return 'Aun no tienes nivel asignado.';
+    return 'Aún no tienes nivel asignado.';
   }
 
   trustScore(): number {

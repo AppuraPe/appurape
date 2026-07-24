@@ -1,0 +1,47 @@
+<section
+  aria-atomic="true"
+  aria-live="polite"
+  class="pointer-events-none fixed inset-x-0 bottom-[calc(68px+env(safe-area-inset-bottom))] z-[85] flex justify-center px-4 sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:justify-end"
+>
+  <div class="flex w-full max-w-[420px] flex-col gap-2">
+    @for (toast of toasts(); track toast.id) {
+      <article
+        class="pointer-events-auto overflow-hidden rounded-2xl border bg-white shadow-[0_12px_28px_rgba(6,25,43,0.14)]"
+        [attr.role]="toast.type === 'error' ? 'alert' : 'status'"
+        [class.border-emerald-200]="toast.type === 'success'"
+        [class.border-red-200]="toast.type === 'error'"
+        [class.border-amber-200]="toast.type === 'warning'"
+        [class.border-sky-200]="toast.type === 'info'"
+      >
+        <div
+          class="flex items-start gap-3 px-4 py-3"
+          [class.bg-emerald-50]="toast.type === 'success'"
+          [class.bg-red-50]="toast.type === 'error'"
+          [class.bg-amber-50]="toast.type === 'warning'"
+          [class.bg-sky-50]="toast.type === 'info'"
+        >
+          <span
+            class="mt-0.5 inline-flex h-2.5 w-2.5 shrink-0 rounded-full"
+            [class.bg-emerald-500]="toast.type === 'success'"
+            [class.bg-red-500]="toast.type === 'error'"
+            [class.bg-amber-500]="toast.type === 'warning'"
+            [class.bg-sky-500]="toast.type === 'info'"
+          ></span>
+
+          <p class="min-w-0 flex-1 text-sm font-semibold leading-5 text-slate-800">
+            {{ toast.message }}
+          </p>
+
+          <button
+            type="button"
+            class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/70 hover:text-slate-800"
+            (click)="dismiss(toast.id)"
+            aria-label="Cerrar mensaje"
+          >
+            ×
+          </button>
+        </div>
+      </article>
+    }
+  </div>
+</section>

@@ -1,5 +1,5 @@
-import { CurrencyPipe, DOCUMENT } from '@angular/common';
-import { AfterViewInit, Component, DestroyRef, OnDestroy, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
+﻿import { CurrencyPipe, DOCUMENT } from '@angular/common';
+import { Component, DestroyRef, OnDestroy, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -13,7 +13,6 @@ import {
 } from '../../core/models/businesses.models';
 import { CatalogItemResponse } from '../../core/models/catalog.models';
 import { AuthService } from '../../core/services/auth.service';
-import { AppNavigationService } from '../../core/services/app-navigation.service';
 import { BusinessesApiService } from '../../core/services/businesses-api.service';
 import { CheckoutDrawerUiService } from '../../core/services/checkout-drawer-ui.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
@@ -21,13 +20,8 @@ import { NotificationService } from '../../core/services/notification.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { MenuCardComponent } from '../restaurants/components/menu-card.component';
-
-type CartLine = {
-  menuItemId: string;
-  name: string;
-  price: number;
-  quantity: number;
-};
+import { BusinessCartService } from './business-cart.service';
+import { BusinessCheckoutDrawerComponent } from './business-checkout-drawer.component';
 
 type HighlightSegment = {
   text: string;
@@ -45,11 +39,16 @@ type FlyAnimationState = {
 @Component({
   selector: 'app-business-detail-page',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, ReactiveFormsModule, LucideAngularModule, AppBackButtonComponent, MenuCardComponent],
+  imports: [RouterLink, CurrencyPipe, ReactiveFormsModule, LucideAngularModule, AppBackButtonComponent, MenuCardComponent, BusinessCheckoutDrawerComponent],
   templateUrl: './business-detail-page.component.html',
 })
-export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
+export class BusinessDetailPageComponent implements OnDestroy {
   private static readonly FLY_ANIMATION_DURATION_MS = 650;
+  private static readonly MATCH_HIGHLIGHT_DURATION_MS = 3000;
+  private static readonly MATCH_SCROLL_MAX_ATTEMPTS = 10;
+  private static readonly MATCH_SCROLL_RETRY_DELAY_MS = 160;
+  private static readonly CATEGORY_SCROLL_MAX_ATTEMPTS = 10;
+  private static readonly CATEGORY_SCROLL_RETRY_DELAY_MS = 160;
   private static readonly PAYMENT_METHOD_TO_ENUM: Record<PaymentMethod, number> = {
     Cash: 0,
     Yape: 1,
@@ -58,7 +57,6 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   };
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly navigation = inject(AppNavigationService);
   private readonly document = inject(DOCUMENT);
   private readonly formBuilder = inject(FormBuilder);
   private readonly businessesApi = inject(BusinessesApiService);
@@ -67,11 +65,12 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly notificationService = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly businessCart = inject(BusinessCartService);
 
   readonly paymentMethods: PaymentMethod[] = ['Cash', 'Yape', 'Plin', 'Card'];
+  readonly catalogPlaceholderImage = '/img/catalog-placeholder.svg';
   readonly restaurant = signal<BusinessDetailResponse | null>(null);
   readonly menu = signal<CatalogResponse | null>(null);
-  readonly cartState = signal<Record<string, CartLine>>({});
   readonly isLoading = signal(true);
   readonly isSubmittingOrder = signal(false);
   readonly errorMessage = signal('');
@@ -83,6 +82,7 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly matchedCategoryName = signal('');
   readonly globalContextQuery = signal('');
   readonly selectedCategoryId = signal<'all' | string>('all');
+  readonly businessHeroImageFailed = signal(false);
   readonly isCheckoutDrawerOpen = this.checkoutDrawerUi.isOpen;
   readonly trashIcon = Trash2;
   readonly shoppingCartIcon = ShoppingCart;
@@ -91,9 +91,17 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly menuSearchControl = new FormControl('', { nonNullable: true });
   readonly activeFlyAnimation = signal<FlyAnimationState | null>(null);
   readonly animatingAddByItemId = signal<Record<string, boolean>>({});
-  @ViewChild('checkoutDrawerTemplate', { static: true })
-  private checkoutDrawerTemplate?: TemplateRef<unknown>;
+  readonly matchedItemBannerMessage = signal('');
+  readonly highlightedMatchedItemId = signal('');
+  readonly showBusinessHeroImage = computed(
+    () => hasText(this.restaurant()?.logoUrl) && !this.businessHeroImageFailed(),
+  );
   private flyAnimationTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private highlightTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private pendingMatchedItemFocusTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private pendingCategoryFocusTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private handledGlobalFocusKey = '';
+  private handledCategoryFocusKey = '';
 
   readonly checkoutForm = this.formBuilder.nonNullable.group({
     deliveryAddress: ['', [Validators.required, Validators.maxLength(300)]],
@@ -102,18 +110,15 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
     paymentMethod: ['Cash' as PaymentMethod, [Validators.required]],
   });
 
-  readonly cartItems = computed(() =>
-    Object.values(this.cartState()).sort((left, right) => left.name.localeCompare(right.name)),
-  );
-  readonly totalQuantity = computed(() =>
-    this.cartItems().reduce((total, item) => total + item.quantity, 0),
-  );
-  readonly subtotal = computed(() =>
-    this.cartItems().reduce((total, item) => total + item.price * item.quantity, 0),
-  );
+  readonly cartItems = this.businessCart.cartItems;
+  readonly totalQuantity = this.businessCart.totalQuantity;
+  readonly subtotal = this.businessCart.subtotal;
   readonly hasActiveMenuSearch = computed(() => hasText(this.menuSearchQuery()));
   readonly isGlobalSearchContext = computed(
     () => this.searchSource() === 'global' && this.hasActiveMenuSearch(),
+  );
+  readonly isProductDetailCategoryContext = computed(
+    () => this.searchSource() === 'product-detail' && hasText(this.matchedCategoryName()),
   );
   readonly visibleMenu = computed(() => {
     const menu = this.menu();
@@ -173,7 +178,6 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     this.checkoutDrawerUi.close();
-    const id = this.route.snapshot.paramMap.get('id');
 
     this.route.queryParamMap
       .pipe(
@@ -198,10 +202,26 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
         this.matchedItemId.set(params.matchedItemId);
         this.matchedCategoryName.set(params.matchedCategoryName);
         this.globalContextQuery.set(params.searchSource === 'global' ? params.menuSearch : '');
+        if (params.searchSource === 'global' && hasText(params.matchedItemId)) {
+          this.matchedItemBannerMessage.set('Encontramos este producto en este negocio');
+        } else if (this.matchedItemBannerMessage() !== 'El producto ya no está disponible') {
+          this.matchedItemBannerMessage.set('');
+        }
 
         if (this.menuSearchControl.getRawValue() !== params.menuSearch) {
           this.menuSearchControl.setValue(params.menuSearch, { emitEvent: false });
         }
+
+        if (!this.isGlobalSearchContext()) {
+          this.clearMatchedItemHighlight();
+        }
+
+        if (!this.isProductDetailCategoryContext()) {
+          this.handledCategoryFocusKey = '';
+        }
+
+        this.tryHandleMatchedItemFocus();
+        this.tryHandleCategoryFocus();
       });
 
     this.menuSearchControl.valueChanges
@@ -233,41 +253,15 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
         });
       });
 
-    if (!id) {
-      const message = 'No se encontró el negocio solicitado.';
-      this.errorMessage.set(message);
-      this.notificationService.error(message);
-      this.isLoading.set(false);
-      return;
-    }
-
-    forkJoin({
-      restaurant: this.businessesApi.getBusiness(id),
-      menu: this.businessesApi.getBusinessCatalog(id),
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ({ restaurant, menu }) => {
-          this.restaurant.set(restaurant);
-          this.menu.set(menu);
-          this.isLoading.set(false);
-        },
-        error: (error) => {
-          this.checkoutDrawerUi.close();
-          const message = getApiErrorMessage(error, 'Revisa tu conexión o vuelve al listado para intentarlo otra vez.');
-          this.errorMessage.set(message);
-          this.notificationService.error(message);
-          this.isLoading.set(false);
-        },
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id')?.trim() || params.get('businessId')?.trim() || ''),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((businessId) => {
+        this.loadBusiness(businessId);
       });
-  }
-
-  ngAfterViewInit(): void {
-    if (!this.checkoutDrawerTemplate) {
-      return;
-    }
-
-    this.checkoutDrawerUi.register(this.checkoutDrawerTemplate, this);
   }
 
   ngOnDestroy(): void {
@@ -276,77 +270,59 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
       this.flyAnimationTimeoutId = null;
     }
 
+    if (this.highlightTimeoutId !== null) {
+      clearTimeout(this.highlightTimeoutId);
+      this.highlightTimeoutId = null;
+    }
+
+    if (this.pendingMatchedItemFocusTimeoutId !== null) {
+      clearTimeout(this.pendingMatchedItemFocusTimeoutId);
+      this.pendingMatchedItemFocusTimeoutId = null;
+    }
+
+    if (this.pendingCategoryFocusTimeoutId !== null) {
+      clearTimeout(this.pendingCategoryFocusTimeoutId);
+      this.pendingCategoryFocusTimeoutId = null;
+    }
+
     this.activeFlyAnimation.set(null);
-    this.checkoutDrawerUi.unregister();
   }
 
-  addItem(item: CatalogItemResponse): void {
+  addItem(item: CatalogItemResponse): boolean {
     if (!item.isAvailable) {
-      return;
+      return false;
     }
 
     this.checkoutErrorMessage.set('');
-    this.recentlyAddedMessage.set(`${item.name} se agregó a tu pedido.`);
-    this.notificationService.success(`${item.name} se agregó a tu pedido.`);
-    this.cartState.update((currentState) => {
-      const currentLine = currentState[item.id];
-      const quantity = currentLine ? currentLine.quantity + 1 : 1;
-
-      return {
-        ...currentState,
-        [item.id]: {
-          menuItemId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity,
-        },
-      };
+    const business = this.restaurant();
+    const wasAdded = this.businessCart.addItemFromBusiness({
+      businessId: business?.id ?? '',
+      businessName: business?.name ?? '',
+      item: {
+        id: item.id,
+        name: item.name,
+        price: item.price,
+      },
     });
-  }
 
-  incrementItem(menuItemId: string): void {
-    const cartLine = this.cartState()[menuItemId];
-
-    if (!cartLine) {
-      return;
+    if (!wasAdded) {
+      return false;
     }
 
-    this.cartState.update((currentState) => ({
-      ...currentState,
-      [menuItemId]: {
-        ...cartLine,
-        quantity: cartLine.quantity + 1,
-      },
-    }));
+    this.recentlyAddedMessage.set(`${item.name} se agregó a tu pedido.`);
+    this.notificationService.success('Producto agregado al carrito.');
+    return true;
+  }
+  incrementItem(menuItemId: string): void {
+    this.businessCart.incrementItem(menuItemId);
   }
 
   decrementItem(menuItemId: string): void {
-    const cartLine = this.cartState()[menuItemId];
-
-    if (!cartLine) {
-      return;
-    }
-
-    if (cartLine.quantity <= 1) {
-      this.removeItem(menuItemId);
-      return;
-    }
-
-    this.cartState.update((currentState) => ({
-      ...currentState,
-      [menuItemId]: {
-        ...cartLine,
-        quantity: cartLine.quantity - 1,
-      },
-    }));
+    this.businessCart.decrementItem(menuItemId);
   }
 
   removeItem(menuItemId: string): void {
-    this.cartState.update((currentState) => {
-      const nextState = { ...currentState };
-      delete nextState[menuItemId];
-      return nextState;
-    });
+    this.businessCart.removeItem(menuItemId);
 
     if (!this.cartItems().length) {
       this.recentlyAddedMessage.set('');
@@ -354,11 +330,32 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   getItemQuantity(menuItemId: string): number {
-    return this.cartState()[menuItemId]?.quantity ?? 0;
+    return this.businessCart.getItemQuantity(menuItemId);
   }
 
   clearMenuSearch(): void {
     this.menuSearchControl.setValue('');
+  }
+
+  clearGlobalSearchContext(): void {
+    this.clearMatchedItemHighlight();
+    this.selectedCategoryId.set('all');
+    this.matchedItemBannerMessage.set('');
+    this.handledGlobalFocusKey = '';
+    this.menuSearchQuery.set('');
+    this.menuSearchControl.setValue('', { emitEvent: false });
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        menuSearch: null,
+        matchedItemId: null,
+        matchedCategoryName: null,
+        searchSource: null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   addItemWithAnimation(item: CatalogItemResponse, event: MouseEvent): void {
@@ -367,7 +364,12 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
     }
 
     this.setAnimatingAdd(item.id, true);
-    this.addItem(item);
+    const wasAdded = this.addItem(item);
+
+    if (!wasAdded) {
+      this.finishAddAnimation(item.id);
+      return;
+    }
 
     const sourceButton = event.currentTarget as HTMLElement | null;
     if (!sourceButton) {
@@ -431,7 +433,17 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   getCategoryPreviewImage(category: CatalogCategoryResponse): string {
-    return category.items.find((item) => hasText(item.imageUrl))?.imageUrl ?? '/img/banner1.png';
+    return category.items.find((item) => hasText(item.imageUrl))?.imageUrl ?? this.catalogPlaceholderImage;
+  }
+
+  handleCategoryPreviewImageError(event: Event): void {
+    const image = event.target as HTMLImageElement | null;
+
+    if (!image || image.src.endsWith(this.catalogPlaceholderImage)) {
+      return;
+    }
+
+    image.src = this.catalogPlaceholderImage;
   }
 
   openCheckoutDrawer(): void {
@@ -443,7 +455,7 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   goBackToBusinesses(): void {
-    this.navigation.goBack('/businesses');
+    void this.router.navigate(['/businesses']);
   }
 
   submitOrder(): void {
@@ -483,6 +495,9 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
     const paymentMethod = BusinessDetailPageComponent.PAYMENT_METHOD_TO_ENUM[formValue.paymentMethod];
 
     const payload: CreateOrderRequest = {
+      clientRequestId: typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `req-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`,
       restaurantId: restaurant.id,
       zoneId: restaurant.zoneId,
       deliveryAddress: formValue.deliveryAddress.trim(),
@@ -505,7 +520,7 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
         next: (order) => {
           this.isSubmittingOrder.set(false);
           this.checkoutDrawerUi.close();
-          this.cartState.set({});
+          this.businessCart.clear();
           this.checkoutForm.reset({
             deliveryAddress: '',
             deliveryReference: '',
@@ -552,7 +567,7 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
   menuEmptyStateTitle(): string {
     return this.hasActiveMenuSearch()
       ? 'No encontramos platos para esa búsqueda'
-      : 'Este negocio aún no tiene catalogo visible';
+      : 'Este negocio aún no tiene catálogo visible';
   }
 
   menuEmptyStateMessage(): string {
@@ -569,6 +584,14 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
 
   isMatchedSearchItem(menuItemId: string): boolean {
     return this.isGlobalSearchContext() && this.matchedItemId() === menuItemId;
+  }
+
+  matchedItemElementId(menuItemId: string): string {
+    return `matched-menu-item-${menuItemId}`;
+  }
+
+  categorySectionElementId(categoryId: string): string {
+    return `business-category-section-${categoryId}`;
   }
 
   getHighlightedSegments(value: string | null | undefined): HighlightSegment[] {
@@ -640,6 +663,265 @@ export class BusinessDetailPageComponent implements AfterViewInit, OnDestroy {
 
   private normalizeMenuMatchValue(value: string | null | undefined): string {
     return value?.trim().toLocaleLowerCase() ?? '';
+  }
+
+  markBusinessHeroImageFailed(): void {
+    this.businessHeroImageFailed.set(true);
+  }
+
+  private loadBusiness(businessId: string): void {
+    this.checkoutDrawerUi.close();
+    this.restaurant.set(null);
+    this.menu.set(null);
+    this.businessHeroImageFailed.set(false);
+    this.errorMessage.set('');
+
+    if (!businessId) {
+      const message = 'No se encontró el negocio solicitado.';
+      this.errorMessage.set(message);
+      this.notificationService.error(message);
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    forkJoin({
+      restaurant: this.businessesApi.getBusiness(businessId),
+      menu: this.businessesApi.getBusinessCatalog(businessId),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ restaurant, menu }) => {
+          this.restaurant.set(restaurant);
+          this.menu.set(menu);
+          this.isLoading.set(false);
+          this.tryHandleMatchedItemFocus();
+          this.tryHandleCategoryFocus();
+        },
+        error: (error) => {
+          const message =
+            error?.status === 404
+              ? 'Este negocio ya no está disponible para el público.'
+              : getApiErrorMessage(error, 'Revisa tu conexión o vuelve al listado para intentarlo otra vez.');
+          this.errorMessage.set(message);
+          this.notificationService.error(message);
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  private tryHandleMatchedItemFocus(): void {
+    if (!this.isGlobalSearchContext() || !hasText(this.matchedItemId()) || this.isLoading()) {
+      return;
+    }
+
+    const menu = this.menu();
+
+    if (!menu) {
+      return;
+    }
+
+    const focusKey = `${this.restaurant()?.id ?? ''}:${this.menuSearchQuery()}:${this.matchedItemId()}:${this.matchedCategoryName()}`;
+
+    if (this.handledGlobalFocusKey === focusKey) {
+      return;
+    }
+
+    const match = this.findMatchedItem(menu);
+
+    if (!match || !match.item.isAvailable) {
+      this.handleUnavailableMatchedItem();
+      return;
+    }
+
+    const requestedCategory = this.findCategoryByName(menu, this.matchedCategoryName());
+    const targetCategory = requestedCategory?.items.some((item) => item.id === match.item.id) ? requestedCategory : match.category;
+    this.selectedCategoryId.set(targetCategory.id);
+    this.scheduleMatchedItemFocus(focusKey, match.item.id, 0);
+  }
+
+  private tryHandleCategoryFocus(): void {
+    if (!this.isProductDetailCategoryContext() || this.isLoading()) {
+      return;
+    }
+
+    const menu = this.menu();
+
+    if (!menu) {
+      return;
+    }
+
+    const matchedCategory = this.findCategoryByName(menu, this.matchedCategoryName());
+
+    if (!matchedCategory) {
+      this.selectedCategoryId.set('all');
+      this.handledCategoryFocusKey = '';
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {
+          matchedCategoryName: null,
+          searchSource: null,
+        },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+      return;
+    }
+
+    const focusKey = `${this.restaurant()?.id ?? ''}:${matchedCategory.id}:${this.matchedCategoryName()}`;
+
+    if (this.handledCategoryFocusKey === focusKey) {
+      return;
+    }
+
+    this.selectedCategoryId.set(matchedCategory.id);
+    this.scheduleCategoryFocus(focusKey, matchedCategory.id, 0);
+  }
+
+  private scheduleMatchedItemFocus(focusKey: string, menuItemId: string, attempt: number): void {
+    if (this.pendingMatchedItemFocusTimeoutId !== null) {
+      clearTimeout(this.pendingMatchedItemFocusTimeoutId);
+      this.pendingMatchedItemFocusTimeoutId = null;
+    }
+
+    this.pendingMatchedItemFocusTimeoutId = setTimeout(() => {
+      this.pendingMatchedItemFocusTimeoutId = null;
+
+      if (this.handledGlobalFocusKey === focusKey) {
+        return;
+      }
+
+      const matchedElement = this.document.getElementById(this.matchedItemElementId(menuItemId));
+
+      if (!matchedElement) {
+        if (attempt + 1 >= BusinessDetailPageComponent.MATCH_SCROLL_MAX_ATTEMPTS) {
+          this.handleUnavailableMatchedItem();
+          return;
+        }
+
+        this.scheduleMatchedItemFocus(focusKey, menuItemId, attempt + 1);
+        return;
+      }
+
+      matchedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      this.highlightedMatchedItemId.set(menuItemId);
+      this.matchedItemBannerMessage.set('Encontramos este producto en este negocio');
+      this.handledGlobalFocusKey = focusKey;
+
+      if (this.highlightTimeoutId !== null) {
+        clearTimeout(this.highlightTimeoutId);
+      }
+
+      this.highlightTimeoutId = setTimeout(() => {
+        this.highlightTimeoutId = null;
+        this.highlightedMatchedItemId.set('');
+      }, BusinessDetailPageComponent.MATCH_HIGHLIGHT_DURATION_MS);
+    }, attempt === 0 ? 0 : BusinessDetailPageComponent.MATCH_SCROLL_RETRY_DELAY_MS);
+  }
+
+  private scheduleCategoryFocus(focusKey: string, categoryId: string, attempt: number): void {
+    if (this.pendingCategoryFocusTimeoutId !== null) {
+      clearTimeout(this.pendingCategoryFocusTimeoutId);
+      this.pendingCategoryFocusTimeoutId = null;
+    }
+
+    this.pendingCategoryFocusTimeoutId = setTimeout(() => {
+      this.pendingCategoryFocusTimeoutId = null;
+
+      if (this.handledCategoryFocusKey === focusKey) {
+        return;
+      }
+
+      const categoryElement = this.document.getElementById(this.categorySectionElementId(categoryId));
+
+      if (!categoryElement) {
+        if (attempt + 1 >= BusinessDetailPageComponent.CATEGORY_SCROLL_MAX_ATTEMPTS) {
+          this.selectedCategoryId.set('all');
+          void this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: {
+              matchedCategoryName: null,
+              searchSource: null,
+            },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+          });
+          return;
+        }
+
+        this.scheduleCategoryFocus(focusKey, categoryId, attempt + 1);
+        return;
+      }
+
+      categoryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      this.handledCategoryFocusKey = focusKey;
+    }, attempt === 0 ? 0 : BusinessDetailPageComponent.CATEGORY_SCROLL_RETRY_DELAY_MS);
+  }
+
+  private findMatchedItem(menu: CatalogResponse): { category: CatalogCategoryResponse; item: CatalogItemResponse } | null {
+    const matchedItemId = this.matchedItemId();
+
+    for (const category of menu.categories) {
+      const item = category.items.find((candidate) => candidate.id === matchedItemId);
+
+      if (item) {
+        return { category, item };
+      }
+    }
+
+    return null;
+  }
+
+  private findCategoryByName(menu: CatalogResponse, categoryName: string): CatalogCategoryResponse | null {
+    const normalizedCategoryName = this.normalizeCategoryName(categoryName);
+
+    if (!normalizedCategoryName) {
+      return null;
+    }
+
+    return (
+      menu.categories.find((category) => this.normalizeCategoryName(category.name) === normalizedCategoryName) ?? null
+    );
+  }
+
+  private handleUnavailableMatchedItem(): void {
+    this.clearMatchedItemHighlight();
+    this.selectedCategoryId.set('all');
+    this.matchedItemBannerMessage.set('El producto ya no está disponible');
+    this.handledGlobalFocusKey = '';
+    this.menuSearchQuery.set('');
+    this.menuSearchControl.setValue('', { emitEvent: false });
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        menuSearch: null,
+        matchedItemId: null,
+        matchedCategoryName: null,
+        searchSource: null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private clearMatchedItemHighlight(): void {
+    if (this.highlightTimeoutId !== null) {
+      clearTimeout(this.highlightTimeoutId);
+      this.highlightTimeoutId = null;
+    }
+
+    if (this.pendingMatchedItemFocusTimeoutId !== null) {
+      clearTimeout(this.pendingMatchedItemFocusTimeoutId);
+      this.pendingMatchedItemFocusTimeoutId = null;
+    }
+
+    this.highlightedMatchedItemId.set('');
+  }
+
+  private normalizeCategoryName(value: string | null | undefined): string {
+    return value?.trim().toLocaleLowerCase().replace(/\s+/g, '') ?? '';
   }
 
   private setAnimatingAdd(menuItemId: string, isAnimating: boolean): void {

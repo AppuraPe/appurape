@@ -15,7 +15,11 @@ export class CheckoutDrawerUiService {
     this.drawerContext.set(context);
   }
 
-  unregister(): void {
+  unregister(template?: TemplateRef<unknown> | null): void {
+    if (template && this.drawerTemplate() !== template) {
+      return;
+    }
+
     this.close();
     this.drawerTemplate.set(null);
     this.drawerContext.set(null);

@@ -6,6 +6,7 @@ import {
   AvailableDriverOrderListItemResponse,
   DriverAvailableOrderFilters,
   DriverAssignedOrderListItemResponse,
+  DriverOrderDetailResponse,
   DriverMyOrderFilters,
   UpdateDriverOrderStatusRequest,
 } from '../models/driver.models';
@@ -27,12 +28,44 @@ export class DriverOrdersApiService {
     });
   }
 
-  takeOrder(id: string): Observable<unknown> {
-    return this.http.patch(`${this.baseUrl}/${id}/take`, {});
+  getActiveOrder(): Observable<DriverOrderDetailResponse | null> {
+    return this.http.get<DriverOrderDetailResponse | null>(`${this.baseUrl}/active`);
   }
 
-  updateMyOrderStatus(id: string, request: UpdateDriverOrderStatusRequest): Observable<unknown> {
-    return this.http.patch(`${this.baseUrl}/my/${id}/status`, request);
+  getAvailableOrderById(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.get<DriverOrderDetailResponse>(`${this.baseUrl}/available/${id}`);
+  }
+
+  getOrderById(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.get<DriverOrderDetailResponse>(`${this.baseUrl}/${id}`);
+  }
+
+  getMyOrderById(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.get<DriverOrderDetailResponse>(`${this.baseUrl}/my/${id}`);
+  }
+
+  takeOrder(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.patch<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/take`, {});
+  }
+
+  acceptOrder(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.post<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/accept`, {});
+  }
+
+  markPickedUp(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.post<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/picked-up`, {});
+  }
+
+  markOnTheWay(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.post<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/on-the-way`, {});
+  }
+
+  markDelivered(id: string): Observable<DriverOrderDetailResponse> {
+    return this.http.post<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/delivered`, {});
+  }
+
+  updateMyOrderStatus(id: string, request: UpdateDriverOrderStatusRequest): Observable<DriverOrderDetailResponse> {
+    return this.http.patch<DriverOrderDetailResponse>(`${this.baseUrl}/my/${id}/status`, request);
   }
 
   private buildAvailableParams(filters: DriverAvailableOrderFilters): HttpParams {

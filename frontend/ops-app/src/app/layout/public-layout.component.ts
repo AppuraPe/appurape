@@ -37,12 +37,19 @@ export class PublicLayoutComponent {
   readonly primaryDestinationRoute = computed(() =>
     this.currentRole() === 'Customer' ? '/orders' : this.defaultRoute(),
   );
-  readonly communityRoute = computed(() => '/favors');
+  readonly communityRoute = computed(() => '/community');
   readonly isNavbarOpen = signal(false);
   readonly isUserDropdownOpen = signal(false);
+  readonly brandingLogoFailed = signal(false);
   readonly currentPath = signal(this.router.url);
   readonly mobileBackFallback = computed(() => {
-    const path = this.currentPath();
+    const path = this.normalizedPath();
+
+    const productMatch = path.match(/^\/businesses\/([^/]+)\/products\/[^/]+$/);
+
+    if (productMatch) {
+      return `/businesses/${productMatch[1]}`;
+    }
 
     if (path.startsWith('/restaurants/') || path.startsWith('/businesses/')) {
       return '/businesses';
@@ -53,7 +60,7 @@ export class PublicLayoutComponent {
     }
 
     if (path.startsWith('/community/requests/') || path.startsWith('/favors/')) {
-      return '/favors';
+      return '/community';
     }
 
     if (path.startsWith('/register')) {
@@ -87,6 +94,13 @@ export class PublicLayoutComponent {
         takeUntilDestroyed(),
       )
       .subscribe((event) => {
+        if (this.canonicalizeLegacyBusinessesRoute(event.urlAfterRedirects)
+          || this.canonicalizeLegacyCommunityRoute(event.urlAfterRedirects)) {
+          this.closeNavbar();
+          this.closeUserDropdown();
+          return;
+        }
+
         this.currentPath.set(event.urlAfterRedirects);
         this.closeNavbar();
         this.closeUserDropdown();
@@ -137,7 +151,51 @@ export class PublicLayoutComponent {
     this.checkoutDrawerUi.close();
   }
 
+  markBrandingLogoFailed(): void {
+    this.brandingLogoFailed.set(true);
+  }
+
   private normalizedPath(): string {
     return this.currentPath().split('?')[0]?.split('#')[0] || '/';
+  }
+
+  private canonicalizeLegacyBusinessesRoute(url: string): boolean {
+    const urlTree = this.router.parseUrl(url);
+    const primarySegments = urlTree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
+
+    if (!primarySegments.length || primarySegments[0] !== 'restaurants') {
+      return false;
+    }
+
+    const commands = primarySegments.length > 1 ? ['/businesses', primarySegments[1]] : ['/businesses'];
+
+    void this.router.navigate(commands, {
+      queryParams: urlTree.queryParams,
+      fragment: urlTree.fragment ?? undefined,
+      replaceUrl: true,
+    });
+
+    return true;
+  }
+
+  private canonicalizeLegacyCommunityRoute(url: string): boolean {
+    const urlTree = this.router.parseUrl(url);
+    const primarySegments = urlTree.root.children['primary']?.segments.map((segment) => segment.path) ?? [];
+
+    if (!primarySegments.length || primarySegments[0] !== 'favors') {
+      return false;
+    }
+
+    const commands = primarySegments.length > 1
+      ? ['/community/requests', primarySegments[1]]
+      : ['/community'];
+
+    void this.router.navigate(commands, {
+      queryParams: urlTree.queryParams,
+      fragment: urlTree.fragment ?? undefined,
+      replaceUrl: true,
+    });
+
+    return true;
   }
 }

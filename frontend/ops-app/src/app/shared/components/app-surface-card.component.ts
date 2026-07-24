@@ -21,15 +21,15 @@ export class AppSurfaceCardComponent {
     const baseClass = (() => {
       switch (this.variant()) {
         case 'page':
-          return 'rounded-[22px] border border-[#eddad4] bg-white/95 p-4 shadow-[0_12px_28px_rgba(6,25,43,0.08)] backdrop-blur-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-7 lg:shadow-[0_18px_48px_rgba(6,25,43,0.12)]';
+          return 'rounded-[26px] border border-slate-200/80 bg-white/95 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[28px] sm:p-5 lg:rounded-[32px] lg:p-7 lg:shadow-[0_18px_44px_rgba(15,23,42,0.1)]';
         case 'hero':
-          return 'rounded-[24px] border border-[#eddad4] bg-gradient-to-br from-white via-[#fff4f2] to-[#ffe4e1] p-5 shadow-[0_12px_28px_rgba(6,25,43,0.08)] sm:rounded-[28px] sm:p-6 lg:rounded-[32px] lg:p-8 lg:shadow-[0_18px_48px_rgba(6,25,43,0.12)]';
+          return 'rounded-[26px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(248,113,113,0.1),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:rounded-[30px] sm:p-6 lg:rounded-[34px] lg:p-8 lg:shadow-[0_18px_44px_rgba(15,23,42,0.1)]';
         case 'soft':
-          return 'rounded-[20px] border border-[#eddad4] bg-surface-soft p-4 shadow-[0_8px_18px_rgba(6,25,43,0.05)] sm:rounded-[22px] sm:p-5 lg:rounded-[24px] lg:shadow-[0_12px_28px_rgba(6,25,43,0.08)]';
+          return 'rounded-2xl border border-slate-200 bg-slate-50/85 p-4 shadow-sm sm:rounded-[22px] sm:p-5 lg:rounded-[24px] lg:shadow-[0_12px_28px_rgba(15,23,42,0.06)]';
         case 'stat':
-          return 'grid gap-1 rounded-[18px] border border-[#eddad4] bg-surface-soft p-3 shadow-[0_8px_18px_rgba(6,25,43,0.05)] sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:shadow-[0_12px_28px_rgba(6,25,43,0.08)]';
+          return 'grid gap-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[20px] sm:p-4 lg:rounded-[22px] lg:shadow-[0_12px_28px_rgba(15,23,42,0.06)]';
         default:
-          return 'rounded-[20px] border border-[#eddad4] bg-white p-4 shadow-[0_8px_18px_rgba(6,25,43,0.05)] sm:rounded-[22px] sm:p-5 lg:rounded-[24px] lg:shadow-[0_12px_28px_rgba(6,25,43,0.08)]';
+          return 'rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-[22px] sm:p-5 lg:rounded-[24px] lg:shadow-[0_12px_28px_rgba(15,23,42,0.06)]';
       }
     })();
 

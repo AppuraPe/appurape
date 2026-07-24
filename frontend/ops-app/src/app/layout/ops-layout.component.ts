@@ -1,7 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { PlatformSettingsApiService } from '../core/services/platform-settings-api.service';
+import { MobilePageShellComponent } from '../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../shared/components/status-badge.component';
 
 interface NavItem {
@@ -13,18 +14,18 @@ interface NavItem {
 @Component({
   selector: 'app-ops-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, StatusBadgeComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, StatusBadgeComponent, MobilePageShellComponent],
   template: `
-    <div class="grid min-h-screen xl:grid-cols-[304px_minmax(0,1fr)]">
-      <aside class="z-20 flex flex-col gap-4 border-b border-[#eddad4] bg-[linear-gradient(180deg,#ffffff_0%,#fff7f5_100%)] p-3 xl:sticky xl:top-0 xl:h-screen xl:justify-between xl:gap-5 xl:overflow-y-auto xl:border-r xl:border-b-0 xl:bg-[radial-gradient(circle_at_top_left,rgba(229,27,35,0.14),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fff3f2_100%)] xl:p-4">
+    <div class="grid min-h-dvh bg-slate-50 xl:grid-cols-[304px_minmax(0,1fr)]">
+      <aside class="z-20 flex flex-col gap-3 border-b border-slate-200 bg-white/95 px-3 pb-3 pt-[max(12px,env(safe-area-inset-top,0px))] backdrop-blur xl:sticky xl:top-0 xl:h-screen xl:justify-between xl:gap-5 xl:overflow-y-auto xl:border-r xl:border-b-0 xl:bg-[radial-gradient(circle_at_top_left,rgba(248,113,113,0.12),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] xl:p-4 xl:backdrop-blur-0">
         <div class="grid gap-3 xl:gap-4">
           <a class="hidden items-center text-primary-900 no-underline md:flex" [routerLink]="defaultRoute()">
-            @if (branding()?.logoUrl) {
-              <img class="block h-16 w-auto max-w-[260px] object-contain xl:h-20 xl:max-w-[320px]" [src]="branding()!.logoUrl!" [alt]="branding()?.appName || 'AppuraPe'" />
+            @if (branding()?.logoUrl && !brandingLogoFailed()) {
+              <img class="block h-16 w-auto max-w-[260px] object-contain xl:h-20 xl:max-w-[320px]" [src]="branding()!.logoUrl!" alt="" aria-hidden="true" (error)="markBrandingLogoFailed()" />
             } @else {
               <span class="grid h-11 w-11 place-items-center rounded-2xl bg-primary-700 text-sm font-black text-white shadow-lg shadow-primary-700/20">AP</span>
             }
-            @if (!branding()?.logoUrl) {
+            @if (!branding()?.logoUrl || brandingLogoFailed()) {
               <span class="pl-3 text-[1.25rem] font-black tracking-[-0.04em]">
                 {{ branding()?.appName || 'AppuraPe' }}
                 <small class="block text-xs font-bold tracking-normal text-text-muted">{{ branding()?.tagline || (branding()?.appName || 'AppuraPe') }}</small>
@@ -32,23 +33,23 @@ interface NavItem {
             }
           </a>
 
-          <div class="hidden gap-2 rounded-[22px] border border-[#eddad4] bg-white/90 p-4 shadow-soft md:grid-cols-[minmax(0,1fr)_auto] md:items-center xl:grid xl:grid-cols-1 xl:items-start">
+          <div class="hidden gap-2 rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-center xl:grid xl:grid-cols-1 xl:items-start">
             <div class="grid gap-1">
-              <span class="text-[0.76rem] font-black uppercase tracking-[0.08em] text-text-muted">Sesion activa</span>
+              <span class="text-[0.76rem] font-black uppercase tracking-[0.08em] text-slate-500">Sesión activa</span>
               <strong class="text-base text-loreto-carbon">{{ currentUser()?.fullName || 'Operador' }}</strong>
               <small class="text-sm text-text-muted">{{ currentUser()?.email || 'Sin email' }}</small>
             </div>
             <app-status-badge [status]="currentUser()?.role" prefix="Rol" />
           </div>
 
-          <div class="hidden px-1 text-[0.76rem] font-black uppercase tracking-[0.08em] text-text-muted xl:block">{{ navHeading() }}</div>
-          <nav class="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 xl:mx-0 xl:grid xl:gap-2 xl:overflow-visible xl:px-0 xl:pb-0">
+          <div class="hidden px-1 text-[0.76rem] font-black uppercase tracking-[0.08em] text-slate-500 xl:block">{{ navHeading() }}</div>
+          <nav class="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:mx-0 xl:grid xl:gap-2 xl:overflow-visible xl:px-0 xl:pb-0">
             @for (item of navItems(); track item.path) {
               <a
                 routerLinkActive="active-link"
                 [routerLinkActiveOptions]="{ exact: true }"
                 [routerLink]="item.path"
-                class="grid min-h-[48px] min-w-[10.5rem] shrink-0 gap-1 rounded-2xl border border-transparent px-4 py-2.5 font-extrabold text-text-muted no-underline transition hover:border-[#eddad4] hover:bg-white hover:text-primary-700 md:min-w-[12rem] xl:min-h-[54px] xl:min-w-0 xl:flex-none xl:px-4 xl:py-3"
+                class="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 no-underline shadow-sm transition hover:border-slate-200 hover:bg-white hover:text-primary-700 xl:grid xl:min-h-[54px] xl:min-w-0 xl:flex-none xl:justify-start xl:gap-1 xl:rounded-2xl xl:border-transparent xl:bg-white/70 xl:px-4 xl:py-3 xl:text-base xl:font-extrabold xl:text-text-muted"
               >
                 <span>{{ item.label }}</span>
                 @if (item.helper) {
@@ -59,11 +60,18 @@ interface NavItem {
           </nav>
         </div>
 
-        <button class="button secondary w-full min-h-11 xl:sticky xl:bottom-4" type="button" (click)="logout()">Cerrar sesion</button>
+        <button class="button secondary w-full min-h-11 rounded-2xl xl:sticky xl:bottom-4" type="button" (click)="logout()">Cerrar sesión</button>
       </aside>
 
-      <main class="min-w-0 overflow-x-hidden p-3 md:p-4 xl:p-6">
-        <router-outlet />
+      <main class="min-w-0 overflow-x-hidden">
+        <app-mobile-page-shell
+          [backgroundClass]="'bg-slate-50'"
+          [bottomSpacingClass]="'pb-6'"
+          [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'"
+          [extraClass]="'px-3 md:px-4 xl:px-6'"
+        >
+          <router-outlet />
+        </app-mobile-page-shell>
       </main>
     </div>
   `,
@@ -76,6 +84,7 @@ export class OpsLayoutComponent {
   readonly currentUser = computed(() => this.authService.currentUser());
   readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
   readonly branding = this.platformSettingsApi.settings;
+  readonly brandingLogoFailed = signal(false);
   readonly navHeading = computed(() => {
     const role = this.authService.getCurrentRole();
 
@@ -105,13 +114,14 @@ export class OpsLayoutComponent {
           { label: 'Perfil', path: '/business/profile', helper: 'Visibilidad pública' },
           { label: 'Categorías', path: '/business/menu/categories', helper: 'Organiza catálogo' },
           { label: 'Productos', path: '/business/menu/items', helper: 'Disponibilidad' },
-          { label: 'Favores', path: '/favors', helper: 'Solicitudes y trayectos' },
+          { label: 'Favores', path: '/community', helper: 'Solicitudes y trayectos' },
         ];
       case 'Driver':
         return [
           { label: 'Dashboard', path: '/driver/dashboard', helper: 'Estado operativo' },
-          { label: 'Pedidos disponibles', path: '/driver/orders/available', helper: 'Listos para tomar' },
-          { label: 'Mis pedidos', path: '/driver/orders/my', helper: 'Siguiente acción' },
+          { label: 'Pedidos disponibles', path: '/driver/orders', helper: 'Listos para tomar' },
+          { label: 'Pedido activo', path: '/driver/active-order', helper: 'Entrega en curso' },
+          { label: 'Mis pedidos', path: '/driver/orders/my', helper: 'Historial operativo' },
           { label: 'Comunidad', path: '/community', helper: 'Red distribuida' },
         ];
       case 'Admin':
@@ -119,6 +129,7 @@ export class OpsLayoutComponent {
           { label: 'Dashboard', path: '/admin/dashboard', helper: 'Pendientes clave' },
           { label: 'Comunidad', path: '/admin/community', helper: 'Colaboradores y métricas' },
           { label: 'Branding', path: '/admin/settings/branding', helper: 'Logo, icono y splash' },
+          { label: 'Pagos', path: '/admin/payments', helper: 'Yape y Plin pendientes' },
           { label: 'Categorías de negocios', path: '/admin/business-types', helper: 'Tipos, iconos y estado' },
           { label: 'Negocios pendientes', path: '/admin/restaurants/pending', helper: 'Aprobar o rechazar' },
           { label: 'Drivers pendientes', path: '/admin/drivers/pending', helper: 'Aprobar o rechazar' },
@@ -126,9 +137,7 @@ export class OpsLayoutComponent {
           { label: 'Todos los drivers', path: '/admin/drivers', helper: 'Estados y detalle' },
         ];
       default:
-        return [
-          { label: 'Comunidad', path: '/community', helper: 'Solicitudes y trayectos' },
-        ];
+        return [{ label: 'Comunidad', path: '/community', helper: 'Solicitudes y trayectos' }];
     }
   });
 
@@ -143,5 +152,9 @@ export class OpsLayoutComponent {
   logout(): void {
     this.authService.logout();
     void this.router.navigateByUrl('/login');
+  }
+
+  markBrandingLogoFailed(): void {
+    this.brandingLogoFailed.set(true);
   }
 }

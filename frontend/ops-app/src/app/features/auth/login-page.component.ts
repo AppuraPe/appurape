@@ -75,7 +75,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                   <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder="Tu contraseña" class="min-h-0 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                   <button
                     type="button"
-                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-soft hover:text-primary-700"
+                    class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-soft hover:text-primary-700"
                     (click)="togglePasswordVisibility()"
                     [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
                   >
@@ -95,7 +95,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 <lucide-angular class="h-4 w-4" [img]="arrowRightIcon" aria-hidden="true"></lucide-angular>
               </app-button>
 
-              <a routerLink="/forgot-password" class="text-center text-sm font-semibold text-primary-700 transition hover:text-primary-600">
+              <a routerLink="/forgot-password" class="inline-flex min-h-11 items-center justify-center text-center text-sm font-semibold text-primary-700 transition hover:text-primary-600">
                 Olvidé mi contraseña
               </a>
 
@@ -139,9 +139,9 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               <div class="grid gap-3 rounded-[20px] border border-[#eddad4] bg-surface-soft p-4">
                 <span class="text-sm font-black text-loreto-carbon">Crear cuenta</span>
                 <div class="flex flex-wrap gap-2 text-sm font-semibold text-primary-700">
-                  <a class="rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register">Cliente</a>
-                  <a class="rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/restaurant">Negocio</a>
-                  <a class="rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/driver">Driver</a>
+                  <a class="inline-flex min-h-11 items-center rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register">Cliente</a>
+                  <a class="inline-flex min-h-11 items-center rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/restaurant">Negocio</a>
+                  <a class="inline-flex min-h-11 items-center rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/driver">Driver</a>
                 </div>
               </div>
             </form>

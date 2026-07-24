@@ -8,11 +8,11 @@ type NoticeTone = 'info' | 'success' | 'warning' | 'danger';
   standalone: true,
   imports: [NgClass],
   template: `
-    <div class="grid gap-1 rounded-[22px] border px-4 py-3 shadow-soft" [ngClass]="toneClass()">
+    <div class="grid gap-1 rounded-[22px] border px-4 py-3 shadow-sm" [ngClass]="toneClass()">
       @if (title()) {
-        <strong class="text-sm font-extrabold text-loreto-carbon">{{ title() }}</strong>
+        <strong class="text-sm font-extrabold text-slate-950">{{ title() }}</strong>
       }
-      <p class="text-sm leading-6 text-loreto-carbon/80">{{ message() }}</p>
+      <p class="text-sm leading-6 text-slate-600">{{ message() }}</p>
     </div>
   `,
 })
@@ -24,13 +24,13 @@ export class AppNoticeComponent {
   toneClass(): string {
     switch (this.tone()) {
       case 'success':
-        return 'border-emerald-200 bg-emerald-50';
+        return 'border-emerald-200 bg-emerald-50/80';
       case 'warning':
-        return 'border-amber-200 bg-amber-50';
+        return 'border-amber-200 bg-amber-50/80';
       case 'danger':
-        return 'border-red-200 bg-red-50';
+        return 'border-red-200 bg-red-50/80';
       default:
-        return 'border-blue-200 bg-blue-50';
+        return 'border-slate-200 bg-slate-50';
     }
   }
 }

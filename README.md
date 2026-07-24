@@ -218,7 +218,7 @@ Guia de Supabase Storage:
 Referencia local por si quieres volver a una BD local:
 
 ```text
-# Host=localhost;Port=5432;Database=iquitos_delivery_db;Username=postgres;Password=postgres
+ConnectionStrings__DefaultConnection="__SET_VIA_USER_SECRETS_OR_ENV__"
 ```
 
 Ejemplo con variables de entorno:

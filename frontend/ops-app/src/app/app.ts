@@ -3,11 +3,15 @@ import { Router, RouterOutlet } from '@angular/router';
 import { AppNavigationService } from './core/services/app-navigation.service';
 import { CheckoutDrawerUiService } from './core/services/checkout-drawer-ui.service';
 import { PlatformSettingsApiService } from './core/services/platform-settings-api.service';
+import { ToastContainerComponent } from './shared/toast/toast-container.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  template: '<router-outlet />'
+  imports: [RouterOutlet, ToastContainerComponent],
+  template: `
+    <router-outlet />
+    <app-toast-container />
+  `,
 })
 export class App {
   private readonly navigation = inject(AppNavigationService);
@@ -38,13 +42,15 @@ export class App {
           return;
         }
 
+        const fallbackUrl = this.resolveNativeBackFallback();
+
         if (this.navigation.canGoBack()) {
-          this.navigation.goBack('/restaurants');
+          this.navigation.goBack(fallbackUrl);
           return;
         }
 
-        if (this.router.url !== '/restaurants') {
-          void this.router.navigateByUrl('/restaurants');
+        if (this.router.url !== '/businesses') {
+          void this.router.navigateByUrl(fallbackUrl);
           return;
         }
 
@@ -57,5 +63,20 @@ export class App {
     } catch {
       // Ignore when the native App plugin is not available.
     }
+  }
+
+  private resolveNativeBackFallback(): string {
+    const path = this.router.url.split('?')[0]?.split('#')[0] || '/businesses';
+    const productMatch = path.match(/^\/businesses\/([^/]+)\/products\/[^/]+$/);
+
+    if (productMatch) {
+      return `/businesses/${productMatch[1]}`;
+    }
+
+    if (path.startsWith('/businesses/') || path.startsWith('/restaurants/')) {
+      return '/businesses';
+    }
+
+    return '/businesses';
   }
 }

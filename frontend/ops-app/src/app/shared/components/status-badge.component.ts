@@ -9,7 +9,7 @@ type BadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'muted'
   imports: [NgClass],
   template: `
     <span
-      class="inline-flex min-h-8 items-center gap-2 rounded-full border px-3 py-1 text-xs font-extrabold uppercase tracking-[0.08em]"
+      class="inline-flex min-h-8 items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em]"
       [ngClass]="toneClass()"
     >
       @if (prefix()) {
@@ -37,7 +37,7 @@ export class StatusBadgeComponent {
       case 'muted':
         return 'border-slate-200 bg-slate-100 text-slate-600';
       default:
-        return 'border-[#eddad4] bg-surface-soft text-loreto-carbon';
+        return 'border-slate-200 bg-white text-slate-700';
     }
   });
 

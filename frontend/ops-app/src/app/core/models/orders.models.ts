@@ -22,6 +22,8 @@ export interface CustomerOrderListItemResponse {
   platformRevenueAmount: number;
   total: number;
   paymentMethod: string;
+  paymentStatus: string;
+  paymentFailureReason?: string | null;
   assignedCourierUserId?: string | null;
   assignedCourierType?: string | null;
   createdAtUtc: string;
@@ -36,6 +38,8 @@ export interface CustomerOrderDetailResponse {
   deliveryReference: string;
   notes?: string | null;
   paymentMethod: string;
+  paymentStatus: string;
+  paymentFailureReason?: string | null;
   subtotal: number;
   businessCommissionAmount: number;
   businessNetAmount: number;
@@ -65,16 +69,54 @@ export type PaymentMethod = 'Cash' | 'Card' | 'Yape' | 'Plin';
 export interface CreateOrderItemRequest {
   menuItemId: string;
   quantity: number;
+  clientUnitPrice?: number;
 }
 
 export interface CreateOrderRequest {
+  clientRequestId: string;
   restaurantId: string;
+  customerAddressId?: string;
   zoneId: string;
   deliveryAddress: string;
   deliveryReference: string;
   notes?: string;
   paymentMethod: number;
   items: CreateOrderItemRequest[];
+}
+
+export interface ValidateOrderItemResponse {
+  menuItemId: string;
+  productName: string;
+  requestedQuantity: number;
+  validatedQuantity: number;
+  clientUnitPrice?: number | null;
+  currentUnitPrice: number;
+  subtotal: number;
+  exists: boolean;
+  belongsToRestaurant: boolean;
+  isActive: boolean;
+  isAvailable: boolean;
+  hasStock: boolean;
+  quantityAdjusted: boolean;
+  priceChanged: boolean;
+  removed: boolean;
+  message: string;
+}
+
+export interface ValidateOrderResponse {
+  canCreateOrder: boolean;
+  hasChanges: boolean;
+  subtotal: number;
+  businessCommissionAmount: number;
+  businessNetAmount: number;
+  deliveryFee: number;
+  deliveryPlatformCommissionAmount: number;
+  courierEarningAmount: number;
+  serviceFeeAmount: number;
+  discountAmount: number;
+  platformRevenueAmount: number;
+  total: number;
+  items: ValidateOrderItemResponse[];
 }
 
 export interface RateDriverRequest {

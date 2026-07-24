@@ -28,6 +28,16 @@ pnpm-debug.log*
 # Environment / secrets
 .env
 .env.*
+!.env.example
+.env.local
+.env.development.local
+.env.production.local
+*.secrets.json
+*.service-account.json
+google-services.json
+**/google-services.json
+firebase/
+firebase/**
 appsettings.Local.json
 appsettings.*.local.json
 backend/src/IquitosDelivery.Api/appsettings.json
@@ -42,3 +52,9 @@ backend/src/IquitosDelivery.Api/appsettings.Testing.json
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Local logs / QA artifacts
+*.log
+*.out.log
+*.err.log
+.tmp/

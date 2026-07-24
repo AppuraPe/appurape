@@ -17,14 +17,14 @@
           }
 
           <a class="inline-flex min-w-0 flex-1 items-center text-primary-900 no-underline" routerLink="/businesses" [attr.aria-label]="'Ir a negocios ' + (branding()?.appName || 'AppuraPe')" (click)="closeNavbar()">
-            @if (branding()?.logoUrl) {
-              <img class="block h-10 w-auto max-w-[170px] shrink object-contain lg:h-[58px] lg:max-w-[320px] lg:scale-[1.15] lg:origin-left" [src]="branding()!.logoUrl!" [alt]="branding()?.appName || 'AppuraPe'" />
+            @if (branding()?.logoUrl && !brandingLogoFailed()) {
+              <img class="block h-10 w-auto max-w-[170px] shrink object-contain lg:h-[58px] lg:max-w-[320px] lg:scale-[1.15] lg:origin-left" [src]="branding()!.logoUrl!" alt="" aria-hidden="true" (error)="markBrandingLogoFailed()" />
             } @else {
               <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary-700 text-sm font-black text-white shadow-[0_6px_14px_rgba(229,27,35,0.18)]">
                 A
               </span>
             }
-            @if (!branding()?.logoUrl) {
+            @if (!branding()?.logoUrl || brandingLogoFailed()) {
               <span class="min-w-0 pl-2.5 leading-tight">
                 <strong class="block truncate font-ui text-base font-bold tracking-[-0.03em]">{{ branding()?.appName || 'AppuraPe' }}</strong>
                 @if (branding()?.tagline) {
@@ -77,7 +77,7 @@
               </a>
               @if (isAuthenticated()) {
                 <a
-                  routerLink="/favors"
+                  routerLink="/community"
                   routerLinkActive="bg-primary-100 text-primary-700"
                   [routerLinkActiveOptions]="{ exact: false }"
                   class="inline-flex min-h-10 items-center justify-center rounded-full px-4 py-2 text-center font-ui text-sm font-semibold text-loreto-carbon transition hover:bg-surface-soft hover:text-primary-700"
@@ -127,7 +127,7 @@
                         {{ primaryDestinationLabel() }}
                       </a>
                       <a
-                        routerLink="/favors"
+                        routerLink="/community"
                         role="menuitem"
                         class="inline-flex min-h-11 items-center rounded-full px-4 py-2 font-ui text-sm font-semibold text-loreto-carbon transition hover:bg-surface-soft hover:text-primary-700"
                         (click)="closeUserDropdown(); closeNavbar()"
@@ -189,7 +189,7 @@
       Explorar
     </a>
     <a
-      routerLink="/favors"
+      routerLink="/community"
       routerLinkActive="text-primary-700"
       [routerLinkActiveOptions]="{ exact: false }"
       class="relative z-[101] flex min-h-12 min-w-14 cursor-pointer touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 text-center text-[0.72rem] font-semibold tracking-[0.01em] text-slate-500 no-underline pointer-events-auto transition"

@@ -7,13 +7,32 @@ import { CustomerOrderListItemResponse } from '../../core/models/orders.models';
 import { NotificationService } from '../../core/services/notification.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
 import { getApiErrorMessage, hasText } from '../../core/utils/api-utils';
+import { ActionChipRowComponent } from '../../shared/components/action-chip-row.component';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
+import { AppButtonComponent } from '../../shared/components/app-button.component';
+import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
+import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
+import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
+import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
+import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 import { OrderSummaryCardComponent } from './components/order-summary-card.component';
 
 @Component({
   selector: 'app-my-orders-page',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, AppBackButtonComponent, OrderSummaryCardComponent],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    AppBackButtonComponent,
+    OrderSummaryCardComponent,
+    MobilePageShellComponent,
+    InternalPageSectionHeaderComponent,
+    AppSurfaceCardComponent,
+    AppButtonComponent,
+    UnifiedEmptyStateComponent,
+    UnifiedLoadingStateComponent,
+    ActionChipRowComponent,
+  ],
   templateUrl: './my-orders-page.component.html',
 })
 export class MyOrdersPageComponent {
@@ -97,7 +116,7 @@ export class MyOrdersPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          const message = getApiErrorMessage(error, 'Revisa tu sesion o intenta nuevamente.');
+          const message = getApiErrorMessage(error, 'Revisa tu sesión o intenta nuevamente.');
           this.errorMessage.set(message);
           this.notificationService.error(message);
           this.isLoading.set(false);
@@ -118,7 +137,7 @@ export class MyOrdersPageComponent {
     const labels: Record<string, string> = {
       Pending: 'Pendiente',
       Accepted: 'Aceptado',
-      Preparing: 'En preparacion',
+      Preparing: 'En preparación',
       ReadyForPickup: 'Listo para recoger',
       Assigned: 'Repartidor asignado',
       PickedUp: 'En camino',

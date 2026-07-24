@@ -81,7 +81,7 @@ import { setRegistrationState } from './registration-flow.storage';
             <div class="message error">
               <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span>{{ businessTypesLoadError() }}</span>
-                <app-button type="button" variant="ghost" size="sm" (click)="loadBusinessTypes()">Reintentar</app-button>
+                <app-button type="button" variant="ghost" size="md" (click)="loadBusinessTypes()">Reintentar</app-button>
               </div>
             </div>
           }
@@ -349,8 +349,8 @@ export class RestaurantRegistrationStartPageComponent {
           this.businessTypes.set(businessTypes.filter((businessType) => !!businessType.id));
           this.isLoadingBusinessTypes.set(false);
         },
-        error: (error) => {
-          this.businessTypesLoadError.set(getErrorMessage(error, 'No se pudieron cargar las categorías.'));
+        error: () => {
+          this.businessTypesLoadError.set('No pudimos cargar las categorías de negocio. Revisa tu conexión e inténtalo nuevamente.');
           this.isLoadingBusinessTypes.set(false);
         },
       });
@@ -365,8 +365,8 @@ export class RestaurantRegistrationStartPageComponent {
           this.zones.set(zones.filter((zone) => zone.isActive));
           this.isLoadingZones.set(false);
         },
-        error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar las zonas.'));
+        error: () => {
+          this.errorMessage.set('No pudimos cargar las zonas. Revisa tu conexión e inténtalo nuevamente.');
           this.isLoadingZones.set(false);
         },
       });

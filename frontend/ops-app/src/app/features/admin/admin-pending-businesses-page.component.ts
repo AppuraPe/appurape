@@ -68,7 +68,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           <app-metric-card label="Pendientes" [value]="restaurants().length" helper="Restaurantes esperando revision" />
           <app-metric-card label="Zonas" [value]="zoneCount()" helper="Cobertura de las altas pendientes" />
           <app-metric-card label="Nuevos hoy" [value]="todayCount()" helper="Registros creados durante el dia" />
-          <app-metric-card label="Owner �nicos" [value]="ownerCount()" helper="Personas a validar en esta cola" />
+          <app-metric-card label="Owners únicos" [value]="ownerCount()" helper="Personas a validar en esta cola" />
         </div>
       </app-surface-card>
 
@@ -76,7 +76,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="grid gap-1">
             <span class="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Cola de aprobacion</span>
-            <p class="text-sm text-text-muted">Mant�n la red limpia: valida negocio, contacto y zona antes de activar.</p>
+            <p class="text-sm text-text-muted">Mantén la red limpia: valida negocio, contacto y zona antes de activar.</p>
           </div>
           <app-button variant="ghost" [disabled]="isLoading() || !!actionRestaurantId()" (click)="loadRestaurants()">
             <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
@@ -121,7 +121,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant.name }}</strong>
                       <span class="text-sm text-text-muted">Tipo de negocio: {{ restaurant.businessTypeName || 'Sin categoría' }}</span>
                       <span class="text-sm text-text-muted">Owner: {{ restaurant.ownerFullName }}</span>
-                      <span class="text-sm text-text-muted">{{ restaurant.email }} � {{ restaurant.phone }}</span>
+                      <span class="text-sm text-text-muted">{{ restaurant.email }} · {{ restaurant.phone }}</span>
                     </div>
                   </div>
 
@@ -271,4 +271,3 @@ export class AdminPendingBusinessesPageComponent {
       });
   }
 }
-

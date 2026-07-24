@@ -9,6 +9,8 @@ export type OrderStatus =
   | 'Delivered'
   | 'Cancelled';
 
+export type PaymentStatus = 'Pending' | 'PendingConfirmation' | 'Paid' | 'Rejected' | 'Failed' | 'Refunded';
+
 export interface MyRestaurantResponse {
   id: string;
   name: string;
@@ -137,14 +139,74 @@ export interface RestaurantOrderListItemResponse {
   id: string;
   customerId: string;
   customerName: string;
+  itemCount: number;
   status: OrderStatus | string;
   businessNetAmount: number;
   platformRevenueAmount: number;
   total: number;
   paymentMethod: string;
+  paymentStatus: PaymentStatus | string;
   assignedCourierUserId?: string | null;
   assignedCourierType?: string | null;
   createdAtUtc: string;
+}
+
+export interface RestaurantOrderDetailResponse {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  status: OrderStatus | string;
+  deliveryAddress: string;
+  deliveryReference: string;
+  notes?: string | null;
+  paymentMethod: string;
+  paymentStatus: PaymentStatus | string;
+  subtotal: number;
+  businessCommissionAmount: number;
+  businessNetAmount: number;
+  deliveryFee: number;
+  deliveryPlatformCommissionAmount: number;
+  courierEarningAmount: number;
+  serviceFeeAmount: number;
+  discountAmount: number;
+  platformRevenueAmount: number;
+  total: number;
+  createdAtUtc: string;
+  acceptedAtUtc?: string | null;
+  readyAtUtc?: string | null;
+  pickedUpAtUtc?: string | null;
+  deliveredAtUtc?: string | null;
+  assignedCourierUserId?: string | null;
+  assignedCourierType?: string | null;
+  items: Array<{
+    productName: string;
+    imageUrl?: string | null;
+    unitPrice: number;
+    quantity: number;
+    subtotal: number;
+  }>;
+}
+
+export interface RestaurantOrderPaymentResponse {
+  orderId: string;
+  paymentId: string;
+  method: string;
+  status: PaymentStatus | string;
+  amount: number;
+  currency: string;
+  manualReference?: string | null;
+  confirmedAtUtc?: string | null;
+  rejectedAtUtc?: string | null;
+  failureReason?: string | null;
+}
+
+export interface ConfirmRestaurantOrderPaymentRequest {
+  manualReference?: string | null;
+}
+
+export interface RejectRestaurantOrderPaymentRequest {
+  failureReason: string;
 }
 
 export interface UpdateRestaurantOrderStatusRequest {

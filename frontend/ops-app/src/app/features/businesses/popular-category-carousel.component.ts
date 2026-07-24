@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, input } from '@angular/core';
+﻿import { Component, EventEmitter, Output, input } from '@angular/core';
 import { LucideAngularModule, Cross, Hammer, Shirt, ShoppingBasket, Utensils } from 'lucide-angular';
 import { BusinessTypeListItemResponse } from '../../core/models/businesses.models';
 

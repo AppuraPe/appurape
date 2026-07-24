@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  BusinessOrderDetailResponse,
   BusinessOrderFilters,
   BusinessOrderListItemResponse,
   UpdateBusinessOrderStatusRequest,
@@ -15,7 +16,7 @@ export class RestaurantOrdersApiService {
     return this.businessOrdersApi.getOrders(filters);
   }
 
-  updateOrderStatus(id: string, request: UpdateBusinessOrderStatusRequest): Observable<unknown> {
+  updateOrderStatus(id: string, request: UpdateBusinessOrderStatusRequest): Observable<BusinessOrderDetailResponse> {
     return this.businessOrdersApi.updateOrderStatus(id, request);
   }
 }

@@ -21,7 +21,7 @@ export interface RestaurantCardView {
   template: `
     <article class="grid min-h-full gap-2 rounded-3xl bg-surface-card p-3 shadow-loreto sm:gap-3 sm:p-4">
       <div class="overflow-hidden rounded-xl bg-surface-soft">
-        <img class="h-52 w-full object-cover sm:h-52" [src]="resolveImageUrl(restaurant().imageUrl)" [alt]="'Imagen de ' + restaurant().name" loading="lazy" />
+        <img class="h-52 w-full object-cover sm:h-52" [src]="resolveImageUrl(restaurant().imageUrl)" [alt]="'Imagen de ' + restaurant().name" loading="lazy" (error)="handleImageError($event)" />
       </div>
 
       <div class="grid gap-2 p-1 font-ui sm:gap-3">
@@ -47,6 +47,8 @@ export interface RestaurantCardView {
   `,
 })
 export class RestaurantCardComponent {
+  private static readonly PLACEHOLDER_IMAGE = '/img/catalog-placeholder.svg';
+
   readonly restaurant = input.required<RestaurantCardView>();
   readonly showReference = input(false);
   readonly detailRoute = input.required<any[]>();
@@ -58,6 +60,16 @@ export class RestaurantCardComponent {
   }
 
   resolveImageUrl(url?: string | null): string {
-    return hasText(url ?? '') ? url! : '/img/banner1.png';
+    return hasText(url ?? '') ? url! : RestaurantCardComponent.PLACEHOLDER_IMAGE;
+  }
+
+  handleImageError(event: Event): void {
+    const image = event.target as HTMLImageElement | null;
+
+    if (!image || image.src.endsWith(RestaurantCardComponent.PLACEHOLDER_IMAGE)) {
+      return;
+    }
+
+    image.src = RestaurantCardComponent.PLACEHOLDER_IMAGE;
   }
 }

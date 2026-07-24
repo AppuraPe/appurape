@@ -1,109 +1,106 @@
-<section class="mx-auto flex w-full max-w-[1240px] flex-col gap-5 px-4 pb-10 pt-4 font-ui md:px-6 md:pt-5">
+<app-mobile-page-shell [extraClass]="'mx-auto flex w-full max-w-[1240px] flex-col gap-4 px-4 pb-[calc(96px+env(safe-area-inset-bottom,0px))] pt-4 font-ui md:px-6 md:pt-5 lg:pb-10'">
   <app-back-button fallbackUrl="/orders" label="Volver a mis pedidos" />
 
   @if (errorMessage()) {
-    <section class="rounded-[24px] border border-primary-200 bg-primary-50 p-5 text-primary-700 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
-      <h2 class="text-[1.5rem] font-black tracking-[-0.04em] text-primary-700">Pedido no disponible</h2>
-      <p class="mt-2 text-sm leading-6">No pudimos abrir este pedido. Revisa si sigue disponible en tu cuenta.</p>
-      <a
-        class="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-primary-200 bg-white px-5 text-sm font-black text-loreto-carbon transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30"
-        routerLink="/orders"
-      >
-        Volver a mis pedidos
-      </a>
-    </section>
+    <app-unified-empty-state
+      eyebrow="Pedido"
+      title="Pedido no disponible"
+      message="No pudimos abrir este pedido. Revisa si sigue disponible en tu cuenta."
+    >
+      <app-button routerLink="/orders" variant="secondary">Volver a mis pedidos</app-button>
+    </app-unified-empty-state>
   } @else if (isLoading()) {
-    <section class="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-      <article class="h-32 animate-pulse rounded-[24px] border border-[#ead8d2] bg-white"></article>
-      <article class="h-32 animate-pulse rounded-[24px] border border-[#ead8d2] bg-white"></article>
+    <section class="grid gap-3">
+      <app-unified-loading-state label="Cargando pedido" />
+      <app-unified-loading-state label="Preparando detalle" />
     </section>
-    <section class="h-28 animate-pulse rounded-[24px] border border-[#ead8d2] bg-white"></section>
-    <section class="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
-      <article class="h-[24rem] animate-pulse rounded-[24px] border border-[#ead8d2] bg-white"></article>
-      <article class="h-[24rem] animate-pulse rounded-[24px] border border-[#ead8d2] bg-white"></article>
-    </section>
-    <section class="h-32 animate-pulse rounded-[24px] border border-[#ead8d2] bg-white"></section>
   } @else if (order(); as currentOrder) {
-    <header class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
-      <div class="flex flex-col gap-4">
-        <div class="flex items-center gap-2">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
-            <lucide-angular class="h-4 w-4" [img]="receiptIcon" aria-hidden="true"></lucide-angular>
-          </span>
-          <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-loreto-cecina">Pedido</p>
-        </div>
+    <app-surface-card variant="page" extraClass="p-5">
+      <app-internal-page-section-header
+        eyebrow="Pedido"
+        [title]="currentOrder.restaurantName"
+        [subtitle]="'Sigue el estado de tu pedido y revisa su pago.'"
+        [meta]="'#' + shortOrderId(currentOrder.id)"
+      />
 
-        <div class="min-w-0">
-          <h1 class="text-balance font-display text-[2rem] leading-[0.94] tracking-[-0.05em] text-loreto-carbon sm:text-[2.4rem]">{{ currentOrder.restaurantName }}</h1>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-3">
-          @for (item of orderIdentity(); track item.label) {
-            <div class="rounded-2xl border border-[#ead8d2] bg-surface-soft p-4">
-              <div class="flex items-center gap-2">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary-700">
-                  <lucide-angular class="h-4 w-4" [img]="item.icon" aria-hidden="true"></lucide-angular>
-                </span>
-                <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-cecina">{{ item.label }}</p>
-              </div>
-              @if (item.label === 'Creado') {
-                <p class="mt-3 text-sm font-semibold text-loreto-carbon">{{ item.value | date: 'medium' }}</p>
-              } @else {
-                <p class="mt-3 break-all text-sm font-semibold text-loreto-carbon">{{ item.value }}</p>
-              }
+      <div class="mt-5 grid gap-3 sm:grid-cols-3">
+        @for (item of orderIdentity(); track item.label) {
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
+                <lucide-angular class="h-4 w-4" [img]="item.icon" aria-hidden="true"></lucide-angular>
+              </span>
+              <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">{{ item.label }}</p>
             </div>
-          }
-        </div>
+            @if (item.label === 'Pedido') {
+              <p class="mt-3 text-base font-bold text-slate-900">Pedido #{{ shortOrderId(currentOrder.id).slice(0, 6) }}</p>
+              <p class="mt-1 truncate text-xs text-slate-500">{{ currentOrder.id }}</p>
+            } @else if (item.label === 'Creado') {
+              <p class="mt-3 text-sm font-semibold text-slate-900">{{ item.value | date: 'medium' }}</p>
+            } @else {
+              <p class="mt-3 break-all text-sm font-semibold text-slate-900">{{ item.value }}</p>
+            }
+          </div>
+        }
       </div>
-    </header>
+    </app-surface-card>
 
-    <section class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-2">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
-            <lucide-angular class="h-4 w-4" [img]="deliveryIcon" aria-hidden="true"></lucide-angular>
-          </span>
-          <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-loreto-cecina">Entrega</p>
+    <app-surface-card variant="page" extraClass="p-5">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <app-status-badge [status]="currentOrder.status" [label]="readableStatus(currentOrder.status)" />
+          <app-status-badge [status]="currentOrder.paymentStatus" [label]="paymentStatusLabel(currentOrder.paymentStatus)" prefix="Pago" />
         </div>
-        <h2 class="text-[1.45rem] font-black tracking-[-0.04em] text-loreto-carbon">{{ currentOrder.deliveryAddress }}</h2>
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-2xl bg-surface-soft p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-cecina">Referencia</p>
-            <p class="mt-2 text-sm text-loreto-carbon">{{ currentOrder.deliveryReference || 'Sin referencia' }}</p>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Dirección</p>
+            <p class="mt-2 text-sm text-slate-900">{{ currentOrder.deliveryAddress }}</p>
           </div>
-          <div class="rounded-2xl bg-surface-soft p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-cecina">Método de pago</p>
-            <p class="mt-2 text-sm text-loreto-carbon">{{ currentOrder.paymentMethod }}</p>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Referencia</p>
+            <p class="mt-2 text-sm text-slate-900">{{ currentOrder.deliveryReference || 'Sin referencia' }}</p>
           </div>
-          <div class="rounded-2xl bg-surface-soft p-4 xl:col-span-2">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-cecina">Notas</p>
-            <p class="mt-2 text-sm text-loreto-carbon">{{ currentOrder.notes || 'Sin notas adicionales' }}</p>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Método de pago</p>
+            <p class="mt-2 text-sm text-slate-900">{{ paymentMethodLabel(currentOrder.paymentMethod) }}</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Notas</p>
+            <p class="mt-2 text-sm text-slate-900">{{ currentOrder.notes || 'Sin notas adicionales' }}</p>
           </div>
         </div>
+
+        @if (showManualPaymentNotice()) {
+          <app-notice tone="warning" message="El negocio aún debe confirmar tu pago." />
+        }
+
+        @if (currentOrder.paymentStatus === 'Rejected' && currentOrder.paymentFailureReason) {
+          <app-notice tone="danger" [message]="'Motivo: ' + currentOrder.paymentFailureReason" />
+        }
       </div>
-    </section>
+    </app-surface-card>
 
     <section class="grid gap-4 lg:grid-cols-[0.88fr_1.12fr]">
-      <article class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+      <app-surface-card variant="page" extraClass="p-5">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-loreto-cecina">Pedido</p>
-            <h2 class="mt-2 text-[1.45rem] font-black tracking-[-0.04em] text-loreto-carbon">Productos</h2>
+            <h2 class="text-[1.45rem] font-extrabold tracking-tight text-slate-950">Productos</h2>
+            <p class="mt-1 text-sm text-slate-500">Resumen de lo que incluye tu pedido.</p>
           </div>
-          <span class="inline-flex rounded-full bg-surface-soft px-3 py-1 text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-carbon">
+          <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-700">
             {{ currentOrder.items.length }} item(s)
           </span>
         </div>
 
         @if (!currentOrder.items.length) {
-          <div class="mt-5 rounded-2xl border border-dashed border-[#ead8d2] bg-surface-soft p-6 text-center">
-            <h3 class="text-lg font-black text-loreto-carbon">Sin items</h3>
+          <div class="mt-5">
+            <app-unified-empty-state title="Sin items" message="Este pedido no tiene productos visibles." />
           </div>
         } @else {
           <div class="mt-5 space-y-3">
             @for (item of currentOrder.items; track item.productName + item.quantity) {
-              <article class="overflow-hidden rounded-[22px] border border-[#ead8d2] bg-surface-soft">
+              <article class="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50">
                 <div class="grid gap-0 sm:grid-cols-[7.5rem_1fr]">
                   <div class="h-32 sm:h-full">
                     <img
@@ -112,18 +109,14 @@
                       sizes="(max-width: 639px) 100vw, 7.5rem"
                       [alt]="'Imagen de ' + item.productName"
                       class="h-full w-full object-cover"
+                      (error)="handleProductImageError($event)"
                     />
                   </div>
                   <div class="flex flex-col justify-between gap-3 p-4">
                     <div class="min-w-0">
-                      <div class="flex items-center gap-2">
-                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary-700">
-                          <lucide-angular class="h-4 w-4" [img]="ticketIcon" aria-hidden="true"></lucide-angular>
-                        </span>
-                        <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-cecina">Producto confirmado</p>
-                      </div>
-                      <h3 class="mt-3 text-[1.2rem] font-black leading-tight tracking-[-0.03em] text-loreto-carbon">{{ item.productName }}</h3>
-                      <p class="mt-2 text-sm text-loreto-cecina">
+                      <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Producto confirmado</p>
+                      <h3 class="mt-3 text-[1.1rem] font-extrabold leading-tight tracking-[-0.03em] text-slate-950">{{ item.productName }}</h3>
+                      <p class="mt-2 text-sm text-slate-500">
                         Cantidad: {{ item.quantity }} · Unitario: {{ item.unitPrice | currency: 'PEN' : 'symbol' : '1.2-2' }}
                       </p>
                     </div>
@@ -136,57 +129,50 @@
             }
           </div>
         }
-      </article>
+      </app-surface-card>
 
-      <article class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+      <app-surface-card variant="page" extraClass="p-5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
-                <lucide-angular class="h-4 w-4" [img]="timelineIcon" aria-hidden="true"></lucide-angular>
-              </span>
-              <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-loreto-cecina">Tracking</p>
-            </div>
-            <h2 class="mt-2 text-[1.45rem] font-black tracking-[-0.04em] text-loreto-carbon">Seguimiento</h2>
+            <h2 class="text-[1.45rem] font-extrabold tracking-tight text-slate-950">Seguimiento</h2>
+            <p class="mt-1 text-sm text-slate-500">Estado actual e historial de tu pedido.</p>
           </div>
-          <button
-            class="inline-flex min-h-11 items-center justify-center rounded-full border border-[#ead8d2] bg-surface-soft px-4 text-sm font-black text-loreto-carbon transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-100"
-            type="button"
-            (click)="toggleTrackingMode()"
-          >
+          <app-button variant="secondary" type="button" (click)="toggleTrackingMode()">
             {{ trackingButtonLabel() }}
-          </button>
+          </app-button>
         </div>
 
         @if (trackingMode() === 'current') {
           <div class="mt-5 flex h-full flex-col gap-4">
-            <div class="overflow-hidden rounded-[22px] border border-[#ead8d2] bg-surface-soft">
+            <div class="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50">
               <img
                 [src]="activeTrackingState().gifUrl"
-                [alt]="'Animación de estado ' + activeTrackingState().label"
+                alt=""
+                aria-hidden="true"
                 class="h-52 w-full object-cover sm:h-60"
+                (error)="handleTrackingImageError($event)"
               />
             </div>
 
-            <div class="rounded-2xl bg-primary-50 p-4">
+            <div class="rounded-2xl border border-red-100 bg-red-50/60 p-4">
               <div class="flex items-center gap-2">
-                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary-700">
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm">
                   <lucide-angular class="h-4 w-4" [img]="trackingStateIcon(activeTrackingState().key)" aria-hidden="true"></lucide-angular>
                 </span>
-                <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-loreto-cecina">Estado</p>
+                <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-slate-500">Estado</p>
               </div>
-              <h3 class="mt-3 text-[1.45rem] font-black tracking-[-0.04em] text-loreto-carbon">{{ activeTrackingState().label }}</h3>
-              <p class="mt-2 text-sm leading-6 text-text-muted">{{ activeTrackingState().description }}</p>
-              <div class="mt-4 flex flex-wrap gap-2">
+              <h3 class="mt-3 text-[1.45rem] font-extrabold tracking-tight text-slate-950">{{ activeTrackingState().label }}</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-600">{{ activeTrackingState().description }}</p>
+              <app-action-chip-row class="mt-4 px-0">
                 @for (chip of trackingProgressChips(); track chip.key) {
                   <span
-                    class="inline-flex rounded-full border px-3 py-1 text-[0.64rem] font-black uppercase tracking-[0.12em] transition"
-                    [class]="chip.isCurrent ? 'border-primary-600 bg-primary-600 text-white shadow-sm shadow-primary-600/20' : chip.isActive ? 'border-primary-200 bg-white text-primary-700' : 'border-[#ead8d2] bg-surface-soft text-loreto-cecina/80'"
+                    class="inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 py-1 text-[0.64rem] font-black uppercase tracking-[0.12em] transition"
+                    [class]="chip.isCurrent ? 'border-primary-600 bg-primary-600 text-white shadow-sm shadow-primary-600/20' : chip.isActive ? 'border-primary-200 bg-white text-primary-700' : 'border-slate-200 bg-slate-50 text-slate-500'"
                   >
                     {{ chip.label }}
                   </span>
                 }
-              </div>
+              </app-action-chip-row>
             </div>
           </div>
         } @else {
@@ -196,15 +182,15 @@
                 <div class="flex flex-col items-center">
                   <span
                     class="mt-1 h-4 w-4 rounded-full border-2"
-                    [class]="step.timestamp ? 'border-primary-600 bg-primary-500' : 'border-[#ead8d2] bg-surface-soft'"
+                    [class]="step.timestamp ? 'border-primary-600 bg-primary-500' : 'border-slate-200 bg-slate-50'"
                   ></span>
                   @if (!isLast) {
-                    <span class="mt-1 h-full w-px bg-[#ead8d2]"></span>
+                    <span class="mt-1 h-full w-px bg-slate-200"></span>
                   }
                 </div>
                 <div class="pb-2">
-                  <p class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-loreto-cecina">{{ step.label }}</p>
-                  <p class="mt-1 text-sm text-loreto-carbon">
+                  <p class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500">{{ step.label }}</p>
+                  <p class="mt-1 text-sm text-slate-900">
                     {{ step.timestamp ? (step.timestamp | date: 'medium') : 'Pendiente' }}
                   </p>
                 </div>
@@ -212,24 +198,24 @@
             }
           </ol>
         }
-      </article>
+      </app-surface-card>
     </section>
 
     @if (canRateDriver()) {
-      <section class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+      <app-surface-card variant="page" extraClass="p-5">
         <div class="flex flex-col gap-2">
-          <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-loreto-cecina">Confianza</p>
-          <h2 class="text-[1.45rem] font-black tracking-[-0.04em] text-loreto-carbon">Califica tu entrega</h2>
+          <h2 class="text-[1.45rem] font-extrabold tracking-tight text-slate-950">Califica tu entrega</h2>
+          <p class="text-sm leading-6 text-slate-500">Tu opinión ayuda a mejorar la confianza de la red.</p>
         </div>
 
         @if (ratingMessage()) {
-          <div class="message mt-4">{{ ratingMessage() }}</div>
+          <app-notice class="mt-4" tone="info" [message]="ratingMessage()" />
         }
 
         <form class="mt-5 grid gap-4 md:grid-cols-[14rem_1fr] md:items-end" [formGroup]="ratingForm" (ngSubmit)="submitRating()">
-          <div class="field">
-            <label for="rating">Calificación</label>
-            <select id="rating" formControlName="rating">
+          <div class="grid gap-2">
+            <label for="rating" class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Calificación</label>
+            <select id="rating" formControlName="rating" class="min-h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100">
               <option [ngValue]="5">5 - Excelente</option>
               <option [ngValue]="4">4 - Muy bueno</option>
               <option [ngValue]="3">3 - Correcto</option>
@@ -238,22 +224,22 @@
             </select>
           </div>
 
-          <div class="field">
-            <label for="comment">Comentario</label>
-            <textarea id="comment" rows="3" formControlName="comment" placeholder="Comentario"></textarea>
+          <div class="grid gap-2">
+            <label for="comment" class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Comentario</label>
+            <textarea id="comment" rows="3" formControlName="comment" placeholder="Comentario" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"></textarea>
           </div>
 
           <div class="md:col-span-2">
-            <button class="button" type="submit" [disabled]="isSubmittingRating()">
+            <app-button type="submit" [disabled]="isSubmittingRating()">
               {{ isSubmittingRating() ? 'Guardando...' : 'Enviar' }}
-            </button>
+            </app-button>
           </div>
         </form>
 
         @if (order()!.driverRating) {
-          <div class="mt-4 rounded-2xl bg-surface-soft p-4">
-            <p class="text-sm font-semibold text-loreto-carbon">Ya calificaste</p>
-            <p class="mt-1 text-sm text-loreto-cecina">
+          <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-sm font-semibold text-slate-900">Ya calificaste</p>
+            <p class="mt-1 text-sm text-slate-500">
               Puntaje: {{ order()!.driverRating }}/5
               @if (order()!.driverFeedback) {
                 · {{ order()!.driverFeedback }}
@@ -261,30 +247,26 @@
             </p>
           </div>
         }
-      </section>
+      </app-surface-card>
     }
 
-    <section>
-      <article class="rounded-[24px] border border-[#ead8d2] bg-white p-5 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
-        <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] text-loreto-cecina">Total del pago</p>
-        <p class="mt-4 text-[2rem] font-black leading-none tracking-[-0.04em] text-primary-700 sm:text-[2.5rem]">
-          {{ currentOrder.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
-        </p>
-        <div class="mt-5 grid gap-3 sm:grid-cols-2">
-          <div class="rounded-2xl bg-surface-soft p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-cecina">Subtotal</p>
-            <p class="mt-2 text-base font-semibold text-loreto-carbon">
-              {{ currentOrder.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}
-            </p>
-          </div>
-          <div class="rounded-2xl bg-surface-soft p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-loreto-cecina">Delivery</p>
-            <p class="mt-2 text-base font-semibold text-loreto-carbon">
-              {{ currentOrder.deliveryFee | currency: 'PEN' : 'symbol' : '1.2-2' }}
-            </p>
-          </div>
+    <app-bottom-safe-action-bar mode="static">
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Total del pago</p>
+          <p class="mt-1 text-[1.7rem] font-black leading-none tracking-[-0.04em] text-primary-700 sm:text-[2rem]">
+            {{ currentOrder.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
+          </p>
         </div>
-      </article>
-    </section>
+        <div class="grid gap-1 text-right">
+          <p class="text-sm font-semibold text-slate-600">
+            Subtotal: {{ currentOrder.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}
+          </p>
+          <p class="text-sm font-semibold text-slate-600">
+            Delivery: {{ currentOrder.deliveryFee | currency: 'PEN' : 'symbol' : '1.2-2' }}
+          </p>
+        </div>
+      </div>
+    </app-bottom-safe-action-bar>
   }
-</section>
+</app-mobile-page-shell>

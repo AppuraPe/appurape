@@ -1,9 +1,9 @@
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, map, of } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CommunityApiService } from '../../core/services/community-api.service';
 import {
@@ -11,264 +11,436 @@ import {
   CommunityRequestListItemResponse,
   CommunityRouteResponse,
 } from '../../core/models/community.models';
+import { NotificationService } from '../../core/services/notification.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { ActionChipRowComponent } from '../../shared/components/action-chip-row.component';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
+import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
+import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
+import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
+
+type RequestScope = 'all' | 'mine' | 'available';
+type HubWarning = { title: string; message: string };
+type HubLoadResult<T> = { data: T; warning: HubWarning | null };
 
 @Component({
   selector: 'app-community-hub-page',
   standalone: true,
   imports: [
     CurrencyPipe,
-    DecimalPipe,
+    DatePipe,
     ReactiveFormsModule,
     RouterLink,
     AppBackButtonComponent,
-    PageHeaderComponent,
     AppNoticeComponent,
     StatusBadgeComponent,
     AppButtonComponent,
     AppMetricCardComponent,
     AppSurfaceCardComponent,
+    MobilePageShellComponent,
+    InternalPageSectionHeaderComponent,
+    UnifiedEmptyStateComponent,
+    UnifiedLoadingStateComponent,
+    ActionChipRowComponent,
   ],
   template: `
-    <section class="grid gap-5">
+    <app-mobile-page-shell
+      [topSafeArea]="false"
+      extraClass="space-y-4 px-4 pt-4 sm:px-5 lg:px-0 lg:pt-0"
+      bottomSpacingClass="pb-[calc(88px+env(safe-area-inset-bottom,0px))]"
+    >
       <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
 
-      <app-surface-card variant="page">
-        <app-page-header
-          eyebrow="AppuraPe Favores"
-          title="Red de favores"
-          subtitle="Activa tu disponibilidad, registra trayectos y gestiona solicitudes compensadas desde una vista más simple."
+      <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+        <app-internal-page-section-header
+          eyebrow="AppuraPe Community"
+          title="Favores y encargos"
+          subtitle="Publica un favor, revisa solicitudes disponibles y coordina entregas rápidas desde una experiencia móvil más clara."
+          meta="MVP"
         />
 
         <app-notice
           tone="info"
           title="Cómo funciona"
-          message="La reputación comunitaria es independiente del delivery tradicional y mejora con cumplimiento real, confirmación y buena calificación."
+          message="Los favores se coordinan aparte del delivery tradicional. Puedes pedir ayuda, ofrecerte como colaborador y confirmar la entrega desde el mismo módulo."
         />
 
-        @if (errorMessage()) {
-          <div class="message error">{{ errorMessage() }}</div>
-        } @else if (isLoading()) {
-          <div class="message">Cargando red comunitaria...</div>
-        } @else if (collaborator()) {
-          <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <app-metric-card label="Nivel" [value]="collaborator()!.collaborationLevel" helper="Confianza separada del delivery profesional" />
-            <app-metric-card label="Puntaje" [value]="(collaborator()!.trustScore | number:'1.0-0') + '%'" helper="Sube con cumplimiento real" />
-            <app-metric-card label="Colaboraciones" [value]="collaborator()!.completedCollaborations.toString()" helper="Tareas completadas" />
-            <app-metric-card label="Calificación" [value]="(collaborator()!.collaborationRating | number:'1.1-1') + '/5'" helper="Promedio de experiencias" />
-          </div>
-
-          <div class="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
-            <app-surface-card variant="soft">
-              <form class="grid gap-4" [formGroup]="availabilityForm" (ngSubmit)="saveAvailability()">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <h2 class="mb-1 text-[1.35rem] font-black tracking-[-0.04em] text-loreto-carbon">Disponibilidad</h2>
-                    <p class="text-sm leading-5.5 text-text-muted">Controla cuándo apareces como colaborador disponible.</p>
-                  </div>
-                  <app-status-badge [status]="collaborator()!.availabilityStatus" prefix="Estado" />
-                </div>
-
-                <label>
-                  <span>Activo</span>
-                  <input type="checkbox" formControlName="isAvailable" />
-                </label>
-                <label>
-                  <span>Estado</span>
-                  <select formControlName="availabilityStatus">
-                    <option value="Disconnected">Desconectado</option>
-                    <option value="Available">Disponible</option>
-                    <option value="Busy">Ocupado</option>
-                  </select>
-                </label>
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <label>
-                    <span>Latitud actual</span>
-                    <input type="number" step="0.000001" formControlName="currentLatitude" />
-                  </label>
-                  <label>
-                    <span>Longitud actual</span>
-                    <input type="number" step="0.000001" formControlName="currentLongitude" />
-                  </label>
-                </div>
-                <label>
-                  <span>Radio de cobertura (km)</span>
-                  <input type="number" step="0.1" min="1" formControlName="availabilityRadiusKm" />
-                </label>
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <label>
-                    <span>Disponible desde</span>
-                    <input type="datetime-local" formControlName="availableFromUtc" />
-                  </label>
-                  <label>
-                    <span>Disponible hasta</span>
-                    <input type="datetime-local" formControlName="availableUntilUtc" />
-                  </label>
-                </div>
-                <app-button type="submit" [disabled]="isSavingAvailability()" block>
-                  {{ isSavingAvailability() ? 'Guardando...' : 'Guardar disponibilidad' }}
-                </app-button>
-              </form>
-            </app-surface-card>
-
-            <app-surface-card variant="soft">
-              <form class="grid gap-4" [formGroup]="requestForm" (ngSubmit)="createRequest()">
-                <div class="min-w-0">
-                  <h2 class="mb-1 text-[1.35rem] font-black tracking-[-0.04em] text-loreto-carbon">Nueva solicitud</h2>
-                  <p class="text-sm leading-5.5 text-text-muted">Publica una tarea compensada para la red comunitaria.</p>
-                </div>
-                <label>
-                  <span>Tipo</span>
-                  <select formControlName="type">
-                    <option value="MarketPurchase">Compra de mercado</option>
-                    <option value="Errand">Encargo</option>
-                    <option value="ProductPickup">Recojo de productos</option>
-                    <option value="PackageDelivery">Entrega de paquetes</option>
-                    <option value="CompensatedFavor">Favor compensado</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Título</span>
-                  <input type="text" formControlName="title" />
-                </label>
-                <label>
-                  <span>Descripción</span>
-                  <textarea rows="3" formControlName="description"></textarea>
-                </label>
-                <label>
-                  <span>Origen</span>
-                  <input type="text" formControlName="originLabel" />
-                </label>
-                <label>
-                  <span>Destino</span>
-                  <input type="text" formControlName="destinationLabel" />
-                </label>
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <label>
-                    <span>Latitud origen</span>
-                    <input type="number" step="0.000001" formControlName="originLatitude" />
-                  </label>
-                  <label>
-                    <span>Longitud origen</span>
-                    <input type="number" step="0.000001" formControlName="originLongitude" />
-                  </label>
-                  <label>
-                    <span>Latitud destino</span>
-                    <input type="number" step="0.000001" formControlName="destinationLatitude" />
-                  </label>
-                  <label>
-                    <span>Longitud destino</span>
-                    <input type="number" step="0.000001" formControlName="destinationLongitude" />
-                  </label>
-                </div>
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <label>
-                    <span>Compensación</span>
-                    <input type="number" step="0.01" min="0" formControlName="compensationAmount" />
-                  </label>
-                  <label>
-                    <span>Fecha límite</span>
-                    <input type="datetime-local" formControlName="deadlineUtc" />
-                  </label>
-                </div>
-                <app-button type="submit" [disabled]="isCreatingRequest()" block>
-                  {{ isCreatingRequest() ? 'Publicando...' : 'Publicar solicitud' }}
-                </app-button>
-              </form>
-            </app-surface-card>
-          </div>
-        }
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <app-metric-card label="Disponibilidad" [value]="availabilitySummary()" helper="Tu estado actual como colaborador" />
+          <app-metric-card label="Solicitudes" [value]="requests().length.toString()" helper="Favores visibles para tu cuenta" />
+          <app-metric-card label="Completadas" [value]="completedRequestsCount().toString()" helper="Solicitudes cerradas correctamente" />
+          <app-metric-card label="Confianza" [value]="trustSummary()" helper="Reputación dentro de la red comunitaria" />
+        </div>
       </app-surface-card>
 
-      <div class="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-        <app-surface-card variant="page" extraClass="stack">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h2 class="mb-1 text-[1.35rem] font-black tracking-[-0.04em] text-loreto-carbon">Mis trayectos</h2>
-              <p class="text-sm leading-5.5 text-text-muted">Mejoran el matching cuando ya tienes una ruta habitual.</p>
-            </div>
-            @if (routeEditingId()) {
-              <app-button variant="ghost" type="button" (click)="routeEditingId.set(null); routeForm.reset({ originLabel: '', originLatitude: 0, originLongitude: 0, destinationLabel: '', destinationLatitude: 0, destinationLongitude: 0, estimatedMinutes: 30, deviationRadiusKm: 3, isActive: true })">
-                Limpiar edición
-              </app-button>
-            }
-          </div>
+      @if (errorMessage()) {
+        <app-notice tone="danger" title="No pudimos cargar tus solicitudes" [message]="errorMessage()" />
+      }
 
-          <form class="grid gap-4" [formGroup]="routeForm" (ngSubmit)="saveRoute()">
-            <label><span>Origen</span><input type="text" formControlName="originLabel" /></label>
-            <label><span>Destino</span><input type="text" formControlName="destinationLabel" /></label>
+      @if (successMessage()) {
+        <app-notice tone="success" title="Solicitud publicada" [message]="successMessage()" />
+      }
+
+      @for (warning of hubWarnings(); track warning.title) {
+        <app-notice tone="warning" [title]="warning.title" [message]="warning.message" />
+      }
+
+      @if (isLoading()) {
+        <app-unified-loading-state label="Cargando favores" />
+      } @else if (collaborator()) {
+        <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+          <app-internal-page-section-header
+            eyebrow="Tu perfil"
+            title="Participa como solicitante o colaborador"
+            subtitle="Activa tu disponibilidad cuando quieras recibir solicitudes y mantén tus datos de ruta al día para mejorar el matching."
+            [meta]="availabilityStatusLabel(collaborator()!.availabilityStatus)"
+          />
+
+          <app-notice
+            [tone]="collaborator()!.isAvailable ? 'success' : 'warning'"
+            [title]="collaborator()!.isAvailable ? 'Disponibilidad activa' : 'Disponibilidad pausada'"
+            [message]="collaborator()!.isAvailable
+              ? 'Aparecerás para nuevas coincidencias mientras tu estado se mantenga disponible.'
+              : 'Puedes seguir publicando favores, pero no aparecerás como colaborador disponible hasta activarte.'"
+          />
+
+          <form class="grid gap-4" [formGroup]="availabilityForm" (ngSubmit)="saveAvailability()">
             <div class="grid gap-3 sm:grid-cols-2">
-              <label><span>Latitud origen</span><input type="number" step="0.000001" formControlName="originLatitude" /></label>
-              <label><span>Longitud origen</span><input type="number" step="0.000001" formControlName="originLongitude" /></label>
-              <label><span>Latitud destino</span><input type="number" step="0.000001" formControlName="destinationLatitude" /></label>
-              <label><span>Longitud destino</span><input type="number" step="0.000001" formControlName="destinationLongitude" /></label>
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Disponibilidad general</span>
+                <select class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" formControlName="availabilityStatus">
+                  <option value="Disconnected">Desconectado</option>
+                  <option value="Available">Disponible</option>
+                  <option value="Busy">Ocupado</option>
+                </select>
+              </label>
+
+              <label class="flex min-h-11 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                <span class="text-sm font-semibold text-slate-700">Mostrarme para coincidencias</span>
+                <input class="h-4 w-4" type="checkbox" formControlName="isAvailable" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Latitud actual</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="currentLatitude" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Longitud actual</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="currentLongitude" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Radio de cobertura (km)</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.1" min="1" formControlName="availabilityRadiusKm" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Disponible desde</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="datetime-local" formControlName="availableFromUtc" />
+              </label>
+
+              <label class="grid gap-2 sm:col-span-2">
+                <span class="text-sm font-semibold text-slate-700">Disponible hasta</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="datetime-local" formControlName="availableUntilUtc" />
+              </label>
             </div>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <label><span>Tiempo estimado (min)</span><input type="number" min="1" formControlName="estimatedMinutes" /></label>
-              <label><span>Desvío permitido (km)</span><input type="number" step="0.1" min="1" formControlName="deviationRadiusKm" /></label>
-            </div>
-            <label><span>Activo</span><input type="checkbox" formControlName="isActive" /></label>
-            <app-button variant="secondary" type="submit" [disabled]="isSavingRoute()" block>
-              {{ isSavingRoute() ? 'Guardando...' : routeEditingId() ? 'Actualizar trayecto' : 'Guardar trayecto' }}
+
+            <app-button type="submit" [disabled]="isSavingAvailability()" block>
+              {{ isSavingAvailability() ? 'Guardando disponibilidad...' : 'Guardar disponibilidad' }}
             </app-button>
           </form>
+        </app-surface-card>
 
-          @if (!routes().length) {
-            <div class="message">Aún no tienes trayectos registrados.</div>
-          } @else {
-            <div class="grid gap-3">
-              @for (route of routes(); track route.id) {
-                <button class="list-card text-left" type="button" (click)="editRoute(route)">
-                  <strong>{{ route.originLabel }} → {{ route.destinationLabel }}</strong>
-                  <span class="muted">{{ route.estimatedMinutes }} min · Desvío {{ route.deviationRadiusKm }} km</span>
-                  <app-status-badge [status]="route.isActive" [label]="route.isActive ? 'Activo' : 'Inactivo'" />
+        <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+          <app-internal-page-section-header
+            eyebrow="Crear favor"
+            title="Nueva solicitud"
+            subtitle="Publica un encargo con origen, destino y recompensa. La red verá el favor y podrá postularse."
+          />
+
+          <form class="grid gap-4" [formGroup]="requestForm" (ngSubmit)="createRequest()">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Tipo de favor</span>
+                <select class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" formControlName="type">
+                  <option value="MarketPurchase">Compra de mercado</option>
+                  <option value="Errand">Encargo</option>
+                  <option value="ProductPickup">Recojo de productos</option>
+                  <option value="PackageDelivery">Entrega de paquetes</option>
+                  <option value="CompensatedFavor">Favor compensado</option>
+                </select>
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Compensación</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.01" min="0" formControlName="compensationAmount" />
+              </label>
+
+              <label class="grid gap-2 sm:col-span-2">
+                <span class="text-sm font-semibold text-slate-700">Título</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="title" />
+              </label>
+
+              <label class="grid gap-2 sm:col-span-2">
+                <span class="text-sm font-semibold text-slate-700">Descripción</span>
+                <textarea class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700" rows="3" formControlName="description"></textarea>
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Origen</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Destino</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Latitud origen</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLatitude" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Longitud origen</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLongitude" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Latitud destino</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLatitude" />
+              </label>
+
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Longitud destino</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLongitude" />
+              </label>
+
+              <label class="grid gap-2 sm:col-span-2">
+                <span class="text-sm font-semibold text-slate-700">Fecha límite</span>
+                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="datetime-local" formControlName="deadlineUtc" />
+              </label>
+            </div>
+
+            <app-button type="submit" [disabled]="isCreatingRequest()" block>
+              {{ isCreatingRequest() ? 'Publicando solicitud...' : 'Publicar solicitud' }}
+            </app-button>
+          </form>
+        </app-surface-card>
+
+        <div class="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+            <app-internal-page-section-header
+              eyebrow="Tus trayectos"
+              title="Rutas para mejorar el matching"
+              subtitle="Define trayectos habituales para recibir mejores coincidencias cuando haya favores compatibles."
+            />
+
+            @if (routeEditingId()) {
+              <app-notice
+                tone="warning"
+                title="Editando trayecto"
+                message="Estás actualizando una ruta existente. Puedes limpiar el formulario si prefieres crear una nueva."
+              />
+            }
+
+            <form class="grid gap-4" [formGroup]="routeForm" (ngSubmit)="saveRoute()">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Origen</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" />
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Destino</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" />
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Latitud origen</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLatitude" />
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Longitud origen</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLongitude" />
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Latitud destino</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLatitude" />
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Longitud destino</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLongitude" />
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Tiempo estimado (min)</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" min="1" formControlName="estimatedMinutes" />
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-sm font-semibold text-slate-700">Desvío permitido (km)</span>
+                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.1" min="1" formControlName="deviationRadiusKm" />
+                </label>
+                <label class="flex min-h-11 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:col-span-2">
+                  <span class="text-sm font-semibold text-slate-700">Ruta activa</span>
+                  <input class="h-4 w-4" type="checkbox" formControlName="isActive" />
+                </label>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <app-button variant="secondary" type="submit" [disabled]="isSavingRoute()" block>
+                  {{ isSavingRoute() ? 'Guardando trayecto...' : routeEditingId() ? 'Actualizar trayecto' : 'Guardar trayecto' }}
+                </app-button>
+                @if (routeEditingId()) {
+                  <app-button variant="ghost" type="button" (click)="resetRouteForm()" block>
+                    Limpiar edición
+                  </app-button>
+                }
+              </div>
+            </form>
+
+            @if (!routes().length) {
+              <app-unified-empty-state
+                eyebrow="Trayectos"
+                title="Aún no tienes rutas guardadas"
+                message="Guarda al menos un trayecto para mejorar el matching cuando aparezcan favores compatibles."
+              />
+            } @else {
+              <div class="grid gap-3">
+                @for (route of routes(); track route.id) {
+                  <button
+                    class="grid gap-2 rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-red-200"
+                    type="button"
+                    (click)="editRoute(route)"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-sm font-extrabold text-slate-950">{{ route.originLabel }} → {{ route.destinationLabel }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ route.estimatedMinutes }} min · Desvío {{ route.deviationRadiusKm }} km</p>
+                      </div>
+                      <app-status-badge [status]="route.isActive" [label]="route.isActive ? 'Activo' : 'Inactivo'" />
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+          </app-surface-card>
+
+          <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+            <app-internal-page-section-header
+              eyebrow="Solicitudes"
+              title="Favores disponibles y propios"
+              subtitle="Revisa tus solicitudes, encuentra favores abiertos y entra al detalle para aplicar o seguir el estado."
+              [meta]="filteredRequests().length + ' visibles'"
+            />
+
+            <app-action-chip-row>
+              <button
+                type="button"
+                class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
+                [class]="scopeChipClass('all')"
+                (click)="selectedScope.set('all')"
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
+                [class]="scopeChipClass('mine')"
+                (click)="selectedScope.set('mine')"
+              >
+                Mis solicitudes
+              </button>
+              <button
+                type="button"
+                class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
+                [class]="scopeChipClass('available')"
+                (click)="selectedScope.set('available')"
+              >
+                Para colaborar
+              </button>
+              @for (status of availableStatuses(); track status) {
+                <button
+                  type="button"
+                  class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
+                  [class]="statusChipClass(status)"
+                  (click)="toggleStatusFilter(status)"
+                >
+                  {{ requestStatusLabel(status) }}
                 </button>
               }
-            </div>
-          }
-        </app-surface-card>
+            </app-action-chip-row>
 
-        <app-surface-card variant="page" extraClass="stack">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h2 class="mb-1 text-[1.35rem] font-black tracking-[-0.04em] text-loreto-carbon">Solicitudes</h2>
-              <p class="text-sm leading-5.5 text-text-muted">Tareas publicadas por la red o asignadas directamente a ti.</p>
+            <div class="flex items-center justify-between gap-3 rounded-[20px] bg-slate-100/90 px-4 py-3 text-sm text-slate-600">
+              <p class="min-w-0">{{ requestsSummary() }}</p>
+              <app-button variant="ghost" type="button" [disabled]="isLoading()" (click)="loadHub()">Recargar</app-button>
             </div>
-            <app-button variant="ghost" type="button" [disabled]="isLoading()" (click)="loadHub()">Recargar</app-button>
-          </div>
 
-          @if (!requests().length) {
-            <div class="message">No hay solicitudes comunitarias todavía.</div>
-          } @else {
-            <div class="grid gap-3">
-              @for (request of requests(); track request.id) {
-                <a class="list-card" [routerLink]="['/community/requests', request.id]">
-                  <strong>{{ request.title }}</strong>
-                  <span class="muted">{{ request.type }} · {{ request.originLabel }} → {{ request.destinationLabel }}</span>
-                  <span class="muted">{{ request.compensationAmount | currency:'PEN':'symbol-narrow':'1.2-2' }} · Match {{ request.matchScore | number:'1.0-0' }}%</span>
-                  <div class="inline-status">
-                    <app-status-badge [status]="request.status" />
-                    @if (request.isMine) {
-                      <app-status-badge status="verified" label="Mía" />
-                    }
-                    @if (request.isAssignedToMe) {
-                      <app-status-badge status="trusted" label="Asignada" />
-                    }
-                  </div>
-                </a>
-              }
-            </div>
-          }
-        </app-surface-card>
-      </div>
-    </section>
+            @if (!filteredRequests().length) {
+              <app-unified-empty-state
+                eyebrow="Sin resultados"
+                title="No hay favores para este filtro"
+                message="Prueba con otro estado o vuelve a todos para ver nuevas solicitudes disponibles."
+              >
+                <app-button variant="secondary" type="button" (click)="clearRequestFilters()">Limpiar filtros</app-button>
+              </app-unified-empty-state>
+            } @else {
+              <div class="grid gap-3">
+                @for (request of filteredRequests(); track request.id) {
+                  <a
+                    class="grid gap-3 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-200"
+                    [routerLink]="['/community/requests', request.id]"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+                          {{ requestTypeLabel(request.type) }}
+                        </p>
+                        <h3 class="mt-1 text-base font-extrabold tracking-tight text-slate-950">{{ request.title }}</h3>
+                        <p class="mt-1 text-sm text-slate-500">{{ request.originLabel }} → {{ request.destinationLabel }}</p>
+                      </div>
+                      <app-status-badge [status]="request.status" [label]="requestStatusLabel(request.status)" />
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                      @if (request.isMine) {
+                        <app-status-badge status="verified" label="Mi solicitud" />
+                      }
+                      @if (request.isAssignedToMe) {
+                        <app-status-badge status="trusted" label="Asignada a mí" />
+                      }
+                      <app-status-badge status="available" [label]="'Match ' + formatMatchScore(request.matchScore)" />
+                    </div>
+
+                    <div class="grid gap-2 rounded-[20px] bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      <div class="flex items-center justify-between gap-3">
+                        <span>Recompensa</span>
+                        <strong class="text-slate-950">{{ request.compensationAmount | currency:'PEN':'symbol-narrow':'1.2-2' }}</strong>
+                      </div>
+                      @if (request.deadlineUtc) {
+                        <div class="flex items-center justify-between gap-3">
+                          <span>Límite</span>
+                          <span class="text-right text-slate-500">{{ request.deadlineUtc | date:'short' }}</span>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="text-sm text-slate-500">{{ requestRoleHint(request) }}</p>
+                      <span class="text-sm font-semibold text-red-500">Ver detalle</span>
+                    </div>
+                  </a>
+                }
+              </div>
+            }
+          </app-surface-card>
+        </div>
+      }
+    </app-mobile-page-shell>
   `,
 })
 export class CommunityHubPageComponent {
@@ -276,6 +448,7 @@ export class CommunityHubPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly communityApi = inject(CommunityApiService);
   private readonly authService = inject(AuthService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly collaborator = signal<CommunityCollaboratorResponse | null>(null);
   readonly routes = signal<CommunityRouteResponse[]>([]);
@@ -285,7 +458,11 @@ export class CommunityHubPageComponent {
   readonly isSavingRoute = signal(false);
   readonly isCreatingRequest = signal(false);
   readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly hubWarnings = signal<HubWarning[]>([]);
   readonly routeEditingId = signal<string | null>(null);
+  readonly selectedScope = signal<RequestScope>('all');
+  readonly selectedStatus = signal('');
   readonly currentUserId = computed(() => this.authService.currentUser()?.userId ?? null);
 
   readonly availabilityForm = this.formBuilder.nonNullable.group({
@@ -324,38 +501,116 @@ export class CommunityHubPageComponent {
     deadlineUtc: '',
   });
 
+  readonly availableStatuses = computed(() => {
+    const statuses = new Set(this.requests().map((request) => request.status));
+    return ['Published', 'Searching', 'Accepted', 'InProcess', 'Delivered', 'Confirmed', 'Cancelled']
+      .filter((status) => statuses.has(status))
+      .concat(Array.from(statuses).filter((status) => !['Published', 'Searching', 'Accepted', 'InProcess', 'Delivered', 'Confirmed', 'Cancelled'].includes(status)).sort((a, b) => a.localeCompare(b)));
+  });
+
+  readonly filteredRequests = computed(() => {
+    const scope = this.selectedScope();
+    const status = this.selectedStatus();
+    const currentUserId = this.currentUserId();
+
+    return this.requests().filter((request) => {
+      if (scope === 'mine' && !request.isMine) {
+        return false;
+      }
+
+      if (scope === 'available' && (request.isMine || request.isAssignedToMe || request.createdByUserId === currentUserId)) {
+        return false;
+      }
+
+      if (status && request.status !== status) {
+        return false;
+      }
+
+      return true;
+    });
+  });
+
+  readonly completedRequestsCount = computed(
+    () => this.requests().filter((request) => ['Delivered', 'Confirmed'].includes(request.status)).length,
+  );
+
+  readonly trustSummary = computed(() => {
+    const collaborator = this.collaborator();
+    if (!collaborator) {
+      return '0%';
+    }
+
+    return `${Math.round(collaborator.trustScore)}%`;
+  });
+
+  readonly availabilitySummary = computed(() => {
+    const collaborator = this.collaborator();
+    return collaborator ? this.availabilityStatusLabel(collaborator.availabilityStatus) : 'Sin perfil';
+  });
+
+  readonly requestsSummary = computed(() => {
+    const count = this.filteredRequests().length;
+
+    if (!count) {
+      return 'No hay solicitudes para el filtro actual.';
+    }
+
+    if (this.selectedScope() === 'mine') {
+      return count === 1 ? '1 solicitud tuya visible.' : `${count} solicitudes tuyas visibles.`;
+    }
+
+    if (this.selectedScope() === 'available') {
+      return count === 1 ? '1 favor disponible para colaborar.' : `${count} favores disponibles para colaborar.`;
+    }
+
+    return count === 1 ? '1 solicitud visible en Community.' : `${count} solicitudes visibles en Community.`;
+  });
+
   constructor() {
     this.loadHub();
+
+    effect(() => {
+      if (!this.collaborator()?.isAvailable && this.availabilityForm.controls.isAvailable.value) {
+        return;
+      }
+    });
   }
 
   loadHub(): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
+    this.hubWarnings.set([]);
 
     forkJoin({
-      collaborator: this.communityApi.getMyCollaborator(),
-      routes: this.communityApi.getMyRoutes(),
-      requests: this.communityApi.getRequests(),
+      collaborator: this.wrapLoad(this.communityApi.getMyCollaborator(), null, 'No pudimos cargar tu perfil colaborador'),
+      routes: this.wrapLoad(this.communityApi.getMyRoutes(), [], 'No pudimos cargar rutas disponibles'),
+      requests: this.wrapLoad(this.communityApi.getRequests(), [], 'No pudimos cargar tus solicitudes'),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ collaborator, routes, requests }) => {
-          this.collaborator.set(collaborator);
-          this.routes.set(routes);
-          this.requests.set(requests);
-          this.availabilityForm.patchValue({
-            isAvailable: collaborator.isAvailable,
-            availabilityStatus: collaborator.availabilityStatus,
-            currentLatitude: collaborator.currentLatitude ?? null,
-            currentLongitude: collaborator.currentLongitude ?? null,
-            availabilityRadiusKm: collaborator.availabilityRadiusKm,
-            availableFromUtc: this.toLocalDateTime(collaborator.availableFromUtc),
-            availableUntilUtc: this.toLocalDateTime(collaborator.availableUntilUtc),
-          });
+          this.collaborator.set(collaborator.data);
+          this.routes.set(routes.data);
+          this.requests.set(requests.data);
+          this.errorMessage.set(requests.warning?.message ?? '');
+          this.hubWarnings.set(
+            [collaborator.warning, routes.warning].filter((warning): warning is HubWarning => !!warning),
+          );
+          if (collaborator.data) {
+            this.availabilityForm.patchValue({
+              isAvailable: collaborator.data.isAvailable,
+              availabilityStatus: collaborator.data.availabilityStatus,
+              currentLatitude: collaborator.data.currentLatitude ?? null,
+              currentLongitude: collaborator.data.currentLongitude ?? null,
+              availabilityRadiusKm: collaborator.data.availabilityRadiusKm,
+              availableFromUtc: this.toLocalDateTime(collaborator.data.availableFromUtc),
+              availableUntilUtc: this.toLocalDateTime(collaborator.data.availableUntilUtc),
+            });
+          }
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el modulo comunitario.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el módulo Community.'));
           this.isLoading.set(false);
         },
       });
@@ -401,18 +656,7 @@ export class CommunityHubPageComponent {
 
     operation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.routeEditingId.set(null);
-        this.routeForm.reset({
-          originLabel: '',
-          originLatitude: 0,
-          originLongitude: 0,
-          destinationLabel: '',
-          destinationLatitude: 0,
-          destinationLongitude: 0,
-          estimatedMinutes: 30,
-          deviationRadiusKm: 3,
-          isActive: true,
-        });
+        this.resetRouteForm();
         this.isSavingRoute.set(false);
         this.loadHub();
       },
@@ -438,13 +682,33 @@ export class CommunityHubPageComponent {
     });
   }
 
+  resetRouteForm(): void {
+    this.routeEditingId.set(null);
+    this.routeForm.reset({
+      originLabel: '',
+      originLatitude: 0,
+      originLongitude: 0,
+      destinationLabel: '',
+      destinationLatitude: 0,
+      destinationLongitude: 0,
+      estimatedMinutes: 30,
+      deviationRadiusKm: 3,
+      isActive: true,
+    });
+  }
+
   createRequest(): void {
     if (this.requestForm.invalid) {
       this.requestForm.markAllAsTouched();
+      const message = 'Completa los campos obligatorios del favor antes de publicarlo.';
+      this.errorMessage.set(message);
+      this.notificationService.warning(message);
       return;
     }
 
     this.isCreatingRequest.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
     this.communityApi
       .createRequest({
         ...this.requestForm.getRawValue(),
@@ -466,14 +730,96 @@ export class CommunityHubPageComponent {
             compensationAmount: 0,
             deadlineUtc: '',
           });
+          this.selectedScope.set('mine');
+          this.selectedStatus.set('');
+          this.successMessage.set('Tu favor fue publicado correctamente y ya aparece en tu listado.');
+          this.notificationService.success('Favor publicado correctamente.');
           this.isCreatingRequest.set(false);
           this.loadHub();
         },
         error: (error) => {
           this.errorMessage.set(getErrorMessage(error, 'No se pudo publicar la solicitud.'));
+          this.notificationService.error(this.errorMessage());
           this.isCreatingRequest.set(false);
         },
       });
+  }
+
+  toggleStatusFilter(status: string): void {
+    this.selectedStatus.set(this.selectedStatus() === status ? '' : status);
+  }
+
+  clearRequestFilters(): void {
+    this.selectedScope.set('all');
+    this.selectedStatus.set('');
+  }
+
+  scopeChipClass(scope: RequestScope): string {
+    return this.selectedScope() === scope
+      ? 'border-red-200 bg-red-50 text-red-600'
+      : 'border-slate-200 bg-white text-slate-600';
+  }
+
+  statusChipClass(status: string): string {
+    return this.selectedStatus() === status
+      ? 'border-slate-900 bg-slate-900 text-white'
+      : 'border-slate-200 bg-white text-slate-600';
+  }
+
+  requestStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      Published: 'Publicado',
+      Searching: 'Buscando ayuda',
+      Assigned: 'Asignado',
+      Accepted: 'Asignado',
+      InProgress: 'En proceso',
+      InProcess: 'En proceso',
+      Delivered: 'Entregado',
+      Confirmed: 'Confirmado',
+      Cancelled: 'Cancelado',
+      Rejected: 'Rechazado',
+      Expired: 'Vencido',
+    };
+
+    return labels[status] ?? status;
+  }
+
+  requestTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      MarketPurchase: 'Compra de mercado',
+      Errand: 'Encargo',
+      ProductPickup: 'Recojo de productos',
+      PackageDelivery: 'Entrega de paquetes',
+      CompensatedFavor: 'Favor compensado',
+    };
+
+    return labels[type] ?? type;
+  }
+
+  requestRoleHint(request: CommunityRequestListItemResponse): string {
+    if (request.isMine) {
+      return 'Eres quien publicó este favor.';
+    }
+
+    if (request.isAssignedToMe) {
+      return 'Ya estás asignado a esta solicitud.';
+    }
+
+    return 'Entra al detalle para aplicar o revisar el estado.';
+  }
+
+  availabilityStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      Disconnected: 'Desconectado',
+      Available: 'Disponible',
+      Busy: 'Ocupado',
+    };
+
+    return labels[status] ?? status;
+  }
+
+  formatMatchScore(score: number): string {
+    return `${Math.round(score)}%`;
   }
 
   private toUtcString(value: string | null): string | null {
@@ -486,5 +832,20 @@ export class CommunityHubPageComponent {
     }
 
     return new Date(value).toISOString().slice(0, 16);
+  }
+
+  private wrapLoad<T>(source$: import('rxjs').Observable<T>, fallback: T, title: string) {
+    return source$.pipe(
+      map((data): HubLoadResult<T> => ({ data, warning: null })),
+      catchError((error) =>
+        of({
+          data: fallback,
+          warning: {
+            title,
+            message: getErrorMessage(error, 'Revisa tu conexión e inténtalo nuevamente.'),
+          },
+        } satisfies HubLoadResult<T>),
+      ),
+    );
   }
 }

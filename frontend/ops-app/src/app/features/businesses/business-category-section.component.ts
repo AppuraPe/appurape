@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output, input } from '@angular/core';
-import { ArrowRight, LucideAngularModule } from 'lucide-angular';
+import { ChevronRight, LucideAngularModule } from 'lucide-angular';
 import { BusinessCategorySectionResponse } from '../../core/models/businesses.models';
 import { BusinessHorizontalCardComponent } from './business-horizontal-card.component';
 
@@ -7,17 +7,24 @@ import { BusinessHorizontalCardComponent } from './business-horizontal-card.comp
   selector: 'app-business-category-section',
   standalone: true,
   imports: [LucideAngularModule, BusinessHorizontalCardComponent],
+  host: {
+    class: 'block w-full max-w-full min-w-0',
+  },
   template: `
-    <section class="mt-4 w-full lg:hidden">
-      <div class="flex items-center justify-between px-4">
-        <h2 class="min-w-0 truncate text-xl font-extrabold text-slate-950">{{ section().category.name }}</h2>
-        <button type="button" class="flex shrink-0 items-center gap-1 text-sm text-red-500" (click)="viewAll.emit(section().category.id)">
+    <section class="mt-3 w-full max-w-full min-w-0 overflow-hidden lg:hidden">
+      <div class="flex w-full max-w-full min-w-0 items-center justify-between gap-3 px-4">
+        <h2 class="min-w-0 flex-1 truncate text-xl font-extrabold text-slate-950">{{ section().category.name }}</h2>
+        <button
+          type="button"
+          class="relative z-10 flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap py-1 text-sm font-semibold text-red-500"
+          (click)="viewAll.emit(section().category.id)"
+        >
           Ver todos
-          <lucide-angular class="h-4 w-4" [img]="arrowRightIcon" aria-hidden="true"></lucide-angular>
+          <lucide-angular class="h-4 w-4" [img]="chevronRightIcon" aria-hidden="true"></lucide-angular>
         </button>
       </div>
 
-      <div class="mt-2.5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div class="mt-2 flex w-full max-w-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         @for (business of section().businesses; track business.id) {
           <app-business-horizontal-card [business]="business" />
         }
@@ -30,5 +37,5 @@ export class BusinessCategorySectionComponent {
 
   @Output() readonly viewAll = new EventEmitter<string>();
 
-  readonly arrowRightIcon = ArrowRight;
+  readonly chevronRightIcon = ChevronRight;
 }

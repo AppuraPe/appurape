@@ -87,6 +87,8 @@ export type MenuCardStatusTone = 'success' | 'warning' | 'muted';
   `,
 })
 export class MenuCardComponent {
+  private static readonly PLACEHOLDER_IMAGE = '/img/catalog-placeholder.svg';
+
   readonly title = input.required<string>();
   readonly subtitle = input('');
   readonly description = input('');
@@ -118,16 +120,16 @@ export class MenuCardComponent {
   readonly metaBadgeClass = computed(() => this.resolveToneClass(this.metaBadgeTone()));
 
   resolvedImageUrl(): string {
-    return hasText(this.imageUrl() ?? '') ? this.imageUrl()! : '/img/banner1.png';
+    return hasText(this.imageUrl() ?? '') ? this.imageUrl()! : MenuCardComponent.PLACEHOLDER_IMAGE;
   }
 
   onImageError(event: Event): void {
     const image = event.target as HTMLImageElement | null;
-    if (!image || image.src.endsWith('/img/banner1.png')) {
+    if (!image || image.src.endsWith(MenuCardComponent.PLACEHOLDER_IMAGE)) {
       return;
     }
 
-    image.src = '/img/banner1.png';
+    image.src = MenuCardComponent.PLACEHOLDER_IMAGE;
   }
 
   subtitleIcon() {

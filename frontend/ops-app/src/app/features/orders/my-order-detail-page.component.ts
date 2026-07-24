@@ -18,64 +18,93 @@ import { CustomerOrderDetailResponse } from '../../core/models/orders.models';
 import { NotificationService } from '../../core/services/notification.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
 import { getApiErrorMessage, hasText } from '../../core/utils/api-utils';
+import { ActionChipRowComponent } from '../../shared/components/action-chip-row.component';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
+import { AppButtonComponent } from '../../shared/components/app-button.component';
+import { AppNoticeComponent } from '../../shared/components/app-notice.component';
+import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
+import { BottomSafeActionBarComponent } from '../../shared/components/bottom-safe-action-bar.component';
+import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
+import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
+import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
 @Component({
   selector: 'app-my-order-detail-page',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, DatePipe, ReactiveFormsModule, LucideAngularModule, AppBackButtonComponent],
+  imports: [
+    RouterLink,
+    CurrencyPipe,
+    DatePipe,
+    ReactiveFormsModule,
+    LucideAngularModule,
+    AppBackButtonComponent,
+    MobilePageShellComponent,
+    AppSurfaceCardComponent,
+    AppButtonComponent,
+    AppNoticeComponent,
+    StatusBadgeComponent,
+    UnifiedEmptyStateComponent,
+    UnifiedLoadingStateComponent,
+    InternalPageSectionHeaderComponent,
+    ActionChipRowComponent,
+    BottomSafeActionBarComponent,
+  ],
   templateUrl: './my-order-detail-page.component.html',
 })
 export class MyOrderDetailPageComponent {
+  private static readonly PRODUCT_PLACEHOLDER_IMAGE = '/img/catalog-placeholder.svg';
+  private static readonly TRACKING_PLACEHOLDER_IMAGE = '/img/order-status-placeholder.svg';
   private readonly formBuilder = inject(FormBuilder);
   private readonly trackingStates = [
     {
       key: 'Created',
       label: 'Creado',
       description: 'Tu pedido fue registrado correctamente y ya se encuentra en cola para ser atendido.',
-      gifUrl: '/img/pedido-enviado.gif',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
       key: 'Accepted',
       label: 'Aceptado',
-      description: 'El restaurante confirmo tu pedido y ya empezo a organizar la preparacion.',
-      gifUrl: '/img/cocinando-2.gif',
+      description: 'El restaurante confirmó tu pedido y ya empezó a organizar la preparación.',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
       key: 'Preparing',
-      label: 'En preparacion',
-      description: 'La cocina esta trabajando en tu pedido para dejarlo listo cuanto antes.',
-      gifUrl: '/img/cocinando-2.gif',
+      label: 'En preparación',
+      description: 'La cocina está trabajando en tu pedido para dejarlo listo cuanto antes.',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
       key: 'ReadyForPickup',
       label: 'Listo para recoger',
-      description: 'El pedido ya esta empaquetado y esperando la siguiente etapa del envio.',
-      gifUrl: '/img/chamo-afuera.gif',
+      description: 'El pedido ya está empaquetado y esperando la siguiente etapa del envío.',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
       key: 'Assigned',
       label: 'Repartidor asignado',
-      description: 'Ya encontramos quien llevara tu pedido y se esta coordinando la salida.',
-      gifUrl: '/img/chamo-afuera.gif',
+      description: 'Ya encontramos quién llevará tu pedido y se está coordinando la salida.',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
       key: 'PickedUp',
       label: 'Recogido',
-      description: 'El pedido salio del restaurante y va rumbo a tu direccion.',
-      gifUrl: '/img/encamino.gif',
+      description: 'El pedido salió del restaurante y va rumbo a tu dirección.',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
       key: 'OnTheWay',
       label: 'En camino',
-      description: 'Tu pedido ya esta en ruta y falta poco para que llegue.',
-      gifUrl: '/img/encamino.gif',
+      description: 'Tu pedido ya está en ruta y falta poco para que llegue.',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
       key: 'Delivered',
       label: 'Entregado',
       description: 'El pedido fue entregado. Esperamos que disfrutes tu comida.',
-      gifUrl: '/img/entregado.gif',
+      gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
   ] as const;
 
@@ -183,11 +212,11 @@ export class MyOrderDetailPageComponent {
     const created = this.route.snapshot.queryParamMap.get('created');
 
     if (created === '1') {
-      this.notificationService.success('Tu pedido fue enviado al restaurante. Ahora puedes seguir su estado aqui.');
+      this.notificationService.success('Tu pedido fue enviado al restaurante. Ahora puedes seguir su estado aquí.');
     }
 
     if (!id) {
-      const message = 'No se encontro el pedido solicitado.';
+      const message = 'No se encontró el pedido solicitado.';
       this.errorMessage.set(message);
       this.notificationService.error(message);
       this.isLoading.set(false);
@@ -262,11 +291,32 @@ export class MyOrderDetailPageComponent {
   }
 
   productImageUrl(imageUrl: string | null | undefined): string {
-    return imageUrl?.trim() ? imageUrl : '/img/banner1.png';
+    return imageUrl?.trim() ? imageUrl : MyOrderDetailPageComponent.PRODUCT_PLACEHOLDER_IMAGE;
   }
 
   productImageSrcSet(imageUrl: string | null | undefined): string | null {
-    return imageUrl?.trim() ? null : '/img/banner-mb.png 767w, /img/banner1.png 1280w';
+    return imageUrl?.trim() ? null : null;
+  }
+
+  handleProductImageError(event: Event): void {
+    const image = event.target as HTMLImageElement | null;
+
+    if (!image || image.src.endsWith(MyOrderDetailPageComponent.PRODUCT_PLACEHOLDER_IMAGE)) {
+      return;
+    }
+
+    image.src = MyOrderDetailPageComponent.PRODUCT_PLACEHOLDER_IMAGE;
+    image.srcset = '';
+  }
+
+  handleTrackingImageError(event: Event): void {
+    const image = event.target as HTMLImageElement | null;
+
+    if (!image || image.src.endsWith(MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE)) {
+      return;
+    }
+
+    image.src = MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE;
   }
 
   shortOrderId(id: string): string {
@@ -277,7 +327,7 @@ export class MyOrderDetailPageComponent {
     const labels: Record<string, string> = {
       Pending: 'Pendiente',
       Accepted: 'Aceptado',
-      Preparing: 'En preparacion',
+      Preparing: 'En preparación',
       ReadyForPickup: 'Listo para recoger',
       Assigned: 'Repartidor asignado',
       PickedUp: 'En camino',
@@ -288,19 +338,33 @@ export class MyOrderDetailPageComponent {
     return labels[status] ?? status;
   }
 
-  statusClass(status: string): string {
-    const classes: Record<string, string> = {
-      Pending: 'bg-accent-500/15 text-accent-600',
-      Accepted: 'bg-loreto-rio/15 text-loreto-rio',
-      Preparing: 'bg-loreto-rio/15 text-loreto-rio',
-      ReadyForPickup: 'bg-loreto-hoja/20 text-loreto-verde',
-      Assigned: 'bg-loreto-rio/15 text-loreto-rio',
-      PickedUp: 'bg-loreto-rio/15 text-loreto-rio',
-      Delivered: 'bg-loreto-hoja/20 text-loreto-verde',
-      Cancelled: 'bg-primary-100 text-primary-700',
+  paymentMethodLabel(method: string): string {
+    const labels: Record<string, string> = {
+      Cash: 'Efectivo',
+      Yape: 'Yape',
+      Plin: 'Plin',
+      Card: 'Tarjeta',
     };
 
-    return classes[status] ?? 'bg-primary-50 text-loreto-carbon';
+    return labels[method] ?? method;
+  }
+
+  paymentStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      Pending: 'Pendiente',
+      PendingConfirmation: 'Pendiente de confirmación',
+      Paid: 'Pagado',
+      Rejected: 'Rechazado',
+      Failed: 'Fallido',
+      Refunded: 'Reembolsado',
+    };
+
+    return labels[status] ?? status;
+  }
+
+  showManualPaymentNotice(): boolean {
+    const order = this.order();
+    return !!order && ['Yape', 'Plin'].includes(order.paymentMethod) && order.paymentStatus === 'PendingConfirmation';
   }
 
   trackingStateIcon(key: string) {
