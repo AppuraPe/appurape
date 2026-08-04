@@ -14,24 +14,24 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     <section class="mx-auto grid min-h-[70vh] w-full max-w-4xl place-items-center px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <app-surface-card variant="hero" extraClass="w-full max-w-3xl">
         <div class="grid gap-5 text-center md:justify-items-center md:gap-8">
-          <div class="mx-auto hidden h-20 w-20 place-items-center rounded-[28px] bg-loreto-carbon text-white shadow-[0_20px_50px_rgba(6,25,43,0.24)] md:grid">
+          <div class="mx-auto hidden h-20 w-20 place-items-center rounded-[28px] bg-slate-950 text-white shadow-[0_20px_50px_rgba(15,23,42,0.18)] md:grid">
             <lucide-angular class="h-10 w-10" [img]="searchXIcon" aria-hidden="true"></lucide-angular>
           </div>
 
           <app-page-header
             eyebrow="404"
-            title="No encontramos esta pagina"
-            subtitle="La ruta no existe, cambio o ya no esta disponible dentro de la experiencia actual de AppuraPe."
+            title="No encontramos esta página"
+            subtitle="La ruta no existe, cambió o ya no está disponible dentro de la experiencia actual de AppuraPe."
           />
 
           <app-notice
             class="hidden md:block"
             tone="info"
-            title="Recupera el rumbo rapido"
-            message="Puedes volver al inicio, entrar al login o seguir explorando los modulos disponibles desde tu cuenta actual."
+            title="Recupera el rumbo rápido"
+            message="Puedes volver al inicio, entrar al login o seguir explorando los módulos disponibles desde tu cuenta actual."
           />
 
-          <div class="hidden gap-4 rounded-[24px] border border-[#eddad4] bg-white/80 p-5 text-left shadow-[0_12px_28px_rgba(6,25,43,0.08)] md:grid">
+          <div class="hidden gap-4 rounded-[24px] border border-slate-200 bg-white/90 p-5 text-left shadow-sm md:grid">
             <div class="flex items-start gap-3">
               <div class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary-100 text-primary-700">
                 <lucide-angular class="h-5 w-5" [img]="compassIcon" aria-hidden="true"></lucide-angular>
@@ -39,7 +39,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               <div class="grid gap-1">
                 <strong class="text-sm font-black uppercase tracking-[0.12em] text-primary-700">Sugerencia</strong>
                 <p class="text-sm leading-6 text-text-muted">
-                  Si llegaste desde un enlace antiguo, vuelve al panel principal y navega desde el menu actualizado para evitar rutas obsoletas.
+                  Si llegaste desde un enlace antiguo, vuelve al panel principal y navega desde el menú actualizado para evitar rutas obsoletas.
                 </p>
               </div>
             </div>

@@ -10,8 +10,10 @@ using IquitosDelivery.Application.DTOs.Orders;
 using IquitosDelivery.Application.DTOs.Restaurants;
 using IquitosDelivery.Application.DTOs.Search;
 using IquitosDelivery.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Moq;
 
 namespace IquitosDelivery.Tests;
@@ -242,6 +244,23 @@ public class ControllerSmokeTests
         Assert.IsType<OkObjectResult>((await controller.GetPayment(orderId, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.ConfirmPayment(orderId, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.RejectPayment(orderId, CancellationToken.None)).Result);
+    }
+
+    [Fact]
+    public void AdminPaymentsController_RequiresAdminRole()
+    {
+        var authorize = Assert.Single(typeof(AdminPaymentsController).GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true));
+        Assert.Equal("Admin", Assert.IsType<AuthorizeAttribute>(authorize).Roles);
+    }
+
+    [Fact]
+    public void AuthController_SensitiveEndpoints_HaveRateLimitingPolicies()
+    {
+        AssertEndpointRateLimit(nameof(AuthController.Login), "AuthSensitive");
+        AssertEndpointRateLimit(nameof(AuthController.StartPasswordReset), "OtpSensitive");
+        AssertEndpointRateLimit(nameof(AuthController.ResetPassword), "OtpSensitive");
+        AssertEndpointRateLimit(nameof(AuthController.VerifyCustomerRegistrationCode), "OtpSensitive");
+        AssertEndpointRateLimit(nameof(AuthController.ResendCustomerRegistrationCode), "OtpSensitive");
     }
 
     [Fact]
@@ -504,5 +523,14 @@ public class ControllerSmokeTests
         Assert.IsType<OkObjectResult>((await controller.MarkPickedUp(orderId, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.MarkOnTheWay(orderId, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.MarkDelivered(orderId, CancellationToken.None)).Result);
+    }
+
+    private static void AssertEndpointRateLimit(string methodName, string expectedPolicy)
+    {
+        var method = typeof(AuthController).GetMethod(methodName);
+        Assert.NotNull(method);
+
+        var attribute = Assert.Single(method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), inherit: true));
+        Assert.Equal(expectedPolicy, Assert.IsType<EnableRateLimitingAttribute>(attribute).PolicyName);
     }
 }

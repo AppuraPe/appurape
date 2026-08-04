@@ -72,4 +72,15 @@ public class RestaurantOrdersController : ControllerBase
         var response = await _orderService.UpdateRestaurantOrderStatusAsync(id, request, cancellationToken);
         return Ok(response);
     }
+
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(typeof(RestaurantOrderDetailResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RestaurantOrderDetailResponse>> CancelOrder(
+        Guid id,
+        [FromBody] CancelOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _orderService.CancelRestaurantOrderAsync(id, request, cancellationToken);
+        return Ok(response);
+    }
 }

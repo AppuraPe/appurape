@@ -36,12 +36,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="AppuraPe Admin"
-          title="Comunidad y confianza"
+          title="Favores y confianza"
           subtitle="Monitorea colaboradores, solicitudes comunitarias y la salud distribuida de la red."
         />
 
         <div class="page-actions">
-          <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al dashboard</app-button>
+          <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
           <app-button variant="secondary" type="button" [disabled]="isLoading()" (click)="loadCommunity()">Recargar</app-button>
         </div>
 
@@ -53,8 +53,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           <div class="stats-grid">
             <app-metric-card label="Colaboradores activos" [value]="overview()!.activeCollaboratorsCount.toString()" helper="Cuentas participando en la red" />
             <app-metric-card label="Disponibles" [value]="overview()!.availableCollaboratorsCount.toString()" helper="Listos para recibir matching" />
-            <app-metric-card label="Solicitudes abiertas" [value]="overview()!.publishedRequestsCount.toString()" helper="Pendientes de asignacion o ayuda" />
-            <app-metric-card label="Exito" [value]="overview()!.successRate + '%'" helper="Tareas cerradas correctamente" />
+            <app-metric-card label="Solicitudes abiertas" [value]="overview()!.publishedRequestsCount.toString()" helper="Pendientes de asignación o ayuda" />
+            <app-metric-card label="Éxito" [value]="overview()!.successRate + '%'" helper="Tareas cerradas correctamente" />
           </div>
 
           <app-notice
@@ -86,7 +86,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         <app-surface-card variant="page" extraClass="stack">
           <div class="section-heading">
             <h2>Solicitudes recientes</h2>
-            <span class="muted">Historial rapido de incidencias y operacion comunitaria.</span>
+            <span class="muted">Historial rápido de incidencias y operación comunitaria.</span>
           </div>
           @for (request of requests(); track request.id) {
             <div class="list-card">

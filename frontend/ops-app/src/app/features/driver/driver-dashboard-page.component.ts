@@ -33,7 +33,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
           <div class="grid gap-4">
             <app-internal-page-section-header
               eyebrow="Driver"
-              title="Panel del driver"
+              title="Inicio del driver"
               subtitle="Tu operación combina pedidos disponibles, reputación y colaboración comunitaria dentro de la misma red."
             />
 
@@ -224,7 +224,7 @@ export class DriverDashboardPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el dashboard del driver.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el inicio del driver.'));
           this.isLoading.set(false);
         },
       });

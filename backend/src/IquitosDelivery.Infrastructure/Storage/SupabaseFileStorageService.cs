@@ -9,6 +9,20 @@ namespace IquitosDelivery.Infrastructure.Storage;
 public class SupabaseFileStorageService : IFileStorageService
 {
     private const long MaxUploadSizeBytes = 5 * 1024 * 1024;
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
+
+    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    };
 
     private readonly HttpClient _httpClient;
     private readonly StorageSettings _storageSettings;
@@ -29,6 +43,7 @@ public class SupabaseFileStorageService : IFileStorageService
     {
         ValidateSettings();
         ValidateImageUpload(fileName, contentType, contentLength);
+        ValidateImageSignature(content, contentType);
 
         var normalizedPath = NormalizeObjectPath(objectPath);
         var bucket = _storageSettings.Supabase.Bucket.Trim();
@@ -49,17 +64,14 @@ public class SupabaseFileStorageService : IFileStorageService
         {
             response = await _httpClient.SendAsync(request, cancellationToken);
         }
-        catch (HttpRequestException exception)
+        catch (HttpRequestException)
         {
-            throw new AppException($"Supabase storage is unreachable. Check Storage:Supabase:Url. Details: {exception.Message}");
+            throw new AppException("Storage service is temporarily unavailable.");
         }
 
         if (!response.IsSuccessStatusCode)
         {
-            var details = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new AppException(string.IsNullOrWhiteSpace(details)
-                ? $"Supabase storage upload failed with status code {(int)response.StatusCode}."
-                : $"Supabase storage upload failed: {details}");
+            throw new AppException("The image could not be uploaded.");
         }
 
         return BuildPublicUrl(normalizedPath);
@@ -87,17 +99,14 @@ public class SupabaseFileStorageService : IFileStorageService
         {
             response = await _httpClient.SendAsync(request, cancellationToken);
         }
-        catch (HttpRequestException exception)
+        catch (HttpRequestException)
         {
-            throw new AppException($"Supabase storage is unreachable. Check Storage:Supabase:Url. Details: {exception.Message}");
+            throw new AppException("Storage service is temporarily unavailable.");
         }
 
         if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.NotFound)
         {
-            var details = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new AppException(string.IsNullOrWhiteSpace(details)
-                ? $"Supabase storage deletion failed with status code {(int)response.StatusCode}."
-                : $"Supabase storage deletion failed: {details}");
+            throw new AppException("The image could not be removed.");
         }
     }
 
@@ -131,10 +140,76 @@ public class SupabaseFileStorageService : IFileStorageService
             throw new AppException("The selected file exceeds the 5 MB limit.");
         }
 
-        if (!contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        var extension = Path.GetExtension(fileName);
+        if (!AllowedExtensions.Contains(extension))
         {
-            throw new AppException($"The file '{fileName}' must be an image.");
+            throw new AppException($"The file '{fileName}' must be a JPG, PNG, or WEBP image.");
         }
+
+        if (!AllowedContentTypes.Contains(contentType))
+        {
+            throw new AppException($"The file '{fileName}' must be a JPG, PNG, or WEBP image.");
+        }
+    }
+
+    private static void ValidateImageSignature(Stream content, string contentType)
+    {
+        if (!content.CanSeek)
+        {
+            throw new AppException("The selected file could not be inspected.");
+        }
+
+        var originalPosition = content.Position;
+        Span<byte> header = stackalloc byte[12];
+        var bytesRead = content.Read(header);
+        content.Position = originalPosition;
+
+        var isValid = contentType.ToLowerInvariant() switch
+        {
+            "image/jpeg" => IsJpeg(header, bytesRead),
+            "image/png" => IsPng(header, bytesRead),
+            "image/webp" => IsWebp(header, bytesRead),
+            _ => false
+        };
+
+        if (!isValid)
+        {
+            throw new AppException("The selected file content does not match a supported image format.");
+        }
+    }
+
+    private static bool IsJpeg(ReadOnlySpan<byte> header, int bytesRead)
+    {
+        return bytesRead >= 3 &&
+               header[0] == 0xFF &&
+               header[1] == 0xD8 &&
+               header[2] == 0xFF;
+    }
+
+    private static bool IsPng(ReadOnlySpan<byte> header, int bytesRead)
+    {
+        return bytesRead >= 8 &&
+               header[0] == 0x89 &&
+               header[1] == 0x50 &&
+               header[2] == 0x4E &&
+               header[3] == 0x47 &&
+               header[4] == 0x0D &&
+               header[5] == 0x0A &&
+               header[6] == 0x1A &&
+               header[7] == 0x0A;
+    }
+
+    private static bool IsWebp(ReadOnlySpan<byte> header, int bytesRead)
+    {
+        return bytesRead >= 12 &&
+               header[0] == 0x52 &&
+               header[1] == 0x49 &&
+               header[2] == 0x46 &&
+               header[3] == 0x46 &&
+               header[8] == 0x57 &&
+               header[9] == 0x45 &&
+               header[10] == 0x42 &&
+               header[11] == 0x50;
     }
 
     private string BuildPublicUrl(string objectPath)

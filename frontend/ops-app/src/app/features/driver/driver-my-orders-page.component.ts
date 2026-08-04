@@ -71,7 +71,7 @@ interface DriverOrderAction {
           </div>
           <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Filtro</p>
-            <p class="mt-2 text-xl font-black leading-none text-slate-950">{{ filtersForm.controls.status.value || 'Todos' }}</p>
+            <p class="mt-2 text-xl font-black leading-none text-slate-950">{{ readableOrderStatus(filtersForm.controls.status.value || 'Todos') }}</p>
             <p class="mt-1 text-xs text-slate-500">Estado visible actual</p>
           </div>
         </div>
@@ -98,11 +98,11 @@ interface DriverOrderAction {
             <span class="text-sm font-semibold text-slate-900">Estado</span>
             <select id="myOrderStatus" formControlName="status" class="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/15">
               <option value="">Todos</option>
-              <option value="Assigned">Assigned</option>
-              <option value="PickedUp">PickedUp</option>
-              <option value="OnTheWay">OnTheWay</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="Assigned">Repartidor asignado</option>
+              <option value="PickedUp">Recogido</option>
+              <option value="OnTheWay">En camino</option>
+              <option value="Delivered">Entregado</option>
+              <option value="Cancelled">Cancelado</option>
             </select>
           </label>
 
@@ -126,7 +126,7 @@ interface DriverOrderAction {
               type="button"
               (click)="filtersForm.controls.status.setValue(status)"
             >
-              {{ status }}
+              {{ readableOrderStatus(status) }}
             </button>
           }
         </app-action-chip-row>
@@ -187,7 +187,7 @@ interface DriverOrderAction {
 
                 <div class="grid gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="order.status" />
+                    <app-status-badge [status]="order.status" [label]="readableOrderStatus(order.status)" />
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-2">
@@ -305,6 +305,25 @@ export class DriverMyOrdersPageComponent {
       { emitEvent: false },
     );
     this.loadOrders();
+  }
+
+  readableOrderStatus(status: string): string {
+    switch (status) {
+      case 'Assigned':
+        return 'Repartidor asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
+      case 'Todos':
+        return 'Todos';
+      default:
+        return status;
+    }
   }
 
   getActions(status: string): DriverOrderAction[] {

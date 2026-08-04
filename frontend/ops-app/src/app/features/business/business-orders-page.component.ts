@@ -124,15 +124,15 @@ type PaymentActionMode = 'confirm' | 'reject';
               class="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/15"
             >
               <option value="">Todos</option>
-              <option value="Pending">Pending</option>
-              <option value="Accepted">Accepted</option>
-              <option value="Preparing">Preparing</option>
-              <option value="ReadyForPickup">ReadyForPickup</option>
-              <option value="Assigned">Assigned</option>
-              <option value="PickedUp">PickedUp</option>
-              <option value="OnTheWay">OnTheWay</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="Pending">Pendiente</option>
+              <option value="Accepted">Aceptado</option>
+              <option value="Preparing">En preparación</option>
+              <option value="ReadyForPickup">Listo para recoger</option>
+              <option value="Assigned">Repartidor asignado</option>
+              <option value="PickedUp">Recogido</option>
+              <option value="OnTheWay">En camino</option>
+              <option value="Delivered">Entregado</option>
+              <option value="Cancelled">Cancelado</option>
             </select>
           </label>
 
@@ -169,7 +169,7 @@ type PaymentActionMode = 'confirm' | 'reject';
               type="button"
               (click)="filtersForm.controls.status.setValue(status)"
             >
-              {{ status }}
+              {{ readableOrderStatus(status) }}
             </button>
           }
         </app-action-chip-row>
@@ -240,7 +240,7 @@ type PaymentActionMode = 'confirm' | 'reject';
                       </p>
 
                       @if (isManualPayment(order.paymentMethod)) {
-                        <div class="mt-3 rounded-2xl border border-red-100 bg-red-50/60 px-3 py-2">
+                        <div class="mt-3 rounded-2xl border border-primary-100 bg-primary-50/80 px-3 py-2">
                           <div class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-primary-700">
                             <lucide-angular class="h-3.5 w-3.5" [img]="mobileWalletIcon" aria-hidden="true"></lucide-angular>
                             Pago manual
@@ -330,7 +330,7 @@ type PaymentActionMode = 'confirm' | 'reject';
         <div class="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" (click)="closeRejectConfirmation()"></div>
         <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-lg px-3 pb-3 sm:inset-0 sm:grid sm:place-items-center sm:px-6 sm:py-8">
           <section
-            class="w-full rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_rgba(6,25,43,0.24)]"
+            class="w-full rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.22)]"
             (click)="$event.stopPropagation()"
           >
             <h2 class="text-lg font-extrabold tracking-[-0.03em] text-slate-950">¿Seguro que deseas rechazar este pedido?</h2>
@@ -352,7 +352,7 @@ type PaymentActionMode = 'confirm' | 'reject';
         <div class="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" (click)="closePaymentSheet()"></div>
         <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-2xl px-3 pb-3 sm:inset-0 sm:grid sm:place-items-center sm:px-6 sm:py-8">
           <section
-            class="w-full rounded-[28px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(6,25,43,0.24)]"
+            class="w-full rounded-[28px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.22)]"
             (click)="$event.stopPropagation()"
           >
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 sm:px-6">
@@ -563,6 +563,31 @@ export class BusinessOrdersPageComponent {
         return 'Reembolsado';
       default:
         return status || 'Sin estado';
+    }
+  }
+
+  readableOrderStatus(status: string): string {
+    switch (status) {
+      case 'Pending':
+        return 'Pendiente';
+      case 'Accepted':
+        return 'Aceptado';
+      case 'Preparing':
+        return 'En preparación';
+      case 'ReadyForPickup':
+        return 'Listo para recoger';
+      case 'Assigned':
+        return 'Repartidor asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
+      default:
+        return status;
     }
   }
 

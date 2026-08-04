@@ -14,24 +14,24 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     <section class="mx-auto grid min-h-[70vh] w-full max-w-4xl place-items-center px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <app-surface-card variant="hero" extraClass="w-full max-w-3xl">
         <div class="grid gap-5 text-center md:justify-items-center md:gap-8">
-          <div class="mx-auto hidden h-20 w-20 place-items-center rounded-[28px] bg-primary-700 text-white shadow-[0_20px_50px_rgba(229,27,35,0.28)] md:grid">
+          <div class="mx-auto hidden h-20 w-20 place-items-center rounded-[28px] bg-orange-500 text-white shadow-[0_20px_50px_rgba(249,115,22,0.22)] md:grid">
             <lucide-angular class="h-10 w-10" [img]="shieldAlertIcon" aria-hidden="true"></lucide-angular>
           </div>
 
           <app-page-header
             eyebrow="Acceso protegido"
-            title="No tienes permiso para entrar aqui"
-            subtitle="Tu sesion esta activa, pero el rol actual no puede abrir esta vista dentro de AppuraPe."
+            title="No tienes permiso para entrar aquí"
+            subtitle="Tu sesión está activa, pero el rol actual no puede abrir esta vista dentro de AppuraPe."
           />
 
           <app-notice
             class="hidden md:block"
             tone="warning"
             title="Revisa tu tipo de cuenta"
-            message="Si necesitas esta pantalla, inicia sesion con una cuenta Admin, Restaurant o Driver segun corresponda."
+            message="Si necesitas esta pantalla, inicia sesión con una cuenta Admin, Restaurant o Driver según corresponda."
           />
 
-          <div class="hidden gap-4 rounded-[24px] border border-[#eddad4] bg-white/80 p-5 text-left shadow-[0_12px_28px_rgba(6,25,43,0.08)] md:grid">
+          <div class="hidden gap-4 rounded-[24px] border border-slate-200 bg-white/90 p-5 text-left shadow-sm md:grid">
             <div class="flex items-start gap-3">
               <div class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary-100 text-primary-700">
                 <lucide-angular class="h-5 w-5" [img]="lockIcon" aria-hidden="true"></lucide-angular>
@@ -39,7 +39,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               <div class="grid gap-1">
                 <strong class="text-sm font-black uppercase tracking-[0.12em] text-primary-700">Siguiente paso recomendado</strong>
                 <p class="text-sm leading-6 text-text-muted">
-                  Vuelve al login si quieres cambiar de cuenta, o regresa al inicio para seguir navegando dentro del modulo permitido para tu rol actual.
+                  Vuelve al login si quieres cambiar de cuenta, o regresa al inicio para seguir navegando dentro del módulo permitido para tu rol actual.
                 </p>
               </div>
             </div>

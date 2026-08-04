@@ -40,15 +40,15 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
           </div>
 
           <div class="grid gap-2 sm:grid-cols-3">
-            <article class="min-w-0 rounded-[20px] border border-[#eddad4] bg-white px-4 py-3">
+            <article class="min-w-0 rounded-[20px] border border-slate-200 bg-white px-4 py-3">
               <lucide-angular class="h-4 w-4 text-primary-700" [img]="storeIcon" aria-hidden="true"></lucide-angular>
               <p class="mt-2 text-xs font-black uppercase tracking-[0.14em] text-loreto-carbon">Pide</p>
             </article>
-            <article class="min-w-0 rounded-[20px] border border-[#eddad4] bg-white px-4 py-3">
+            <article class="min-w-0 rounded-[20px] border border-slate-200 bg-white px-4 py-3">
               <lucide-angular class="h-4 w-4 text-primary-700" [img]="truckIcon" aria-hidden="true"></lucide-angular>
               <p class="mt-2 text-xs font-black uppercase tracking-[0.14em] text-loreto-carbon">Reparte</p>
             </article>
-            <article class="min-w-0 rounded-[20px] border border-[#eddad4] bg-white px-4 py-3">
+            <article class="min-w-0 rounded-[20px] border border-slate-200 bg-white px-4 py-3">
               <lucide-angular class="h-4 w-4 text-primary-700" [img]="shieldIcon" aria-hidden="true"></lucide-angular>
               <p class="mt-2 text-xs font-black uppercase tracking-[0.14em] text-loreto-carbon">Gestiona</p>
             </article>
@@ -62,7 +62,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             <form class="grid gap-4" [formGroup]="form" (ngSubmit)="submit()">
               <label class="grid gap-2">
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Email</span>
-                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="mailIcon" aria-hidden="true"></lucide-angular>
                   <input id="email" type="email" formControlName="email" placeholder="tu@correo.com" class="min-h-0 min-w-0 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                 </div>
@@ -70,7 +70,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 
               <label class="grid gap-2">
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Contraseña</span>
-                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="lockIcon" aria-hidden="true"></lucide-angular>
                   <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder="Tu contraseña" class="min-h-0 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                   <button
@@ -99,11 +99,11 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 Olvidé mi contraseña
               </a>
 
-              <div class="grid gap-3 rounded-[20px] border border-[#eddad4] bg-white p-4">
+              <div class="grid gap-3 rounded-[20px] border border-slate-200 bg-white p-4">
                 <div class="flex items-center gap-3">
-                  <span class="h-px flex-1 bg-[#eddad4]"></span>
+                  <span class="h-px flex-1 bg-slate-200"></span>
                   <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-text-muted">o sigue rápido</span>
-                  <span class="h-px flex-1 bg-[#eddad4]"></span>
+                  <span class="h-px flex-1 bg-slate-200"></span>
                 </div>
 
                 @if (isGoogleConfigured()) {
@@ -136,12 +136,12 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 }
               </div>
 
-              <div class="grid gap-3 rounded-[20px] border border-[#eddad4] bg-surface-soft p-4">
+              <div class="grid gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4">
                 <span class="text-sm font-black text-loreto-carbon">Crear cuenta</span>
                 <div class="flex flex-wrap gap-2 text-sm font-semibold text-primary-700">
-                  <a class="inline-flex min-h-11 items-center rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register">Cliente</a>
-                  <a class="inline-flex min-h-11 items-center rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/restaurant">Negocio</a>
-                  <a class="inline-flex min-h-11 items-center rounded-full border border-[#eddad4] bg-white px-3 py-2 transition hover:border-primary-200 hover:text-primary-600" routerLink="/register/driver">Driver</a>
+                  <a class="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-3 py-2 transition hover:border-orange-200 hover:text-orange-600" routerLink="/register">Cliente</a>
+                  <a class="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-3 py-2 transition hover:border-orange-200 hover:text-orange-600" routerLink="/register/restaurant">Negocio</a>
+                  <a class="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-3 py-2 transition hover:border-orange-200 hover:text-orange-600" routerLink="/register/driver">Driver</a>
                 </div>
               </div>
             </form>

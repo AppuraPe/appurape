@@ -45,8 +45,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="AppuraPe Admin"
-          title="Restaurantes"
-          subtitle="Listado completo de restaurantes registrados dentro de la red AppuraPe."
+          title="Negocios"
+          subtitle="Listado completo de negocios registrados dentro de la red AppuraPe."
         />
 
         @if (errorMessage()) {
@@ -58,12 +58,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         <app-notice
           tone="info"
           title="Estados administrativos"
-          message="Approved permite operar si el usuario esta activo. Suspended bloquea el acceso operativo aunque el restaurante exista."
+          message="Approved permite operar si el usuario está activo. Suspended bloquea el acceso operativo aunque el negocio exista."
         />
 
         <div class="stats-grid">
-          <app-metric-card label="Restaurantes" [value]="restaurants().length" helper="Registros visibles con filtros actuales" />
-          <app-metric-card label="Activos" [value]="activeRestaurantsCount()" helper="Con operacion habilitada" />
+          <app-metric-card label="Negocios" [value]="restaurants().length" helper="Registros visibles con filtros actuales" />
+          <app-metric-card label="Activos" [value]="activeRestaurantsCount()" helper="Con operación habilitada" />
           <app-metric-card label="Aprobados" [value]="approvedRestaurantsCount()" helper="Cuentas listas para operar" />
           <app-metric-card label="Con zona" [value]="zonedRestaurantsCount()" helper="Mapeados dentro de cobertura" />
         </div>
@@ -75,14 +75,14 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       >
         <form class="grid gap-4 xl:grid-cols-[minmax(0,2.2fr)_repeat(3,minmax(0,1fr))_auto]" [formGroup]="filtersForm" (ngSubmit)="loadRestaurants()">
           <label class="grid gap-2">
-            <span class="text-sm font-semibold text-loreto-carbon">Buscar restaurante</span>
-            <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 shadow-sm focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+            <span class="text-sm font-semibold text-loreto-carbon">Buscar negocio</span>
+            <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
               <lucide-angular class="h-4 w-4 text-primary-700" [img]="searchIcon" aria-hidden="true"></lucide-angular>
               <input
                 id="restaurantSearch"
                 type="search"
                 formControlName="q"
-                placeholder="Nombre, owner, email, zona o direccion"
+                placeholder="Nombre, owner, email, zona o dirección"
                 autocomplete="off"
                 class="min-h-0 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0"
               />
@@ -90,7 +90,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           </label>
 
           <label class="grid gap-2">
-            <span class="text-sm font-semibold text-loreto-carbon">Aprobacion</span>
+            <span class="text-sm font-semibold text-loreto-carbon">Aprobación</span>
             <select id="approvalStatus" formControlName="approvalStatus">
               <option value="">Todos</option>
               <option value="Pending">Pending</option>
@@ -132,18 +132,18 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       </app-surface-card>
 
       @if (isLoading()) {
-        <div class="rounded-[28px] border border-[#eddad4] bg-white px-6 py-5 text-sm font-semibold text-text-muted shadow-[0_12px_28px_rgba(6,25,43,0.08)]">
-          Cargando restaurantes...
+        <div class="rounded-[28px] border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-slate-500 shadow-sm">
+          Cargando negocios...
         </div>
       } @else if (!restaurants().length) {
         <app-surface-card variant="page">
           <div class="grid gap-4">
-            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-4 text-sm font-semibold text-text-muted">
-              No hay restaurantes con los filtros seleccionados.
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
+              No hay negocios con los filtros seleccionados.
             </div>
             <div class="flex flex-wrap gap-3">
               <app-button size="lg" type="button" (click)="clearFilters()">Limpiar filtros</app-button>
-              <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al dashboard</app-button>
+              <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
         </app-surface-card>
@@ -166,7 +166,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                         Zona
@@ -174,10 +174,10 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant.zoneName }}</p>
                     </div>
 
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="buildingIcon" aria-hidden="true"></lucide-angular>
-                        Direccion
+                        Dirección
                       </div>
                       <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant.address }}</p>
                     </div>
@@ -186,27 +186,27 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
                 <div class="grid gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="restaurant.approvalStatus" prefix="Aprobacion" />
+                    <app-status-badge [status]="restaurant.approvalStatus" prefix="Aprobación" />
                     <app-status-badge [status]="restaurant.isActive" [label]="restaurant.isActive ? 'Activo' : 'Inactivo'" />
                     <app-status-badge [status]="restaurant.userStatus" prefix="Usuario" />
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
                         Estado
                       </div>
                       <p class="mt-2 text-xl font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant.approvalStatus }}</p>
                     </div>
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="usersIcon" aria-hidden="true"></lucide-angular>
                         Owner
                       </div>
                       <p class="mt-2 text-sm font-bold text-loreto-carbon">{{ restaurant.ownerFullName }}</p>
                     </div>
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="calendarClockIcon" aria-hidden="true"></lucide-angular>
                         Registro
@@ -215,12 +215,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     </div>
                   </div>
 
-                  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <div class="flex items-center gap-2 text-sm text-text-muted">
                       <lucide-angular class="h-4 w-4 text-primary-700" [img]="calendarClockIcon" aria-hidden="true"></lucide-angular>
                       {{ restaurant.createdAtUtc | date: 'medium' }}
                     </div>
-                    <app-button variant="secondary" size="lg" [routerLink]="['/admin/restaurants', restaurant.restaurantId]">
+                    <app-button variant="secondary" size="lg" [routerLink]="['/admin/businesses', restaurant.restaurantId]">
                       Ver detalle
                     </app-button>
                   </div>
@@ -288,7 +288,7 @@ export class AdminBusinessesPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar los restaurantes.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar los negocios.'));
           this.isLoading.set(false);
         },
       });

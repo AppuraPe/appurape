@@ -13,6 +13,13 @@ namespace IquitosDelivery.Application.Services;
 
 public class OrderService : IOrderService
 {
+    private enum OrderCancellationActor
+    {
+        Customer,
+        Restaurant,
+        Admin
+    }
+
     private sealed class ResolvedDeliveryAddress
     {
         public required Zone Zone { get; init; }
@@ -249,8 +256,56 @@ public class OrderService : IOrderService
     {
         var customer = await GetCurrentCustomerAsync(cancellationToken);
 
-        var order = await _dbContext.Orders
-            .Where(x => x.Id == orderId && x.CustomerId == customer.Id)
+        return await GetCustomerOrderDetailByIdAsync(orderId, customer.Id, cancellationToken);
+    }
+
+    public async Task<CustomerOrderDetailResponse> CancelMyOrderAsync(
+        Guid orderId,
+        CancelOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var customer = await GetCurrentCustomerAsync(cancellationToken);
+        var order = await CancelCommercialOrderAsync(
+            orderId,
+            request,
+            OrderCancellationActor.Customer,
+            customer.Id,
+            restaurantId: null,
+            cancellationToken);
+
+        await NotifyBusinessAboutCustomerCancellationAsync(order, cancellationToken);
+        return await GetCustomerOrderDetailByIdAsync(order.Id, customer.Id, cancellationToken);
+    }
+
+    public async Task<CustomerOrderDetailResponse> CancelAdminOrderAsync(
+        Guid orderId,
+        CancelOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var order = await CancelCommercialOrderAsync(
+            orderId,
+            request,
+            OrderCancellationActor.Admin,
+            customerId: null,
+            restaurantId: null,
+            cancellationToken);
+
+        await NotifyCustomerAboutAdminCancellationAsync(order, cancellationToken);
+        return await GetCustomerOrderDetailByIdAsync(order.Id, customerId: null, cancellationToken);
+    }
+
+    private async Task<CustomerOrderDetailResponse> GetCustomerOrderDetailByIdAsync(
+        Guid orderId,
+        Guid? customerId,
+        CancellationToken cancellationToken)
+    {
+        var query = _dbContext.Orders.Where(x => x.Id == orderId);
+        if (customerId.HasValue)
+        {
+            query = query.Where(x => x.CustomerId == customerId.Value);
+        }
+
+        var order = await query
             .Select(x => new CustomerOrderDetailResponse
             {
                 Id = x.Id,
@@ -780,6 +835,11 @@ public class OrderService : IOrderService
     {
         await _updateOrderStatusValidator.ValidateAndThrowAsync(request, cancellationToken);
 
+        if (request.Status == OrderStatus.Cancelled)
+        {
+            return await CancelRestaurantOrderAsync(orderId, new CancelOrderRequest(), cancellationToken);
+        }
+
         var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
         var order = await _dbContext.Orders
             .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
@@ -817,6 +877,182 @@ public class OrderService : IOrderService
         await NotifyRestaurantOrderStatusChangedAsync(order, restaurant, request.Status, cancellationToken);
 
         return await GetRestaurantOrderByIdAsync(order.Id, cancellationToken);
+    }
+
+    public async Task<RestaurantOrderDetailResponse> CancelRestaurantOrderAsync(
+        Guid orderId,
+        CancelOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
+        var order = await CancelCommercialOrderAsync(
+            orderId,
+            request,
+            OrderCancellationActor.Restaurant,
+            customerId: null,
+            restaurant.Id,
+            cancellationToken);
+
+        await NotifyCustomerAboutRestaurantCancellationAsync(order, restaurant.Name, cancellationToken);
+        return await GetRestaurantOrderByIdAsync(order.Id, cancellationToken);
+    }
+
+    private async Task<Order> CancelCommercialOrderAsync(
+        Guid orderId,
+        CancelOrderRequest request,
+        OrderCancellationActor actor,
+        Guid? customerId,
+        Guid? restaurantId,
+        CancellationToken cancellationToken)
+    {
+        if (_dbContext is not DbContext dbContext)
+        {
+            throw new InvalidOperationException("Order cancellations require a DbContext-backed implementation.");
+        }
+
+        var useTransaction = dbContext.Database.IsRelational();
+        await using var transaction = useTransaction
+            ? await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken)
+            : null;
+
+        try
+        {
+            var order = await _dbContext.Orders
+                .Include(x => x.Items)
+                    .ThenInclude(x => x.MenuItem)
+                .Include(x => x.Payment)
+                .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+            if (order is null)
+            {
+                throw new NotFoundException("Order was not found.");
+            }
+
+            EnsureCancellationActorCanAccessOrder(order, actor, customerId, restaurantId);
+            EnsureOrderCanBeCancelled(order, actor);
+
+            order.Status = OrderStatus.Cancelled;
+            RestoreTrackedStock(order);
+            UpdatePaymentForCancelledOrder(order.Payment, request.Reason);
+            await CancelPendingFinancialMovementsAsync(order.Id, cancellationToken);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            return order;
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+    }
+
+    private static void EnsureCancellationActorCanAccessOrder(
+        Order order,
+        OrderCancellationActor actor,
+        Guid? customerId,
+        Guid? restaurantId)
+    {
+        if (actor == OrderCancellationActor.Customer && order.CustomerId != customerId)
+        {
+            throw new NotFoundException("Order was not found.");
+        }
+
+        if (actor == OrderCancellationActor.Restaurant && order.RestaurantId != restaurantId)
+        {
+            throw new ForbiddenException("You do not have access to this order.");
+        }
+    }
+
+    private static void EnsureOrderCanBeCancelled(Order order, OrderCancellationActor actor)
+    {
+        if (order.Status == OrderStatus.Cancelled)
+        {
+            throw new AppException("El pedido ya fue cancelado.");
+        }
+
+        var canCancel = actor switch
+        {
+            OrderCancellationActor.Customer => order.Status == OrderStatus.Pending,
+            OrderCancellationActor.Restaurant => order.Status is OrderStatus.Pending or OrderStatus.Accepted or OrderStatus.Preparing,
+            OrderCancellationActor.Admin => order.Status is OrderStatus.Pending or OrderStatus.Accepted or OrderStatus.Preparing ||
+                (order.Status == OrderStatus.ReadyForPickup && order.AssignedCourierUserId is null),
+            _ => false
+        };
+
+        if (!canCancel)
+        {
+            throw new AppException("El pedido ya no puede ser cancelado.");
+        }
+    }
+
+    private static void RestoreTrackedStock(Order order)
+    {
+        foreach (var item in order.Items)
+        {
+            var menuItem = item.MenuItem;
+            if (!menuItem.TrackStock)
+            {
+                continue;
+            }
+
+            menuItem.StockQuantity = (menuItem.StockQuantity ?? 0) + item.Quantity;
+            if (menuItem.IsActive && menuItem.StockQuantity > 0)
+            {
+                menuItem.IsAvailable = true;
+            }
+        }
+    }
+
+    private static void UpdatePaymentForCancelledOrder(Payment? payment, string? reason)
+    {
+        if (payment is null)
+        {
+            return;
+        }
+
+        var cancellationReason = NormalizeCancellationReason(reason);
+
+        if (payment.Status is PaymentStatus.Pending or PaymentStatus.PendingConfirmation)
+        {
+            payment.Status = PaymentStatus.Failed;
+            payment.FailureReason = cancellationReason;
+            return;
+        }
+
+        if (payment.Status == PaymentStatus.Paid)
+        {
+            payment.Status = PaymentStatus.Refunded;
+            payment.FailureReason = cancellationReason;
+        }
+    }
+
+    private async Task CancelPendingFinancialMovementsAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var movements = await _dbContext.FinancialMovements
+            .Where(x => x.OrderId == orderId && x.Status == FinancialMovementStatus.Pending)
+            .ToListAsync(cancellationToken);
+
+        foreach (var movement in movements)
+        {
+            movement.Status = FinancialMovementStatus.Cancelled;
+        }
+    }
+
+    private static string NormalizeCancellationReason(string? reason)
+    {
+        return string.IsNullOrWhiteSpace(reason)
+            ? "Pedido cancelado."
+            : reason.Trim();
     }
 
     private async Task<(Order order, Payment payment)> GetRestaurantOrderPaymentEntityAsync(Guid orderId, CancellationToken cancellationToken)
@@ -1001,6 +1237,60 @@ public class OrderService : IOrderService
                 Title = title,
                 Body = body,
                 Data = NotificationPayloadFactory.Order(payment.OrderId, $"/orders/{payment.OrderId}", payment.Status == PaymentStatus.Paid ? "payment_confirmed" : "payment_rejected")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyBusinessAboutCustomerCancellationAsync(Order order, CancellationToken cancellationToken)
+    {
+        var restaurantOwner = await _dbContext.Restaurants
+            .Where(x => x.Id == order.RestaurantId)
+            .Select(x => new { x.OwnerUserId, x.Name })
+            .FirstAsync(cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            restaurantOwner.OwnerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Pedido cancelado",
+                Body = $"El cliente canceló su pedido en {restaurantOwner.Name}.",
+                Data = NotificationPayloadFactory.Order(order.Id, $"/business/orders/{order.Id}", "order_cancelled")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCustomerAboutRestaurantCancellationAsync(Order order, string restaurantName, CancellationToken cancellationToken)
+    {
+        var customerUserId = await _dbContext.Customers
+            .Where(x => x.Id == order.CustomerId)
+            .Select(x => x.UserId)
+            .FirstAsync(cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            customerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Pedido cancelado",
+                Body = $"{restaurantName} canceló tu pedido.",
+                Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_cancelled")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCustomerAboutAdminCancellationAsync(Order order, CancellationToken cancellationToken)
+    {
+        var customerUserId = await _dbContext.Customers
+            .Where(x => x.Id == order.CustomerId)
+            .Select(x => x.UserId)
+            .FirstAsync(cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            customerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Pedido cancelado",
+                Body = "Tu pedido fue cancelado por soporte.",
+                Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_cancelled")
             },
             cancellationToken);
     }

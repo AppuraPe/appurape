@@ -129,7 +129,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
               <label class="grid gap-2">
                 <span class="text-sm font-semibold text-loreto-carbon">Buscar por nombre</span>
-                <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 shadow-sm focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 text-primary-700" [img]="searchIcon" aria-hidden="true"></lucide-angular>
                   <input
                     id="businessTypeSearch"
@@ -152,18 +152,18 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           </app-surface-card>
 
           @if (isLoading()) {
-            <div class="rounded-[28px] border border-[#eddad4] bg-white px-6 py-5 text-sm font-semibold text-text-muted shadow-[0_12px_28px_rgba(6,25,43,0.08)]">
+            <div class="rounded-[28px] border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-slate-500 shadow-sm">
               Cargando categorías...
             </div>
           } @else if (!filteredBusinessTypes().length) {
             <app-surface-card variant="page">
               <div class="grid gap-4">
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-4 text-sm font-semibold text-text-muted">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
                   No hay categorías que coincidan con la búsqueda actual.
                 </div>
                 <div class="flex flex-wrap gap-3">
                   <app-button size="lg" type="button" (click)="clearSearch()">Limpiar búsqueda</app-button>
-                  <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al dashboard</app-button>
+                  <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
                 </div>
               </div>
             </app-surface-card>
@@ -185,7 +185,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     </thead>
                     <tbody>
                       @for (businessType of filteredBusinessTypes(); track businessType.id) {
-                        <tr class="border-t border-[#f0dfda] align-top">
+                        <tr class="border-t border-slate-100 align-top">
                           <td class="px-4 py-4">
                             <strong class="text-base font-black text-loreto-carbon">{{ businessType.name }}</strong>
                           </td>
@@ -238,21 +238,21 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     </div>
 
                     <div class="grid gap-3 sm:grid-cols-3">
-                      <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                           <lucide-angular class="h-4 w-4" [img]="sortIcon" aria-hidden="true"></lucide-angular>
                           Orden
                         </div>
                         <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ businessType.sortOrder }}</p>
                       </div>
-                      <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                           <lucide-angular class="h-4 w-4" [img]="businessIcon" aria-hidden="true"></lucide-angular>
                           Negocios
                         </div>
                         <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ businessType.businessCount }}</p>
                       </div>
-                      <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                           <lucide-angular class="h-4 w-4" [img]="statusIcon" aria-hidden="true"></lucide-angular>
                           Estado
@@ -263,7 +263,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       </div>
                     </div>
 
-                    <div class="flex flex-wrap gap-3 rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                       <app-button type="button" variant="secondary" size="md" (click)="startEdit(businessType)">
                         <lucide-angular class="h-4 w-4" [img]="editIcon" aria-hidden="true"></lucide-angular>
                         Editar

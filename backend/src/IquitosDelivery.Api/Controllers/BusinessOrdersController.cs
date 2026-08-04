@@ -41,4 +41,15 @@ public class BusinessOrdersController : ControllerBase
         var response = await _businessOrderService.UpdateBusinessOrderStatusAsync(id, request, cancellationToken);
         return Ok(response);
     }
+
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(typeof(BusinessOrderDetailResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BusinessOrderDetailResponse>> CancelOrder(
+        Guid id,
+        [FromBody] CancelOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _businessOrderService.CancelBusinessOrderAsync(id, request, cancellationToken);
+        return Ok(response);
+    }
 }

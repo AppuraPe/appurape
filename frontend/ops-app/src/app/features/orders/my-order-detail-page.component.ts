@@ -67,7 +67,7 @@ export class MyOrderDetailPageComponent {
     {
       key: 'Accepted',
       label: 'Aceptado',
-      description: 'El restaurante confirmó tu pedido y ya empezó a organizar la preparación.',
+      description: 'El negocio confirmó tu pedido y ya empezó a organizar la preparación.',
       gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
@@ -91,7 +91,7 @@ export class MyOrderDetailPageComponent {
     {
       key: 'PickedUp',
       label: 'Recogido',
-      description: 'El pedido salió del restaurante y va rumbo a tu dirección.',
+      description: 'El pedido salió del negocio y va rumbo a tu dirección.',
       gifUrl: MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE,
     },
     {
@@ -212,7 +212,7 @@ export class MyOrderDetailPageComponent {
     const created = this.route.snapshot.queryParamMap.get('created');
 
     if (created === '1') {
-      this.notificationService.success('Tu pedido fue enviado al restaurante. Ahora puedes seguir su estado aquí.');
+      this.notificationService.success('Tu pedido fue enviado al negocio. Ahora puedes seguir su estado aquí.');
     }
 
     if (!id) {

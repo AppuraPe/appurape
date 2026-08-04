@@ -65,15 +65,15 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         @if (!categories().length && !isLoading()) {
           <app-notice
             tone="warning"
-            title="Primero crea una categoria"
-            message="No puedes publicar productos si no existe al menos una categoria activa para organizarlos."
+            title="Primero crea una categoría"
+            message="No puedes publicar productos si no existe al menos una categoría activa para organizarlos."
           />
         }
 
         <div class="stats-grid">
           <app-metric-card label="Productos" [value]="items().length" helper="Resultados visibles en la lista" />
-          <app-metric-card label="Categorias" [value]="categories().length" helper="Opciones para clasificar el menu" />
-          <app-metric-card label="Modo" [value]="editingItem() ? 'Edicion' : 'Creacion'" helper="Estado actual del formulario" />
+          <app-metric-card label="Categorías" [value]="categories().length" helper="Opciones para clasificar el menú" />
+          <app-metric-card label="Modo" [value]="editingItem() ? 'Edición' : 'Creación'" helper="Estado actual del formulario" />
         </div>
       </app-surface-card>
 
@@ -87,9 +87,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="grid gap-2">
-                <span class="text-sm font-semibold text-loreto-carbon">Categoria</span>
+                <span class="text-sm font-semibold text-loreto-carbon">Categoría</span>
                 <select id="itemCategoryId" formControlName="categoryId">
-                  <option value="">Selecciona una categoria</option>
+                  <option value="">Selecciona una categoría</option>
                   @for (category of categories(); track category.id) {
                     <option [value]="category.id">{{ category.name }}</option>
                   }
@@ -117,28 +117,28 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             </div>
 
             @if (imagePreviewUrl()) {
-              <div class="overflow-hidden rounded-[24px] border border-[#eddad4] bg-surface-soft">
+              <div class="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
                 <img class="block h-64 w-full object-cover" [src]="imagePreviewUrl()" alt="Vista previa del producto" />
               </div>
             } @else {
               <div class="grid min-h-56 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
-                La imagen del producto aparecera aqui.
+                La imagen del producto aparecerá aquí.
               </div>
             }
 
             <label class="grid gap-2">
-              <span class="text-sm font-semibold text-loreto-carbon">Descripcion</span>
+              <span class="text-sm font-semibold text-loreto-carbon">Descripción</span>
               <textarea id="itemDescription" rows="4" formControlName="description"></textarea>
             </label>
 
             @if (editingItem()) {
               <div class="grid gap-3 sm:grid-cols-2">
-                <label class="flex items-center gap-3 rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-loreto-carbon">
+                <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950">
                   <input type="checkbox" formControlName="isAvailable" />
                   <span>Disponible</span>
                 </label>
 
-                <label class="flex items-center gap-3 rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-loreto-carbon">
+                <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950">
                   <input type="checkbox" formControlName="isActive" />
                   <span>Activo</span>
                 </label>
@@ -178,13 +178,13 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           <form class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,0.8fr))_auto]" [formGroup]="filtersForm" (ngSubmit)="loadItems()">
             <label class="grid gap-2 xl:col-span-2">
               <span class="text-sm font-semibold text-loreto-carbon">Buscar producto</span>
-              <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 shadow-sm focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+              <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                 <lucide-angular class="h-4 w-4 text-primary-700" [img]="searchIcon" aria-hidden="true"></lucide-angular>
                 <input
                   id="itemSearch"
                   type="search"
                   formControlName="q"
-                  placeholder="Nombre, descripcion o categoria"
+                  placeholder="Nombre, descripción o categoría"
                   autocomplete="off"
                   class="min-h-0 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0"
                 />
@@ -192,7 +192,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             </label>
 
             <label class="grid gap-2">
-              <span class="text-sm font-semibold text-loreto-carbon">Categoria</span>
+              <span class="text-sm font-semibold text-loreto-carbon">Categoría</span>
               <select id="itemCategoryFilter" formControlName="categoryId">
                 <option value="">Todas</option>
                 @for (category of categories(); track category.id) {
@@ -232,11 +232,11 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           </form>
 
           @if (isLoading()) {
-            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
               Cargando productos...
             </div>
           } @else if (!items().length) {
-            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-4 text-sm font-semibold text-text-muted">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
               No hay productos para los filtros seleccionados.
             </div>
           } @else {
@@ -246,7 +246,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
                     <div class="grid gap-3">
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ item.name }}</strong>
-                      <span class="text-sm text-text-muted">Categoria: {{ item.categoryName }}</span>
+                      <span class="text-sm text-text-muted">Categoría: {{ item.categoryName }}</span>
                       <span class="text-sm text-text-muted">{{ item.description }}</span>
                       <span class="text-sm font-semibold text-loreto-carbon">Precio: {{ item.price | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
                     </div>
@@ -282,7 +282,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     <app-notice
                       tone="warning"
                       title="Producto oculto o limitado"
-                      message="Este producto no se muestra al publico si esta inactivo o marcado como no disponible."
+                      message="Este producto no se muestra al público si está inactivo o marcado como no disponible."
                     />
                   }
                 </app-surface-card>
@@ -368,7 +368,7 @@ export class BusinessItemsPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar productos y categorias.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar productos y categorías.'));
           this.isLoading.set(false);
         },
       });
@@ -527,7 +527,7 @@ export class BusinessItemsPageComponent {
       .subscribe({
         next: (updatedItem) => {
           this.successMessage.set(
-            `Disponibilidad actualizada: ${updatedItem.name} ahora esta ${updatedItem.isAvailable ? 'disponible' : 'no disponible'}.`,
+            `Disponibilidad actualizada: ${updatedItem.name} ahora está ${updatedItem.isAvailable ? 'disponible' : 'no disponible'}.`,
           );
           this.availabilityItemId.set(null);
           this.loadItems();

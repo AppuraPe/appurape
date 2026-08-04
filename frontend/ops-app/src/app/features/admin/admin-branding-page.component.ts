@@ -7,26 +7,27 @@ import { PlatformSettingsApiService } from '../../core/services/platform-setting
 import { PlatformSettingsResponse } from '../../core/models/platform-settings.models';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
+import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 @Component({
   selector: 'app-admin-branding-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AppNoticeComponent, AppSurfaceCardComponent, PageHeaderComponent],
+  imports: [ReactiveFormsModule, RouterLink, AppNoticeComponent, AppButtonComponent, AppSurfaceCardComponent, PageHeaderComponent],
   template: `
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="AppuraPe Admin"
-          title="Branding global"
+          title="Marca global"
           subtitle="Gestiona logo, icono, splash y datos principales de la app."
         />
 
         <app-notice
           tone="info"
           title="Nota sobre mobile"
-          message="Los assets aqui sirven para web y como fuente de branding. Cambiar iconos ya instalados en Android o iOS puede requerir una nueva build nativa."
+          message="Los assets aquí sirven para web y como fuente de branding. Cambiar iconos ya instalados en Android o iOS puede requerir una nueva build nativa."
         />
 
         @if (errorMessage()) {
@@ -45,34 +46,34 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
           <div class="grid gap-4 md:grid-cols-2">
             <label class="grid gap-2">
               <span class="text-sm font-bold text-loreto-carbon">Nombre de la app</span>
-              <input class="min-h-11 rounded-2xl border border-[#eddad4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-primary-500/20" type="text" formControlName="appName" />
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20" type="text" formControlName="appName" />
             </label>
             <label class="grid gap-2">
               <span class="text-sm font-bold text-loreto-carbon">Tagline</span>
-              <input class="min-h-11 rounded-2xl border border-[#eddad4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-primary-500/20" type="text" formControlName="tagline" />
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20" type="text" formControlName="tagline" />
             </label>
             <label class="grid gap-2">
               <span class="text-sm font-bold text-loreto-carbon">Color primario</span>
-              <input class="min-h-11 rounded-2xl border border-[#eddad4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-primary-500/20" type="text" formControlName="primaryColor" placeholder="#E51B23" />
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20" type="text" formControlName="primaryColor" placeholder="#F97316" />
             </label>
             <label class="grid gap-2">
               <span class="text-sm font-bold text-loreto-carbon">Color secundario</span>
-              <input class="min-h-11 rounded-2xl border border-[#eddad4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-primary-500/20" type="text" formControlName="secondaryColor" placeholder="#F59E0B" />
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20" type="text" formControlName="secondaryColor" placeholder="#FF7A1A" />
             </label>
             <label class="grid gap-2">
               <span class="text-sm font-bold text-loreto-carbon">Email de soporte</span>
-              <input class="min-h-11 rounded-2xl border border-[#eddad4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-primary-500/20" type="email" formControlName="supportEmail" />
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20" type="email" formControlName="supportEmail" />
             </label>
             <label class="grid gap-2">
               <span class="text-sm font-bold text-loreto-carbon">Teléfono de soporte</span>
-              <input class="min-h-11 rounded-2xl border border-[#eddad4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-primary-500/20" type="text" formControlName="supportPhone" />
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20" type="text" formControlName="supportPhone" />
             </label>
           </div>
 
           <div class="grid gap-4 lg:grid-cols-3">
-            <div class="rounded-3xl border border-[#eddad4] bg-surface-soft p-4">
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <h3 class="m-0 text-base font-black text-loreto-carbon">Logo principal</h3>
-              <div class="mt-3 grid min-h-40 place-items-center overflow-hidden rounded-2xl border border-[#eddad4] bg-white">
+              <div class="mt-3 grid min-h-40 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 @if (logoPreviewUrl()) {
                   <img class="h-40 w-full object-cover" [src]="logoPreviewUrl()!" alt="Logo principal" />
                 } @else {
@@ -82,9 +83,9 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               <input class="mt-3 block w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onFileSelected($event, 'logo')" />
             </div>
 
-            <div class="rounded-3xl border border-[#eddad4] bg-surface-soft p-4">
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <h3 class="m-0 text-base font-black text-loreto-carbon">Icono / favicon</h3>
-              <div class="mt-3 grid min-h-40 place-items-center overflow-hidden rounded-2xl border border-[#eddad4] bg-white">
+              <div class="mt-3 grid min-h-40 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 @if (appIconPreviewUrl()) {
                   <img class="h-28 w-28 rounded-3xl object-cover" [src]="appIconPreviewUrl()!" alt="Icono de la app" />
                 } @else {
@@ -94,9 +95,9 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               <input class="mt-3 block w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon" (change)="onFileSelected($event, 'appIcon')" />
             </div>
 
-            <div class="rounded-3xl border border-[#eddad4] bg-surface-soft p-4">
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <h3 class="m-0 text-base font-black text-loreto-carbon">Splash / hero</h3>
-              <div class="mt-3 grid min-h-40 place-items-center overflow-hidden rounded-2xl border border-[#eddad4] bg-white">
+              <div class="mt-3 grid min-h-40 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 @if (splashPreviewUrl()) {
                   <img class="h-40 w-full object-cover" [src]="splashPreviewUrl()!" alt="Splash de la app" />
                 } @else {
@@ -108,10 +109,10 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
           </div>
 
           <div class="flex flex-wrap gap-3">
-            <button class="button" type="submit" [disabled]="isSaving() || form.invalid">
+            <app-button type="submit" [disabled]="isSaving() || form.invalid">
               {{ isSaving() ? 'Guardando...' : 'Guardar branding' }}
-            </button>
-            <a class="button secondary" routerLink="/admin/dashboard">Volver</a>
+            </app-button>
+            <app-button variant="secondary" routerLink="/admin/dashboard">Volver</app-button>
           </div>
         </form>
       </app-surface-card>
@@ -244,7 +245,7 @@ export class AdminBrandingPageComponent {
           this.logoPreviewUrl.set(settings.logoUrl);
           this.appIconPreviewUrl.set(settings.appIconUrl);
           this.splashPreviewUrl.set(settings.splashImageUrl);
-          this.successMessage.set('Branding global actualizado correctamente.');
+          this.successMessage.set('Marca global actualizada correctamente.');
           this.isSaving.set(false);
           await this.platformSettingsApi.refresh();
         },

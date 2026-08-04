@@ -44,7 +44,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
         <app-page-header
           eyebrow="AppuraPe Admin"
           title="Detalle de driver"
-          subtitle="Informacion administrativa, evidencia documental y nivel de confianza."
+          subtitle="Información administrativa, evidencia documental y nivel de confianza."
         />
 
         <div class="flex flex-wrap gap-3">
@@ -65,7 +65,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
         }
 
         @if (isLoading()) {
-          <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
             Cargando driver...
           </div>
         } @else if (driver()) {
@@ -76,11 +76,11 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
           />
 
           <div class="stats-grid">
-            <app-metric-card label="Aprobacion" [value]="driver()!.approvalStatus" helper="Estado operativo principal" />
+            <app-metric-card label="Aprobación" [value]="driver()!.approvalStatus" helper="Estado operativo principal" />
             <app-metric-card label="Disponible" [value]="driver()!.isAvailable ? 'Disponible' : 'No disponible'" helper="Capacidad actual para tomar pedidos" />
             <app-metric-card label="Confianza" [value]="trustLevelLabel(driver()!.trustLevel)" helper="Nivel reputacional actual" />
             <app-metric-card label="Puntaje" [value]="driver()!.trustScore + '%'" helper="Score consolidado por entregas y rating" />
-            <app-metric-card label="Promedio" [value]="(driver()!.averageRating | number:'1.1-1') + '/5'" helper="Calificacion media del cliente" />
+            <app-metric-card label="Promedio" [value]="(driver()!.averageRating | number:'1.1-1') + '/5'" helper="Calificación media del cliente" />
             <app-metric-card label="Entregas" [value]="driver()!.completedDeliveriesCount" helper="Operaciones completadas" />
           </div>
 
@@ -131,28 +131,28 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               </div>
 
               <div class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mailIcon" aria-hidden="true"></lucide-angular>
                     Email
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ driver()!.email }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="phoneIcon" aria-hidden="true"></lucide-angular>
-                    Telefono
+                    Teléfono
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ driver()!.phone }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                     Zona
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ driver()!.zoneName }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="trophyIcon" aria-hidden="true"></lucide-angular>
                     Usuario
@@ -161,7 +161,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 </div>
               </div>
 
-              <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+              <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                 <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                   <lucide-angular class="h-4 w-4" [img]="starIcon" aria-hidden="true"></lucide-angular>
                   Regla de confianza
@@ -181,13 +181,13 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               </div>
 
               <div class="grid gap-4 xl:grid-cols-2">
-                <div class="rounded-[24px] border border-[#eddad4] bg-white p-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="fileIcon" aria-hidden="true"></lucide-angular>
                     Documento identidad
                   </div>
                   @if (driver()!.identityDocumentUrl) {
-                    <div class="mt-3 overflow-hidden rounded-[20px] border border-[#eddad4] bg-surface-soft">
+                    <div class="mt-3 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50">
                       <img class="block h-56 w-full object-cover" [src]="driver()!.identityDocumentUrl" [alt]="driver()!.fullName + ' documento'" />
                     </div>
                     <div class="mt-3">
@@ -196,20 +196,20 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                       </a>
                     </div>
                   } @else {
-                    <div class="mt-3 grid min-h-44 place-items-center rounded-[20px] border border-[#eddad4] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
+                    <div class="mt-3 grid min-h-44 place-items-center rounded-[20px] border border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
                       Sin documento cargado.
                     </div>
                   }
                 </div>
 
-                <div class="rounded-[24px] border border-[#eddad4] bg-white p-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="cameraIcon" aria-hidden="true"></lucide-angular>
-                    Foto vehiculo
+                    Foto vehículo
                   </div>
                   @if (driver()!.vehiclePhotoUrl) {
-                    <div class="mt-3 overflow-hidden rounded-[20px] border border-[#eddad4] bg-surface-soft">
-                      <img class="block h-56 w-full object-cover" [src]="driver()!.vehiclePhotoUrl" [alt]="driver()!.fullName + ' vehiculo'" />
+                    <div class="mt-3 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50">
+                      <img class="block h-56 w-full object-cover" [src]="driver()!.vehiclePhotoUrl" [alt]="driver()!.fullName + ' vehículo'" />
                     </div>
                     <div class="mt-3">
                       <a class="font-extrabold text-primary-700 no-underline hover:text-primary-600" [href]="driver()!.vehiclePhotoUrl" target="_blank" rel="noreferrer">
@@ -217,22 +217,22 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                       </a>
                     </div>
                   } @else {
-                    <div class="mt-3 grid min-h-44 place-items-center rounded-[20px] border border-[#eddad4] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
-                      Sin foto de vehiculo cargada.
+                    <div class="mt-3 grid min-h-44 place-items-center rounded-[20px] border border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
+                      Sin foto de vehículo cargada.
                     </div>
                   }
                 </div>
               </div>
 
               <div class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="calendarIcon" aria-hidden="true"></lucide-angular>
                     Creado
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ driver()!.createdAtUtc | date: 'medium' }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="calendarIcon" aria-hidden="true"></lucide-angular>
                     Actualizado
@@ -323,7 +323,7 @@ export class AdminDriverDetailPageComponent {
           this.actionInProgress.set(null);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, `No se pudo aplicar la accion ${action}.`));
+          this.errorMessage.set(getErrorMessage(error, `No se pudo aplicar la acción ${action}.`));
           this.actionInProgress.set(null);
         },
       });

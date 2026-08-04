@@ -38,7 +38,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
         <app-page-header
           eyebrow="AppuraPe Business"
           title="Perfil del negocio"
-          subtitle="Actualiza la cara publica del negocio con una interfaz mas clara y moderna."
+          subtitle="Actualiza la cara pública del negocio con una interfaz más clara y moderna."
         />
 
         @if (errorMessage()) {
@@ -54,15 +54,15 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
         }
 
         @if (isLoading()) {
-          <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
             Cargando perfil...
           </div>
         } @else if (restaurant()) {
           @if (restaurant()!.approvalStatus === 'Pending') {
             <app-notice
               tone="warning"
-              title="Pendiente de aprobacion"
-              message="Tu negocio aun no aparece al publico porque sigue pendiente de aprobacion administrativa."
+              title="Pendiente de aprobación"
+              message="Tu negocio aún no aparece al público porque sigue pendiente de aprobación administrativa."
             />
           }
 
@@ -70,14 +70,14 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             <app-notice
               tone="success"
               title="Visible para operar"
-              message="Tu negocio esta aprobado y activo. Mantener perfil, horario y catalogo actualizados ayuda a evitar pedidos incorrectos."
+              message="Tu negocio está aprobado y activo. Mantener perfil, horario y catálogo actualizados ayuda a evitar pedidos incorrectos."
             />
           }
 
           @if (!restaurant()!.isActive || restaurant()!.approvalStatus === 'Rejected') {
             <app-notice
               tone="danger"
-              title="No disponible al publico"
+              title="No disponible al público"
               message="Tu negocio no puede recibir pedidos mientras este inactivo, rechazado o suspendido."
             />
           }
@@ -85,7 +85,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
           <div class="stats-grid">
             <app-metric-card label="Zona" [value]="restaurant()!.zoneName" helper="Cobertura operativa actual" />
             <app-metric-card label="Estado" [value]="restaurant()!.isActive ? 'Activo' : 'Inactivo'" helper="Visibilidad operativa" />
-            <app-metric-card label="Aprobacion" [value]="restaurant()!.approvalStatus" helper="Control administrativo" />
+            <app-metric-card label="Aprobación" [value]="restaurant()!.approvalStatus" helper="Control administrativo" />
           </div>
         }
       </app-surface-card>
@@ -105,16 +105,16 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               </div>
 
               @if (logoPreviewUrl()) {
-                <div class="overflow-hidden rounded-[24px] border border-[#eddad4] bg-surface-soft">
+                <div class="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
                   <img class="block h-64 w-full object-cover" [src]="logoPreviewUrl()" alt="Logo del negocio" />
                 </div>
               } @else {
                 <div class="grid min-h-56 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
-                  El logo del negocio aparecera aqui.
+                  El logo del negocio aparecerá aquí.
                 </div>
               }
 
-              <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+              <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                 <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                   <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
                   Identidad visual
@@ -172,21 +172,21 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               <input type="hidden" formControlName="logoUrl" />
 
               <div class="grid gap-3 sm:grid-cols-3">
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                     Zona
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.zoneName }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
-                    Aprobacion
+                    Aprobación
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.approvalStatus }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="clockIcon" aria-hidden="true"></lucide-angular>
                     Horario

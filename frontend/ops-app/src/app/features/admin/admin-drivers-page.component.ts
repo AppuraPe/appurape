@@ -58,14 +58,14 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
         <app-notice
           tone="info"
-          title="Disponibilidad y aprobacion"
-          message="Un driver solo puede operar si esta aprobado y su usuario esta activo. La disponibilidad indica si puede recibir o tomar pedidos."
+          title="Disponibilidad y aprobación"
+          message="Un driver solo puede operar si está aprobado y su usuario está activo. La disponibilidad indica si puede recibir o tomar pedidos."
         />
 
         <div class="stats-grid">
           <app-metric-card label="Drivers" [value]="drivers().length" helper="Registros visibles con los filtros actuales" />
-          <app-metric-card label="Disponibles" [value]="availableDriversCount()" helper="Listos para pedidos o colaboracion" />
-          <app-metric-card label="De confianza" [value]="trustedDriversCount()" helper="Drivers con reputacion consolidada" />
+          <app-metric-card label="Disponibles" [value]="availableDriversCount()" helper="Listos para pedidos o colaboración" />
+          <app-metric-card label="De confianza" [value]="trustedDriversCount()" helper="Drivers con reputación consolidada" />
           <app-metric-card label="Promedio" [value]="averageTrustScore() + '%'" helper="Puntaje medio de confianza" />
         </div>
       </app-surface-card>
@@ -77,7 +77,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         <form class="grid gap-4 xl:grid-cols-[minmax(0,2.2fr)_repeat(3,minmax(0,1fr))_auto]" [formGroup]="filtersForm" (ngSubmit)="loadDrivers()">
           <label class="grid gap-2">
             <span class="text-sm font-semibold text-loreto-carbon">Buscar driver</span>
-            <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 shadow-sm focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+            <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
               <lucide-angular class="h-4 w-4 text-primary-700" [img]="searchIcon" aria-hidden="true"></lucide-angular>
               <input
                 id="driverSearch"
@@ -91,7 +91,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           </label>
 
           <label class="grid gap-2">
-            <span class="text-sm font-semibold text-loreto-carbon">Aprobacion</span>
+            <span class="text-sm font-semibold text-loreto-carbon">Aprobación</span>
             <select id="approvalStatus" formControlName="approvalStatus">
               <option value="">Todos</option>
               <option value="Pending">Pending</option>
@@ -133,18 +133,18 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       </app-surface-card>
 
       @if (isLoading()) {
-        <div class="rounded-[28px] border border-[#eddad4] bg-white px-6 py-5 text-sm font-semibold text-text-muted shadow-[0_12px_28px_rgba(6,25,43,0.08)]">
+        <div class="rounded-[28px] border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-slate-500 shadow-sm">
           Cargando drivers...
         </div>
       } @else if (!drivers().length) {
         <app-surface-card variant="page">
           <div class="grid gap-4">
-            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-4 text-sm font-semibold text-text-muted">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
               No hay drivers con los filtros seleccionados.
             </div>
             <div class="flex flex-wrap gap-3">
               <app-button size="lg" type="button" (click)="clearFilters()">Limpiar filtros</app-button>
-              <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al dashboard</app-button>
+              <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
         </app-surface-card>
@@ -165,15 +165,15 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
-                        Vehiculo
+                        Vehículo
                       </div>
                       <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ driver.vehicleType }} - {{ driver.plate }}</p>
                     </div>
 
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                         Zona
@@ -185,28 +185,28 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
                 <div class="grid gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="driver.approvalStatus" prefix="Aprobacion" />
+                    <app-status-badge [status]="driver.approvalStatus" prefix="Aprobación" />
                     <app-status-badge [status]="driver.isAvailable" [label]="driver.isAvailable ? 'Disponible' : 'No disponible'" />
                     <app-status-badge [status]="driver.trustLevel" prefix="Confianza" [label]="trustLevelLabel(driver.trustLevel)" />
                     <app-status-badge [status]="driver.userStatus" prefix="Usuario" />
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
                         Puntaje
                       </div>
                       <p class="mt-2 text-xl font-black tracking-[-0.03em] text-loreto-carbon">{{ driver.trustScore }}%</p>
                     </div>
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="starIcon" aria-hidden="true"></lucide-angular>
                         Rating
                       </div>
                       <p class="mt-2 text-xl font-black tracking-[-0.03em] text-loreto-carbon">{{ driver.averageRating | number:'1.1-1' }}/5</p>
                     </div>
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="usersIcon" aria-hidden="true"></lucide-angular>
                         Entregas
@@ -215,7 +215,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     </div>
                   </div>
 
-                  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <div class="flex items-center gap-2 text-sm text-text-muted">
                       <lucide-angular class="h-4 w-4 text-primary-700" [img]="calendarClockIcon" aria-hidden="true"></lucide-angular>
                       {{ driver.createdAtUtc | date: 'medium' }}

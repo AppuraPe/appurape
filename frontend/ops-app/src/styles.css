@@ -5,43 +5,43 @@
   --font-ui: "Aptos", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   --font-display: "Aptos", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 
-  --color-primary-50: #fff3f2;
-  --color-primary-100: #ffe0de;
-  --color-primary-500: #ff5a54;
-  --color-primary-600: #f33630;
-  --color-primary-700: #e51b23;
-  --color-primary-800: #c9141b;
-  --color-primary-900: #06192b;
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #fff3ea;
+  --color-primary-500: #ff7a1a;
+  --color-primary-600: #ea580c;
+  --color-primary-700: #f97316;
+  --color-primary-800: #c2410c;
+  --color-primary-900: #0f172a;
 
-  --color-accent-500: #ff7a59;
-  --color-accent-600: #ff6b4a;
+  --color-accent-500: #ff7a1a;
+  --color-accent-600: #f97316;
 
-  --color-surface-0: #fffdfb;
+  --color-surface-0: #f8fafc;
   --color-surface-1: #ffffff;
-  --color-surface-2: #fff6f4;
-  --color-surface-3: #f6eeec;
+  --color-surface-2: #fff3ea;
+  --color-surface-3: #f1f5f9;
   --color-surface-card: #ffffff;
-  --color-surface-soft: #fff7f5;
+  --color-surface-soft: #fff3ea;
 
-  --color-loreto-carbon: #06192b;
-  --color-loreto-cecina: #4b5563;
-  --color-loreto-crema: #f1e4df;
-  --color-loreto-hoja: #dbe7df;
+  --color-loreto-carbon: #0f172a;
+  --color-loreto-cecina: #64748b;
+  --color-loreto-crema: #fff3ea;
+  --color-loreto-hoja: #dcfce7;
   --color-loreto-rio: #2563eb;
-  --color-loreto-tacacho: #e9d4ce;
-  --color-loreto-verde: #0f8a5f;
+  --color-loreto-tacacho: #e5eaf2;
+  --color-loreto-verde: #10b981;
 
-  --color-border: #eddad4;
-  --color-border-strong: #d9c0b8;
-  --color-text-strong: #06192b;
-  --color-text-muted: #667085;
+  --color-border: #e5eaf2;
+  --color-border-strong: #cbd5e1;
+  --color-text-strong: #0f172a;
+  --color-text-muted: #64748b;
   --color-info: #2563eb;
-  --color-success: #0f8a5f;
-  --color-warning: #c9771e;
-  --color-danger: #c1121f;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
 
-  --shadow-loreto: 0 18px 48px rgba(6, 25, 43, 0.12);
-  --shadow-soft: 0 12px 28px rgba(6, 25, 43, 0.08);
+  --shadow-loreto: 0 18px 48px rgba(15, 23, 42, 0.12);
+  --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 @layer base {
@@ -54,9 +54,9 @@
     @apply m-0 min-h-full bg-surface-0 text-loreto-carbon antialiased;
     scroll-behavior: smooth;
     background-image:
-      radial-gradient(circle at 10% 0%, rgba(229, 27, 35, 0.08), transparent 28%),
-      radial-gradient(circle at 90% 8%, rgba(6, 25, 43, 0.07), transparent 28%),
-      linear-gradient(180deg, #fffefd 0%, #fff7f5 100%);
+      radial-gradient(circle at 10% 0%, rgba(249, 115, 22, 0.08), transparent 28%),
+      radial-gradient(circle at 90% 8%, rgba(15, 23, 42, 0.05), transparent 28%),
+      linear-gradient(180deg, #f8fafc 0%, #f9fafb 100%);
   }
 
   body {
@@ -74,8 +74,8 @@
   }
 
   ::selection {
-    background: rgba(229, 27, 35, 0.18);
-    color: #06192b;
+    background: rgba(249, 115, 22, 0.18);
+    color: #0f172a;
   }
 
   button,
@@ -96,11 +96,11 @@
   input:not([type='checkbox']):not([type='radio']),
   select,
   textarea {
-    @apply min-h-11 w-full rounded-2xl border border-[#ddc8c1] bg-white px-4 py-2 text-sm text-loreto-carbon shadow-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15;
+    @apply min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-loreto-carbon shadow-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15;
   }
 
   input[type='checkbox'] {
-    @apply h-5 w-5 rounded border-[#d9c0b8] text-primary-700 accent-primary-700;
+    @apply h-5 w-5 rounded border-slate-300 text-primary-700 accent-primary-700;
   }
 
   h1,
@@ -139,7 +139,7 @@
 }
 
 @utility page-card {
-  @apply rounded-[22px] border border-[#eddad4] bg-white/95 p-4 shadow-soft backdrop-blur-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-7 lg:shadow-loreto;
+  @apply rounded-[22px] border border-slate-200 bg-white/95 p-4 shadow-soft backdrop-blur-sm sm:rounded-[24px] sm:p-5 lg:rounded-[28px] lg:p-7 lg:shadow-loreto;
 }
 
 @utility elevated {
@@ -167,7 +167,7 @@
 }
 
 @utility badge {
-  @apply inline-flex min-h-8 items-center rounded-full border border-[#eddad4] bg-surface-soft px-3 py-1 text-xs font-extrabold uppercase tracking-[0.08em] text-loreto-carbon;
+  @apply inline-flex min-h-8 items-center rounded-full border border-slate-200 bg-surface-soft px-3 py-1 text-xs font-extrabold uppercase tracking-[0.08em] text-loreto-carbon;
 }
 
 @utility text-link {
@@ -203,15 +203,15 @@
 }
 
 @utility secondary {
-  @apply border border-[#eddad4] bg-surface-soft text-loreto-carbon shadow-none hover:bg-[#fff0ec];
+  @apply border border-slate-200 bg-surface-soft text-loreto-carbon shadow-none hover:bg-primary-50;
 }
 
 @utility danger {
-  @apply bg-danger text-white hover:bg-[#a50f19];
+  @apply bg-danger text-white hover:bg-red-600;
 }
 
 @utility ghost {
-  @apply border border-[#d9c0b8] bg-transparent text-primary-700 shadow-none hover:bg-white;
+  @apply border border-slate-200 bg-transparent text-primary-700 shadow-none hover:bg-white;
 }
 
 @utility primary-action {
@@ -227,7 +227,7 @@
 }
 
 @utility filters-grid {
-  @apply mb-4 grid items-end gap-4 rounded-[22px] border border-[#eddad4] bg-surface-soft p-4;
+  @apply mb-4 grid items-end gap-4 rounded-[22px] border border-slate-200 bg-surface-soft p-4;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
@@ -264,7 +264,7 @@
 }
 
 @utility stat-card {
-  @apply grid gap-1 rounded-[22px] border border-[#eddad4] bg-surface-soft p-4 shadow-soft;
+  @apply grid gap-1 rounded-[22px] border border-slate-200 bg-white p-4 shadow-soft;
 }
 
 @utility section-heading {
@@ -276,7 +276,7 @@
 }
 
 @utility message {
-  @apply rounded-[20px] border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-loreto-carbon;
+  @apply rounded-[20px] border border-slate-200 bg-surface-soft px-4 py-3 text-sm font-semibold text-loreto-carbon;
 }
 
 @utility error {
@@ -296,11 +296,11 @@
 }
 
 @utility list-card {
-  @apply grid gap-2 rounded-[22px] border border-[#eddad4] bg-white p-4 text-left no-underline shadow-soft transition duration-150 hover:-translate-y-0.5 hover:shadow-loreto;
+  @apply grid gap-2 rounded-[22px] border border-slate-200 bg-white p-4 text-left no-underline shadow-soft transition duration-150 hover:-translate-y-0.5 hover:shadow-loreto;
 }
 
 @utility preview-card {
-  @apply overflow-hidden rounded-[20px] border border-[#eddad4] bg-surface-soft;
+  @apply overflow-hidden rounded-[20px] border border-slate-200 bg-surface-soft;
 }
 
 @utility preview-empty {
@@ -320,7 +320,7 @@
 }
 
 @utility hero-card {
-  @apply rounded-[24px] border border-[#eddad4] bg-gradient-to-br from-white via-[#fff4f2] to-[#ffe4e1] p-5 shadow-soft sm:rounded-[28px] sm:p-6 lg:rounded-[32px] lg:p-8 lg:shadow-loreto;
+  @apply rounded-[24px] border border-slate-200 bg-gradient-to-br from-white via-primary-50 to-primary-100 p-5 shadow-soft sm:rounded-[28px] sm:p-6 lg:rounded-[32px] lg:p-8 lg:shadow-loreto;
 }
 
 @utility hero-actions {
@@ -332,7 +332,7 @@
 }
 
 @utility app-card {
-  @apply rounded-[20px] border border-[#eddad4] bg-white p-4 shadow-soft sm:rounded-[22px] sm:p-5 lg:rounded-[24px];
+  @apply rounded-[20px] border border-slate-200 bg-white p-4 shadow-soft sm:rounded-[22px] sm:p-5 lg:rounded-[24px];
 }
 
 @utility metric-value {

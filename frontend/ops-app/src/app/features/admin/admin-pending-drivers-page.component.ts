@@ -61,21 +61,21 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         <app-notice
           tone="warning"
           title="Acceso operativo controlado"
-          message="Aprobar habilita al driver para tomar pedidos y tareas comunitarias. Rechazar mantiene la cuenta fuera de operacion mientras se revisa su documentacion."
+          message="Aprobar habilita al driver para tomar pedidos y tareas comunitarias. Rechazar mantiene la cuenta fuera de operación mientras se revisa su documentación."
         />
 
         <div class="stats-grid">
-          <app-metric-card label="Pendientes" [value]="drivers().length" helper="Drivers esperando aprobacion" />
+          <app-metric-card label="Pendientes" [value]="drivers().length" helper="Drivers esperando aprobación" />
           <app-metric-card label="Disponibles" [value]="availableDriversCount()" helper="Perfiles que ya se marcaron como disponibles" />
           <app-metric-card label="Confiables" [value]="trustedDriversCount()" helper="Drivers que llegan con historial alto" />
           <app-metric-card label="Rating medio" [value]="averageRatingLabel()" helper="Promedio de calidad de servicio" />
         </div>
       </app-surface-card>
 
-      <app-surface-card variant="page" extraClass="bg-gradient-to-br from-white via-[#fff8f6] to-[#fff0ed]">
+      <app-surface-card variant="page" extraClass="bg-gradient-to-br from-white via-primary-50 to-slate-50">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="grid gap-1">
-            <span class="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Cola de aprobacion</span>
+            <span class="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Cola de aprobación</span>
             <p class="text-sm text-text-muted">Verifica disponibilidad, documentos y nivel de confianza antes de activar.</p>
           </div>
           <app-button variant="ghost" [disabled]="isLoading() || !!actionDriverId()" (click)="loadDrivers()">
@@ -86,7 +86,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       </app-surface-card>
 
       @if (isLoading()) {
-        <div class="rounded-[28px] border border-[#eddad4] bg-white px-6 py-5 text-sm font-semibold text-text-muted shadow-[0_12px_28px_rgba(6,25,43,0.08)]">
+        <div class="rounded-[28px] border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-text-muted shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
           Cargando drivers pendientes...
         </div>
       } @else if (!drivers().length) {
@@ -98,12 +98,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             <div class="grid gap-2">
               <h2 class="text-2xl font-black tracking-[-0.04em] text-loreto-carbon">No hay drivers pendientes</h2>
               <p class="max-w-2xl text-sm leading-6 text-text-muted md:text-base">
-                La cola de aprobacion esta despejada. Puedes revisar el listado general o volver al dashboard administrativo.
+                La cola de aprobación está despejada. Puedes revisar el listado general o volver al inicio administrativo.
               </p>
             </div>
             <div class="flex flex-wrap justify-center gap-3">
               <app-button size="lg" [routerLink]="'/admin/drivers'">Ver todos los drivers</app-button>
-              <app-button size="lg" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al dashboard</app-button>
+              <app-button size="lg" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
         </app-surface-card>
@@ -119,20 +119,20 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     </div>
                     <div class="grid gap-1">
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ driver.fullName }}</strong>
-                      <span class="text-sm text-text-muted">{{ driver.email }} � {{ driver.phone }}</span>
+                      <span class="text-sm text-text-muted">{{ driver.email }} · {{ driver.phone }}</span>
                     </div>
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-primary-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
-                        Vehiculo
+                        Vehículo
                       </div>
                       <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ driver.vehicleType }} - {{ driver.plate }}</p>
                     </div>
 
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-primary-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                         Zona
@@ -144,27 +144,27 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
                 <div class="grid gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="driver.approvalStatus" prefix="Aprobacion" />
+                    <app-status-badge [status]="driver.approvalStatus" prefix="Aprobación" />
                     <app-status-badge [status]="driver.isAvailable" [label]="driver.isAvailable ? 'Disponible' : 'No disponible'" />
                     <app-status-badge [status]="driver.trustLevel" prefix="Confianza" [label]="trustLevelLabel(driver.trustLevel)" />
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
                         Puntaje
                       </div>
                       <p class="mt-2 text-xl font-black tracking-[-0.03em] text-loreto-carbon">{{ driver.trustScore }}%</p>
                     </div>
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="starIcon" aria-hidden="true"></lucide-angular>
                         Rating
                       </div>
                       <p class="mt-2 text-xl font-black tracking-[-0.03em] text-loreto-carbon">{{ driver.averageRating | number:'1.1-1' }}/5</p>
                     </div>
-                    <div class="rounded-2xl border border-[#eddad4] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="usersIcon" aria-hidden="true"></lucide-angular>
                         Entregas
@@ -173,9 +173,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     </div>
                   </div>
 
-                  <div class="grid gap-3 rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm text-text-muted">
-                      Este perfil esta en espera de aprobacion administrativa para empezar a operar en pedidos y colaboraciones.
+                  <div class="grid gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+                    <div class="rounded-2xl border border-slate-200 bg-primary-50 px-4 py-3 text-sm text-text-muted">
+                      Este perfil está en espera de aprobación administrativa para empezar a operar en pedidos y colaboraciones.
                     </div>
 
                     <div class="flex flex-wrap gap-3">

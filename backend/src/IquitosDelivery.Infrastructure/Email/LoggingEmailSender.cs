@@ -1,4 +1,5 @@
 using IquitosDelivery.Application.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace IquitosDelivery.Infrastructure.Email;
@@ -8,10 +9,12 @@ public class LoggingEmailSender : IEmailSender
     private const string VerificationSubject = "Codigo de verificacion";
     private const string PasswordResetSubject = "Recupera tu contraseña en AppuraPe";
 
+    private readonly IConfiguration _configuration;
     private readonly ILogger<LoggingEmailSender> _logger;
 
-    public LoggingEmailSender(ILogger<LoggingEmailSender> logger)
+    public LoggingEmailSender(IConfiguration configuration, ILogger<LoggingEmailSender> logger)
     {
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -31,9 +34,9 @@ public class LoggingEmailSender : IEmailSender
             ExpiresInMinutes: {ExpiresInMinutes}
             RecipientName: {RecipientName}
             """,
-            toEmail,
+            MaskEmail(toEmail),
             VerificationSubject,
-            code,
+            GetLoggableCode(code),
             expiresInMinutes,
             recipientName);
 
@@ -57,12 +60,33 @@ public class LoggingEmailSender : IEmailSender
             RecipientName: {RecipientName}
             Note: Usa este codigo para actualizar tu contraseña. Si no hiciste esta solicitud, ignora este mensaje.
             """,
-            toEmail,
+            MaskEmail(toEmail),
             PasswordResetSubject,
-            code,
+            GetLoggableCode(code),
             expiresInMinutes,
             recipientName);
 
         return Task.CompletedTask;
+    }
+
+    private string GetLoggableCode(string code)
+    {
+        return _configuration.GetValue<bool>("Email:Logging:RevealCodes")
+            ? code
+            : "[hidden]";
+    }
+
+    private static string MaskEmail(string email)
+    {
+        var trimmed = email.Trim();
+        var atIndex = trimmed.IndexOf('@');
+        if (atIndex <= 1)
+        {
+            return "***";
+        }
+
+        var local = trimmed[..atIndex];
+        var domain = trimmed[(atIndex + 1)..];
+        return $"{local[0]}***@{domain}";
     }
 }

@@ -82,7 +82,7 @@ interface DriverAction {
               </div>
 
               <div class="flex flex-wrap items-center gap-2">
-                <app-status-badge [status]="order.status" />
+                <app-status-badge [status]="order.status" [label]="readableOrderStatus(order.status)" />
                 <app-status-badge [status]="order.paymentStatus" [label]="paymentStatusLabel(order.paymentStatus)" prefix="Pago" />
               </div>
 
@@ -313,6 +313,25 @@ export class DriverOrderDetailPageComponent {
     };
 
     return labels[status] ?? status;
+  }
+
+  readableOrderStatus(status: string): string {
+    switch (status) {
+      case 'ReadyForPickup':
+        return 'Listo para recoger';
+      case 'Assigned':
+        return 'Repartidor asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
+      default:
+        return status;
+    }
   }
 
   private getActions(status: string): DriverAction[] {

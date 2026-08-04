@@ -65,7 +65,7 @@ public class SmtpEmailSender : IEmailSender
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Verification email could not be sent to {Email}.", toEmail);
+            _logger.LogError(exception, "Verification email could not be sent to {Email}.", MaskEmail(toEmail));
             throw exception is AppException appException
                 ? appException
                 : new AppException("Verification email could not be sent.");
@@ -119,10 +119,24 @@ public class SmtpEmailSender : IEmailSender
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Password reset email could not be sent to {Email}.", toEmail);
+            _logger.LogError(exception, "Password reset email could not be sent to {Email}.", MaskEmail(toEmail));
             throw exception is AppException appException
                 ? appException
                 : new AppException("Password reset email could not be sent.");
         }
+    }
+
+    private static string MaskEmail(string email)
+    {
+        var trimmed = email.Trim();
+        var atIndex = trimmed.IndexOf('@');
+        if (atIndex <= 1)
+        {
+            return "***";
+        }
+
+        var local = trimmed[..atIndex];
+        var domain = trimmed[(atIndex + 1)..];
+        return $"{local[0]}***@{domain}";
     }
 }

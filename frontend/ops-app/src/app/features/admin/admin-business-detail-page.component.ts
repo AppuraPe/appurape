@@ -45,13 +45,13 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="AppuraPe Admin"
-          title="Detalle de restaurante"
-          subtitle="Informacion administrativa, branding y control operativo."
+          title="Detalle de negocio"
+          subtitle="Información administrativa, branding y control operativo."
         />
 
         <div class="flex flex-wrap gap-3">
-          <app-button variant="ghost" [routerLink]="'/admin/restaurants'">Volver a restaurantes</app-button>
-          <app-button variant="secondary" [routerLink]="'/admin/restaurants/pending'">Pendientes</app-button>
+          <app-button variant="ghost" [routerLink]="'/admin/businesses'">Volver a negocios</app-button>
+          <app-button variant="secondary" [routerLink]="'/admin/businesses/pending'">Pendientes</app-button>
         </div>
 
         @if (errorMessage()) {
@@ -67,18 +67,18 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
         }
 
         @if (isLoading()) {
-          <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
-            Cargando restaurante...
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+            Cargando negocio...
           </div>
         } @else if (restaurant()) {
           <app-notice
             tone="warning"
             title="Impacto de las acciones"
-            message="Approve habilita la operacion, Reject impide operar, Suspend bloquea temporalmente y Reactivate devuelve el acceso si el estado lo permite."
+            message="Approve habilita la operación, Reject impide operar, Suspend bloquea temporalmente y Reactivate devuelve el acceso si el estado lo permite."
           />
 
           <div class="stats-grid">
-            <app-metric-card label="Aprobacion" [value]="restaurant()!.approvalStatus" helper="Estado administrativo principal" />
+            <app-metric-card label="Aprobación" [value]="restaurant()!.approvalStatus" helper="Estado administrativo principal" />
             <app-metric-card label="Activo" [value]="restaurant()!.isActive ? 'Activo' : 'Inactivo'" helper="Disponibilidad operativa" />
             <app-metric-card label="Usuario" [value]="restaurant()!.userStatus" helper="Estado de la cuenta propietaria" />
           </div>
@@ -109,40 +109,40 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 </div>
                 <div class="grid gap-1">
                   <h2 class="mb-0 text-2xl font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant()!.name }}</h2>
-                  <p class="text-sm text-text-muted">{{ restaurant()!.description || 'Sin descripcion registrada.' }}</p>
+                  <p class="text-sm text-text-muted">{{ restaurant()!.description || 'Sin descripción registrada.' }}</p>
                 </div>
               </div>
 
               <div class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="buildingIcon" aria-hidden="true"></lucide-angular>
                     Owner
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.ownerFullName }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mailIcon" aria-hidden="true"></lucide-angular>
                     Email
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.ownerEmail }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="phoneIcon" aria-hidden="true"></lucide-angular>
-                    Telefono
+                    Teléfono
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.ownerPhone }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="storeIcon" aria-hidden="true"></lucide-angular>
                     Categoría
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.businessTypeName || 'Sin categoría' }}</p>
                 </div>
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                     Zona
@@ -151,14 +151,14 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 </div>
               </div>
 
-              <div class="rounded-[24px] border border-[#eddad4] bg-white p-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+              <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                   <lucide-angular class="h-4 w-4" [img]="storeIcon" aria-hidden="true"></lucide-angular>
                   Logo
                 </div>
 
                 @if (restaurant()!.logoUrl) {
-                  <div class="mt-3 overflow-hidden rounded-[20px] border border-[#eddad4] bg-surface-soft">
+                  <div class="mt-3 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50">
                     <img class="block h-56 w-full object-cover" [src]="restaurant()!.logoUrl" [alt]="restaurant()!.name" />
                   </div>
                   <div class="mt-3">
@@ -167,7 +167,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                     </a>
                   </div>
                 } @else {
-                  <div class="mt-3 grid min-h-44 place-items-center rounded-[20px] border border-[#eddad4] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
+                  <div class="mt-3 grid min-h-44 place-items-center rounded-[20px] border border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
                     Sin logo cargado.
                   </div>
                 }
@@ -179,11 +179,11 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             <div class="grid gap-4">
               <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
                 <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
-                Operacion
+                Operación
               </div>
 
               <div class="grid gap-3">
-                <form class="rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]" [formGroup]="businessTypeForm" (ngSubmit)="updateBusinessType()">
+                <form class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm" [formGroup]="businessTypeForm" (ngSubmit)="updateBusinessType()">
                   <div class="grid gap-3">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                       <div class="grid gap-1">
@@ -218,16 +218,16 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                   </div>
                 </form>
 
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
-                    Direccion
+                    Dirección
                   </div>
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.address }}</p>
                   <p class="mt-1 text-sm text-text-muted">{{ restaurant()!.reference || 'Sin referencia registrada.' }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="clockIcon" aria-hidden="true"></lucide-angular>
                     Horario
@@ -235,7 +235,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                   <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.openTime }} - {{ restaurant()!.closeTime }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="calendarIcon" aria-hidden="true"></lucide-angular>
                     Trazabilidad
@@ -310,7 +310,7 @@ export class AdminBusinessDetailPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el restaurante.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el negocio.'));
           this.isLoading.set(false);
         },
       });
@@ -348,7 +348,7 @@ export class AdminBusinessDetailPageComponent {
           this.actionInProgress.set(null);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, `No se pudo aplicar la accion ${action}.`));
+          this.errorMessage.set(getErrorMessage(error, `No se pudo aplicar la acción ${action}.`));
           this.actionInProgress.set(null);
         },
       });

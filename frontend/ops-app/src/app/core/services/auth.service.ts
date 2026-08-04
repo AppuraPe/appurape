@@ -48,6 +48,8 @@ export class AuthService extends AuthSessionStore {
   }
 
   login(request: LoginRequest): Observable<CurrentUserResponse> {
+    this.clearSession();
+
     return this.authApi.login(request).pipe(
       tap((response) => this.applyAuthResponse(response)),
       map((response) => this.mapAuthResponseToCurrentUser(response)),

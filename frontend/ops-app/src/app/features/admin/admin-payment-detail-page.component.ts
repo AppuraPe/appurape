@@ -79,7 +79,7 @@ type PaymentAction = 'confirm' | 'reject';
               </div>
 
               <div class="flex flex-wrap items-center gap-2">
-                <app-status-badge [status]="payment.orderStatus" prefix="Pedido" />
+                <app-status-badge [status]="payment.orderStatus" [label]="orderStatusLabel(payment.orderStatus)" prefix="Pedido" />
                 <app-status-badge [status]="payment.paymentStatus" [label]="paymentStatusLabel(payment.paymentStatus)" prefix="Pago" />
               </div>
 
@@ -113,7 +113,7 @@ type PaymentAction = 'confirm' | 'reject';
                     <lucide-angular class="h-4 w-4" [img]="creditCardIcon" aria-hidden="true"></lucide-angular>
                     Pago
                   </div>
-                  <p class="mt-2 text-sm font-bold text-slate-950">{{ payment.paymentMethod }}</p>
+                  <p class="mt-2 text-sm font-bold text-slate-950">{{ paymentMethodLabel(payment.paymentMethod) }}</p>
                   <p class="mt-1 text-xs text-slate-500">{{ paymentStatusLabel(payment.paymentStatus) }}</p>
                 </div>
 
@@ -123,7 +123,7 @@ type PaymentAction = 'confirm' | 'reject';
                     Estado del pedido
                   </div>
                   <div class="mt-2">
-                    <app-status-badge [status]="payment.orderStatus" />
+                    <app-status-badge [status]="payment.orderStatus" [label]="orderStatusLabel(payment.orderStatus)" />
                   </div>
                 </div>
               </div>
@@ -191,7 +191,7 @@ type PaymentAction = 'confirm' | 'reject';
         <div class="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" (click)="closeConfirmation()"></div>
         <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-lg px-3 pb-3 sm:inset-0 sm:grid sm:place-items-center sm:px-6 sm:py-8">
           <section
-            class="w-full rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_rgba(6,25,43,0.24)]"
+            class="w-full rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.22)]"
             (click)="$event.stopPropagation()"
           >
             <h2 class="text-lg font-extrabold tracking-[-0.03em] text-slate-950">
@@ -329,6 +329,42 @@ export class AdminPaymentDetailPageComponent {
         return 'Pagado';
       case 'Rejected':
         return 'Pago rechazado';
+      default:
+        return status;
+    }
+  }
+
+  paymentMethodLabel(method: string): string {
+    const labels: Record<string, string> = {
+      Cash: 'Efectivo',
+      Yape: 'Yape',
+      Plin: 'Plin',
+      Card: 'Tarjeta',
+    };
+
+    return labels[method] ?? method;
+  }
+
+  orderStatusLabel(status: string): string {
+    switch (status) {
+      case 'Pending':
+        return 'Pendiente';
+      case 'Accepted':
+        return 'Aceptado';
+      case 'Preparing':
+        return 'En preparación';
+      case 'ReadyForPickup':
+        return 'Listo para recoger';
+      case 'Assigned':
+        return 'Repartidor asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
       default:
         return status;
     }

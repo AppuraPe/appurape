@@ -6,7 +6,7 @@ import { Component, input } from '@angular/core';
   template: `
     <div class="mb-4 flex flex-col gap-2.5 md:mb-5 md:flex-row md:items-start md:justify-between md:gap-3">
       @if (eyebrow()) {
-        <span class="inline-flex min-h-8 w-fit items-center rounded-full bg-red-50 px-3 py-1 text-[0.7rem] font-black uppercase tracking-[0.1em] text-red-500 md:text-[0.78rem]">
+        <span class="inline-flex min-h-8 w-fit items-center rounded-full bg-primary-100 px-3 py-1 text-[0.7rem] font-black uppercase tracking-[0.1em] text-primary-700 md:text-[0.78rem]">
           {{ eyebrow() }}
         </span>
       }

@@ -9,7 +9,7 @@ import { Component, input } from '@angular/core';
   template: `
     <div class="rounded-[24px] border border-dashed border-slate-200 bg-white px-5 py-6 text-center shadow-sm">
       @if (eyebrow()) {
-        <span class="inline-flex min-h-8 items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <span class="inline-flex min-h-8 items-center rounded-full bg-primary-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-primary-700">
           {{ eyebrow() }}
         </span>
       }

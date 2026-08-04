@@ -28,7 +28,7 @@ import { getRegistrationState, setRegistrationState } from './registration-flow.
             </span>
             <h1 class="text-3xl font-black tracking-[-0.05em] sm:text-[2.1rem]">Verifica tu correo</h1>
             <p class="text-sm leading-6 text-text-muted">
-              Ingresa el código enviado al correo del restaurante para poder crear la cuenta.
+              Ingresa el código enviado al correo del negocio para poder crear la cuenta.
             </p>
           </div>
 

@@ -12,6 +12,10 @@ public interface IOrderService
 
     Task<CustomerOrderDetailResponse> GetMyOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
 
+    Task<CustomerOrderDetailResponse> CancelMyOrderAsync(Guid orderId, CancelOrderRequest request, CancellationToken cancellationToken = default);
+
+    Task<CustomerOrderDetailResponse> CancelAdminOrderAsync(Guid orderId, CancelOrderRequest request, CancellationToken cancellationToken = default);
+
     Task<CustomerOrderDetailResponse> RateDriverAsync(Guid orderId, RateDriverRequest request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<RestaurantOrderListItemResponse>> GetRestaurantOrdersAsync(
@@ -33,4 +37,6 @@ public interface IOrderService
     Task<RestaurantOrderDetailResponse> GetRestaurantOrderByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     Task<RestaurantOrderDetailResponse> UpdateRestaurantOrderStatusAsync(Guid orderId, UpdateOrderStatusRequest request, CancellationToken cancellationToken = default);
+
+    Task<RestaurantOrderDetailResponse> CancelRestaurantOrderAsync(Guid orderId, CancelOrderRequest request, CancellationToken cancellationToken = default);
 }

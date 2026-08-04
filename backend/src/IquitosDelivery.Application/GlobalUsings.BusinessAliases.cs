@@ -7,6 +7,7 @@ global using BusinessOrderDetailResponse = IquitosDelivery.Application.DTOs.Orde
 global using BusinessOrderFilterRequest = IquitosDelivery.Application.DTOs.Orders.RestaurantOrderFilterRequest;
 global using BusinessOrderListItemResponse = IquitosDelivery.Application.DTOs.Orders.RestaurantOrderListItemResponse;
 global using BusinessOrderStatusUpdateRequest = IquitosDelivery.Application.DTOs.Orders.UpdateOrderStatusRequest;
+global using CancelOrderRequest = IquitosDelivery.Application.DTOs.Orders.CancelOrderRequest;
 global using CatalogCategoryFilterRequest = IquitosDelivery.Application.DTOs.Menu.MenuCategoryFilterRequest;
 global using CatalogCategoryResponse = IquitosDelivery.Application.DTOs.Menu.MenuCategoryResponse;
 global using CatalogFilterRequest = IquitosDelivery.Application.DTOs.Menu.PublicMenuFilterRequest;

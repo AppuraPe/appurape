@@ -107,7 +107,7 @@
                   class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
                 />
                 @if (startForm.controls.phone.invalid && startForm.controls.phone.touched) {
-                  <span class="text-xs text-accent-600">El telefono es obligatorio.</span>
+                  <span class="text-xs text-accent-600">El teléfono es obligatorio.</span>
                 }
               </div>
 
@@ -132,7 +132,7 @@
                 type="submit"
                 [disabled]="isSubmittingStart()"
               >
-                {{ isSubmittingStart() ? 'Enviando...' : 'Enviar codigo' }}
+                {{ isSubmittingStart() ? 'Enviando...' : 'Enviar código' }}
               </button>
               <a
                 class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-cecina/40 px-5 text-base font-bold text-loreto-cecina transition hover:-translate-y-0.5 hover:bg-loreto-crema focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/30"
@@ -148,7 +148,7 @@
           <form class="space-y-4" [formGroup]="verifyForm" (ngSubmit)="submitVerify()">
             <div class="rounded-2xl border border-loreto-tacacho/25 bg-surface-soft p-4">
               <strong class="block text-sm text-loreto-carbon">Verificacion pendiente</strong>
-              <p class="mt-1 text-sm text-loreto-cecina/85">Te enviamos un codigo de 6 digitos a tu correo.</p>
+              <p class="mt-1 text-sm text-loreto-cecina/85">Te enviamos un código de 6 dígitos a tu correo.</p>
             </div>
 
             <div class="grid gap-1.5">
@@ -173,14 +173,14 @@
                 class="min-h-11 rounded-xl border border-loreto-tacacho/35 bg-white px-3 text-sm text-loreto-carbon outline-none transition placeholder:text-loreto-cecina/55 focus:-translate-y-0.5 focus:ring-2 focus:ring-primary-500"
               />
               @if (verifyForm.controls.code.invalid && verifyForm.controls.code.touched) {
-                <span class="text-xs text-accent-600">Ingresa un codigo de 6 digitos.</span>
+                <span class="text-xs text-accent-600">Ingresa un código de 6 dígitos.</span>
               }
             </div>
 
             @if (expiresInMinutes()) {
               <div class="rounded-2xl border border-loreto-rio/30 bg-loreto-rio/10 p-4">
                 <strong class="block text-sm text-loreto-carbon">Revisa tu correo</strong>
-                <span class="mt-1 block text-sm text-loreto-carbon/80">Tu codigo expira en {{ expiresInMinutes() }} minutos.</span>
+                <span class="mt-1 block text-sm text-loreto-carbon/80">Tu código expira en {{ expiresInMinutes() }} minutos.</span>
               </div>
             }
 
@@ -190,7 +190,7 @@
                 type="submit"
                 [disabled]="isSubmittingVerify()"
               >
-                {{ isSubmittingVerify() ? 'Verificando...' : 'Verificar codigo' }}
+                {{ isSubmittingVerify() ? 'Verificando...' : 'Verificar código' }}
               </button>
               <button
                 class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-cecina/40 px-5 text-base font-bold text-loreto-cecina transition hover:-translate-y-0.5 hover:bg-loreto-crema focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/30 disabled:cursor-not-allowed disabled:opacity-60"
@@ -198,7 +198,7 @@
                 (click)="resendCode()"
                 [disabled]="isResendingCode()"
               >
-                {{ isResendingCode() ? 'Reenviando...' : 'Reenviar codigo' }}
+                {{ isResendingCode() ? 'Reenviando...' : 'Reenviar código' }}
               </button>
               <button
                 class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-tacacho/30 px-5 text-base font-bold text-loreto-carbon transition hover:-translate-y-0.5 hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/25"
@@ -270,7 +270,7 @@
                 type="button"
                 (click)="goToVerify()"
               >
-                Volver al codigo
+                Volver al código
               </button>
               <a
                 class="inline-flex min-h-11 items-center justify-center rounded-full border border-loreto-tacacho/30 px-5 text-base font-bold text-loreto-carbon transition hover:-translate-y-0.5 hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-loreto-chorizo/25"

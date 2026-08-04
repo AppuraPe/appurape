@@ -27,4 +27,9 @@ public class BusinessOrderServiceAdapter : IBusinessOrderService
     {
         return _orderService.UpdateRestaurantOrderStatusAsync(orderId, request, cancellationToken);
     }
+
+    public Task<BusinessOrderDetailResponse> CancelBusinessOrderAsync(Guid orderId, CancelOrderRequest request, CancellationToken cancellationToken = default)
+    {
+        return _orderService.CancelRestaurantOrderAsync(orderId, request, cancellationToken);
+    }
 }

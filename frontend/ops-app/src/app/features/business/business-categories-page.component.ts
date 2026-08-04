@@ -42,8 +42,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="AppuraPe Menu"
-          title="Categorias"
-          subtitle="Crea y edita categorias para ordenar mejor el catalogo del negocio."
+          title="Categorías"
+          subtitle="Crea y edita categorías para ordenar mejor el catálogo del negocio."
         />
 
         @if (errorMessage()) {
@@ -59,9 +59,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         }
 
         <div class="stats-grid">
-          <app-metric-card label="Categorias" [value]="categories().length" helper="Resultados visibles en la lista" />
+          <app-metric-card label="Categorías" [value]="categories().length" helper="Resultados visibles en la lista" />
           <app-metric-card label="Activas" [value]="activeCategoriesCount()" helper="Disponibles para mostrar productos" />
-          <app-metric-card label="Modo" [value]="editingCategory() ? 'Edicion' : 'Creacion'" helper="Estado actual del formulario" />
+          <app-metric-card label="Modo" [value]="editingCategory() ? 'Edición' : 'Creación'" helper="Estado actual del formulario" />
         </div>
       </app-surface-card>
 
@@ -70,7 +70,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           <form class="grid gap-4" [formGroup]="form" (ngSubmit)="submit()">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
               <lucide-angular class="h-4 w-4" [img]="folderIcon" aria-hidden="true"></lucide-angular>
-              {{ editingCategory() ? 'Editar categoria' : 'Nueva categoria' }}
+              {{ editingCategory() ? 'Editar categoría' : 'Nueva categoría' }}
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -86,9 +86,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             </div>
 
             @if (editingCategory()) {
-              <label class="flex items-center gap-3 rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-loreto-carbon">
+              <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950">
                 <input type="checkbox" formControlName="isActive" />
-                <span>Categoria activa</span>
+                <span>Categoría activa</span>
               </label>
             }
 
@@ -116,14 +116,14 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         <app-surface-card variant="page">
           <app-page-header
             eyebrow="Lista"
-            title="Categorias actuales"
-            subtitle="Selecciona una categoria para editarla o revisa su estado."
+            title="Categorías actuales"
+            subtitle="Selecciona una categoría para editarla o revisa su estado."
           />
 
           <form class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_auto]" [formGroup]="filtersForm" (ngSubmit)="loadCategories()">
             <label class="grid gap-2">
-              <span class="text-sm font-semibold text-loreto-carbon">Buscar categoria</span>
-              <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 shadow-sm focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+              <span class="text-sm font-semibold text-loreto-carbon">Buscar categoría</span>
+              <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                 <lucide-angular class="h-4 w-4 text-primary-700" [img]="searchIcon" aria-hidden="true"></lucide-angular>
                 <input
                   id="categorySearch"
@@ -158,12 +158,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           </form>
 
           @if (isLoading()) {
-            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-text-muted">
-              Cargando categorias...
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+              Cargando categorías...
             </div>
           } @else if (!categories().length) {
-            <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-4 text-sm font-semibold text-text-muted">
-              No hay categorias para los filtros seleccionados.
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
+              No hay categorías para los filtros seleccionados.
             </div>
           } @else {
             <div class="grid gap-4">
@@ -186,8 +186,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   @if (!category.isActive) {
                     <app-notice
                       tone="warning"
-                      title="Categoria inactiva"
-                      message="Los productos dentro de una categoria inactiva pueden quedar fuera de la experiencia publica."
+                      title="Categoría inactiva"
+                      message="Los productos dentro de una categoría inactiva pueden quedar fuera de la experiencia pública."
                     />
                   }
                 </app-surface-card>
@@ -257,7 +257,7 @@ export class BusinessCategoriesPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar las categorias.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar las categorías.'));
           this.isLoading.set(false);
         },
       });
@@ -319,13 +319,13 @@ export class BusinessCategoriesPageComponent {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
-            this.successMessage.set('Categoria actualizada correctamente.');
+            this.successMessage.set('Categoría actualizada correctamente.');
             this.isSubmitting.set(false);
             this.cancelEdit();
             this.loadCategories();
           },
           error: (error) => {
-            this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar la categoria.'));
+            this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar la categoría.'));
             this.isSubmitting.set(false);
           },
         });
@@ -343,13 +343,13 @@ export class BusinessCategoriesPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.successMessage.set('Categoria creada correctamente.');
+          this.successMessage.set('Categoría creada correctamente.');
           this.isSubmitting.set(false);
           this.cancelEdit();
           this.loadCategories();
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo crear la categoria.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo crear la categoría.'));
           this.isSubmitting.set(false);
         },
       });

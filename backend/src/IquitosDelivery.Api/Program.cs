@@ -7,9 +7,11 @@ using IquitosDelivery.Infrastructure;
 using IquitosDelivery.Infrastructure.Persistence;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,10 +25,75 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DefaultCors", policy =>
     {
+        var configuredOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? [];
+
+        var allowedOrigins = builder.Environment.IsDevelopment()
+            ? configuredOrigins
+                .Concat([
+                    "http://localhost:4200",
+                    "http://localhost:4201",
+                    "http://127.0.0.1:4200",
+                    "http://127.0.0.1:4201",
+                    "capacitor://localhost",
+                    "ionic://localhost"
+                ])
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : configuredOrigins;
+
         policy
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowAnyOrigin();
+            .AllowAnyMethod();
+
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins);
+        }
+        else
+        {
+            policy.SetIsOriginAllowed(_ => false);
+        }
+    });
+});
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Too many requests. Please try again later." },
+            cancellationToken);
+    };
+
+    options.AddPolicy("AuthSensitive", context =>
+    {
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            remoteIp,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 12,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+    });
+
+    options.AddPolicy("OtpSensitive", context =>
+    {
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            remoteIp,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
     });
 });
 builder.Services.AddSwaggerGen(options =>
@@ -83,6 +150,13 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+var configuredCorsOrigins = app.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+if (!app.Environment.IsDevelopment() && configuredCorsOrigins.Length == 0)
+{
+    app.Logger.LogWarning("Cors:AllowedOrigins is empty outside Development. Browser cross-origin calls will be denied.");
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -90,7 +164,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-if (!app.Environment.IsProduction())
+var swaggerEnabled = app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled");
+if (swaggerEnabled)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -101,7 +176,9 @@ if (!app.Environment.IsProduction())
     app.UseHttpsRedirection();
 }
 
+app.UseRouting();
 app.UseCors("DefaultCors");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -129,6 +206,10 @@ try
 catch (Exception exception)
 {
     app.Logger.LogWarning(exception, "Database migration and admin seed were skipped during startup.");
+    if (app.Configuration.GetValue<bool>("Database:FailFastOnMigrationError"))
+    {
+        throw;
+    }
 }
 
 app.Run();

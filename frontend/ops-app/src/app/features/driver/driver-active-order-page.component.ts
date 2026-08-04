@@ -88,7 +88,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
                     Estado
                   </div>
                   <div class="mt-2">
-                    <app-status-badge [status]="order.status" />
+                    <app-status-badge [status]="order.status" [label]="readableOrderStatus(order.status)" />
                   </div>
                 </div>
               </div>
@@ -108,7 +108,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
                     <lucide-angular class="h-4 w-4" [img]="packageIcon" aria-hidden="true"></lucide-angular>
                     Pago
                   </div>
-                  <p class="mt-2 text-sm font-bold text-slate-950">{{ order.paymentMethod }}</p>
+                  <p class="mt-2 text-sm font-bold text-slate-950">{{ paymentMethodLabel(order.paymentMethod) }}</p>
                 </div>
               </div>
 
@@ -166,5 +166,33 @@ export class DriverActiveOrderPageComponent {
 
   shortOrderId(id: string): string {
     return id.slice(0, 8).toUpperCase();
+  }
+
+  readableOrderStatus(status: string): string {
+    switch (status) {
+      case 'Assigned':
+        return 'Repartidor asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
+      default:
+        return status;
+    }
+  }
+
+  paymentMethodLabel(method: string): string {
+    const labels: Record<string, string> = {
+      Cash: 'Efectivo',
+      Yape: 'Yape',
+      Plin: 'Plin',
+      Card: 'Tarjeta',
+    };
+
+    return labels[method] ?? method;
   }
 }

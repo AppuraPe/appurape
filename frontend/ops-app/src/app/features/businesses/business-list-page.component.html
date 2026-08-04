@@ -179,7 +179,7 @@
                   @for (restaurant of relatedRestaurants(); track restaurant.restaurantId) {
                     <app-businesses-business-card
                       [name]="restaurant.name"
-                      [categoryLabel]="'Restaurantes'"
+                      [categoryLabel]="'Negocio'"
                       [zoneName]="restaurant.zoneName"
                       [scheduleLabel]="formatSchedule(restaurant.openTime, restaurant.closeTime)"
                       [imageUrl]="restaurant.logoUrl"

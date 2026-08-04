@@ -99,6 +99,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/orders/my-order-detail-page.component').then((m) => m.MyOrderDetailPageComponent),
       },
       {
+        path: 'account',
+        pathMatch: 'full',
+        redirectTo: 'account/addresses',
+      },
+      {
         path: 'account/addresses',
         canActivate: [authGuard],
         loadComponent: () => import('./features/account/customer-addresses-page.component').then((m) => m.CustomerAddressesPageComponent),
@@ -223,6 +228,18 @@ export const routes: Routes = [
           {
             path: 'payments/:orderId',
             loadComponent: () => import('./features/admin/admin-payment-detail-page.component').then((m) => m.AdminPaymentDetailPageComponent),
+          },
+          {
+            path: 'businesses/pending',
+            loadComponent: () => import('./features/admin/admin-pending-businesses-page.component').then((m) => m.AdminPendingBusinessesPageComponent),
+          },
+          {
+            path: 'businesses',
+            loadComponent: () => import('./features/admin/admin-businesses-page.component').then((m) => m.AdminBusinessesPageComponent),
+          },
+          {
+            path: 'businesses/:id',
+            loadComponent: () => import('./features/admin/admin-business-detail-page.component').then((m) => m.AdminBusinessDetailPageComponent),
           },
           {
             path: 'restaurants/pending',

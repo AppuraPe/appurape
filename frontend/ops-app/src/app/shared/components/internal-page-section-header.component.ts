@@ -10,7 +10,7 @@ import { Component, input } from '@angular/core';
     <div class="flex w-full min-w-0 items-start justify-between gap-3 px-1">
       <div class="min-w-0 flex-1">
         @if (eyebrow()) {
-          <span class="inline-flex min-h-8 items-center rounded-full bg-red-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-red-500">
+          <span class="inline-flex min-h-8 items-center rounded-full bg-primary-100 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-primary-700">
             {{ eyebrow() }}
           </span>
         }

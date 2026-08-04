@@ -39,14 +39,14 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
             <form class="grid gap-4" [formGroup]="requestForm" (ngSubmit)="submitRequest()">
               <label class="grid gap-2">
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Email</span>
-                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="mailIcon" aria-hidden="true"></lucide-angular>
                   <input formControlName="email" type="email" placeholder="tu@correo.com" class="min-h-0 min-w-0 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                 </div>
               </label>
 
               @if (requestMessage()) {
-                <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm font-semibold text-loreto-carbon">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950">
                   {{ requestMessage() }}
                 </div>
               }
@@ -63,7 +63,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               </app-button>
             </form>
 
-            <div class="h-px bg-[#eddad4]"></div>
+            <div class="h-px bg-slate-200"></div>
 
             <form class="grid gap-4" [formGroup]="resetForm" (ngSubmit)="submitReset()">
               <div class="grid gap-1">
@@ -75,7 +75,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 
               <label class="grid gap-2">
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Email</span>
-                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="mailIcon" aria-hidden="true"></lucide-angular>
                   <input formControlName="email" type="email" placeholder="tu@correo.com" class="min-h-0 min-w-0 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                 </div>
@@ -83,7 +83,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 
               <label class="grid gap-2">
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Código</span>
-                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="keyIcon" aria-hidden="true"></lucide-angular>
                   <input formControlName="code" inputmode="numeric" maxlength="6" placeholder="123456" class="min-h-0 min-w-0 border-0 bg-transparent px-0 py-0 text-sm tracking-[0.24em] text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                 </div>
@@ -91,7 +91,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 
               <label class="grid gap-2">
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Nueva contraseña</span>
-                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="lockIcon" aria-hidden="true"></lucide-angular>
                   <input
                     formControlName="newPassword"

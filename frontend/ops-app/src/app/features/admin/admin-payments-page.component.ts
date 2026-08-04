@@ -123,7 +123,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
 
                 <div class="grid gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="payment.orderStatus" prefix="Pedido" />
+                    <app-status-badge [status]="payment.orderStatus" [label]="orderStatusLabel(payment.orderStatus)" prefix="Pedido" />
                     <app-status-badge [status]="payment.paymentStatus" [label]="paymentStatusLabel(payment.paymentStatus)" prefix="Pago" />
                   </div>
 
@@ -141,7 +141,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
                         <lucide-angular class="h-4 w-4" [img]="creditCardIcon" aria-hidden="true"></lucide-angular>
                         Método
                       </div>
-                      <p class="mt-2 text-sm font-bold text-slate-950">{{ payment.paymentMethod }}</p>
+                      <p class="mt-2 text-sm font-bold text-slate-950">{{ paymentMethodLabel(payment.paymentMethod) }}</p>
                     </div>
 
                     <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
@@ -222,6 +222,42 @@ export class AdminPaymentsPageComponent {
         return 'Pagado';
       case 'Rejected':
         return 'Pago rechazado';
+      default:
+        return status;
+    }
+  }
+
+  paymentMethodLabel(method: string): string {
+    const labels: Record<string, string> = {
+      Cash: 'Efectivo',
+      Yape: 'Yape',
+      Plin: 'Plin',
+      Card: 'Tarjeta',
+    };
+
+    return labels[method] ?? method;
+  }
+
+  orderStatusLabel(status: string): string {
+    switch (status) {
+      case 'Pending':
+        return 'Pendiente';
+      case 'Accepted':
+        return 'Aceptado';
+      case 'Preparing':
+        return 'En preparación';
+      case 'ReadyForPickup':
+        return 'Listo para recoger';
+      case 'Assigned':
+        return 'Repartidor asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
       default:
         return status;
     }

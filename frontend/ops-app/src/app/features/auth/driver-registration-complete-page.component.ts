@@ -68,7 +68,7 @@ import { clearRegistrationState, getRegistrationState } from './registration-flo
 
             <div class="field">
               <label for="password">Contraseña</label>
-              <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4">
+              <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4">
                 <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" class="min-h-0 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none focus:ring-0" />
                 <button type="button" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-soft hover:text-primary-700" (click)="togglePasswordVisibility()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
                   <lucide-angular class="h-4 w-4" [img]="showPassword() ? eyeOffIcon : eyeIcon" aria-hidden="true"></lucide-angular>

@@ -49,6 +49,17 @@ public class OrdersController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("my/{id:guid}/cancel")]
+    [ProducesResponseType(typeof(CustomerOrderDetailResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CustomerOrderDetailResponse>> CancelMyOrder(
+        Guid id,
+        [FromBody] CancelOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _orderService.CancelMyOrderAsync(id, request, cancellationToken);
+        return Ok(response);
+    }
+
     [HttpPatch("my/{id:guid}/driver-rating")]
     [ProducesResponseType(typeof(CustomerOrderDetailResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<CustomerOrderDetailResponse>> RateDriver(

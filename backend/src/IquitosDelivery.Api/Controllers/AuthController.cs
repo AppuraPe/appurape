@@ -2,6 +2,7 @@ using IquitosDelivery.Application.DTOs.Auth;
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Api.Controllers.Requests.Auth;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IquitosDelivery.Api.Controllers;
@@ -32,6 +33,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/customer/start")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> StartCustomerRegistration([FromBody] StartCustomerRegistrationRequest request, CancellationToken cancellationToken)
     {
@@ -41,6 +43,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/customer/verify-code")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationStatusResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationStatusResponse>> VerifyCustomerRegistrationCode([FromBody] VerifyCustomerRegistrationCodeRequest request, CancellationToken cancellationToken)
     {
@@ -50,6 +53,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/customer/complete")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthResponse>> CompleteCustomerRegistration([FromBody] CompleteCustomerRegistrationRequest request, CancellationToken cancellationToken)
     {
@@ -59,6 +63,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/customer/resend-code")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> ResendCustomerRegistrationCode([FromBody] ResendCustomerRegistrationCodeRequest request, CancellationToken cancellationToken)
     {
@@ -68,6 +73,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/restaurant/start")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> StartRestaurantRegistration([FromForm] StartRestaurantRegistrationFormRequest request, CancellationToken cancellationToken)
@@ -101,6 +107,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/restaurant/verify-code")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationStatusResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationStatusResponse>> VerifyRestaurantRegistrationCode([FromBody] VerifyRestaurantRegistrationCodeRequest request, CancellationToken cancellationToken)
     {
@@ -110,6 +117,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/restaurant/complete")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthResponse>> CompleteRestaurantRegistration([FromBody] CompleteRestaurantRegistrationRequest request, CancellationToken cancellationToken)
     {
@@ -119,6 +127,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/restaurant/resend-code")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> ResendRestaurantRegistrationCode([FromBody] ResendRestaurantRegistrationCodeRequest request, CancellationToken cancellationToken)
     {
@@ -128,6 +137,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/driver/start")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> StartDriverRegistration([FromForm] StartDriverRegistrationFormRequest request, CancellationToken cancellationToken)
@@ -163,6 +173,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/driver/verify-code")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationStatusResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationStatusResponse>> VerifyDriverRegistrationCode([FromBody] VerifyDriverRegistrationCodeRequest request, CancellationToken cancellationToken)
     {
@@ -172,6 +183,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/driver/complete")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthResponse>> CompleteDriverRegistration([FromBody] CompleteDriverRegistrationRequest request, CancellationToken cancellationToken)
     {
@@ -181,6 +193,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/driver/resend-code")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> ResendDriverRegistrationCode([FromBody] ResendDriverRegistrationCodeRequest request, CancellationToken cancellationToken)
     {
@@ -190,6 +203,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/restaurant")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthResponse>> RegisterRestaurant([FromBody] RegisterRestaurantRequest request, CancellationToken cancellationToken)
     {
@@ -199,6 +213,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/driver")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthResponse>> RegisterDriver([FromBody] RegisterDriverRequest request, CancellationToken cancellationToken)
     {
@@ -208,6 +223,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
@@ -217,6 +233,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("google")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthSensitive")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthResponse>> LoginWithGoogle([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
     {
@@ -226,6 +243,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("password/forgot")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> StartPasswordReset([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
@@ -235,6 +253,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("password/resend-code")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationCodeResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationCodeResponse>> ResendPasswordResetCode([FromBody] ResendPasswordResetCodeRequest request, CancellationToken cancellationToken)
     {
@@ -244,6 +263,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("password/reset")]
     [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
     [ProducesResponseType(typeof(VerificationStatusResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationStatusResponse>> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {

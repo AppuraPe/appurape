@@ -42,7 +42,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="AppuraPe Admin"
-          title="Restaurantes pendientes"
+          title="Negocios pendientes"
           subtitle="Revisa nuevas altas de comercios y habilita solo los perfiles listos para operar dentro de la red."
         />
 
@@ -60,22 +60,22 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
         <app-notice
           tone="warning"
-          title="Validacion previa a la activacion"
-          message="Aprobar hace visible al restaurante para clientes y pedidos. Rechazar mantiene la cuenta fuera de operacion hasta nueva revision."
+          title="Validación previa a la activación"
+          message="Aprobar hace visible al negocio para clientes y pedidos. Rechazar mantiene la cuenta fuera de operación hasta nueva revisión."
         />
 
         <div class="stats-grid">
-          <app-metric-card label="Pendientes" [value]="restaurants().length" helper="Restaurantes esperando revision" />
+          <app-metric-card label="Pendientes" [value]="restaurants().length" helper="Negocios esperando revisión" />
           <app-metric-card label="Zonas" [value]="zoneCount()" helper="Cobertura de las altas pendientes" />
-          <app-metric-card label="Nuevos hoy" [value]="todayCount()" helper="Registros creados durante el dia" />
+          <app-metric-card label="Nuevos hoy" [value]="todayCount()" helper="Registros creados durante el día" />
           <app-metric-card label="Owners únicos" [value]="ownerCount()" helper="Personas a validar en esta cola" />
         </div>
       </app-surface-card>
 
-      <app-surface-card variant="page" extraClass="bg-gradient-to-br from-white via-[#fff8f6] to-[#fff0ed]">
+      <app-surface-card variant="page" extraClass="bg-gradient-to-br from-white via-primary-50 to-slate-50">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="grid gap-1">
-            <span class="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Cola de aprobacion</span>
+            <span class="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Cola de aprobación</span>
             <p class="text-sm text-text-muted">Mantén la red limpia: valida negocio, contacto y zona antes de activar.</p>
           </div>
           <app-button variant="ghost" [disabled]="isLoading() || !!actionRestaurantId()" (click)="loadRestaurants()">
@@ -86,8 +86,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
       </app-surface-card>
 
       @if (isLoading()) {
-        <div class="rounded-[28px] border border-[#eddad4] bg-white px-6 py-5 text-sm font-semibold text-text-muted shadow-[0_12px_28px_rgba(6,25,43,0.08)]">
-          Cargando restaurantes pendientes...
+        <div class="rounded-[28px] border border-slate-200 bg-white px-6 py-5 text-sm font-semibold text-text-muted shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+          Cargando negocios pendientes...
         </div>
       } @else if (!restaurants().length) {
         <app-surface-card variant="page">
@@ -96,14 +96,14 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               <lucide-angular class="h-8 w-8" [img]="circleCheckIcon" aria-hidden="true"></lucide-angular>
             </div>
             <div class="grid gap-2">
-              <h2 class="text-2xl font-black tracking-[-0.04em] text-loreto-carbon">No hay restaurantes pendientes</h2>
+              <h2 class="text-2xl font-black tracking-[-0.04em] text-loreto-carbon">No hay negocios pendientes</h2>
               <p class="max-w-2xl text-sm leading-6 text-text-muted md:text-base">
-                La cola de aprobacion esta al dia. Puedes revisar el listado general o volver al dashboard administrativo.
+                La cola de aprobación está al día. Puedes revisar el listado general o volver al inicio administrativo.
               </p>
             </div>
             <div class="flex flex-wrap justify-center gap-3">
-              <app-button size="lg" [routerLink]="'/admin/restaurants'">Ver todos los restaurantes</app-button>
-              <app-button size="lg" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al dashboard</app-button>
+              <app-button size="lg" [routerLink]="'/admin/businesses'">Ver todos los negocios</app-button>
+              <app-button size="lg" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
         </app-surface-card>
@@ -126,7 +126,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-primary-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
                         Zona
@@ -134,7 +134,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant.zoneName }}</p>
                     </div>
 
-                    <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3">
+                    <div class="rounded-2xl border border-slate-200 bg-primary-50 px-4 py-3">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="usersIcon" aria-hidden="true"></lucide-angular>
                         Owner
@@ -146,11 +146,11 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
                 <div class="grid gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="restaurant.approvalStatus" prefix="Aprobacion" />
+                    <app-status-badge [status]="restaurant.approvalStatus" prefix="Aprobación" />
                     <app-status-badge [status]="restaurant.isActive" [label]="restaurant.isActive ? 'Activo' : 'Inactivo'" />
                   </div>
 
-                  <div class="rounded-2xl border border-[#eddad4] bg-surface-soft px-4 py-3 text-sm text-text-muted">
+                  <div class="rounded-2xl border border-slate-200 bg-primary-50 px-4 py-3 text-sm text-text-muted">
                     <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                       <lucide-angular class="h-4 w-4" [img]="calendarClockIcon" aria-hidden="true"></lucide-angular>
                       Registrado
@@ -158,7 +158,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     <p class="mt-2 font-semibold text-loreto-carbon">{{ restaurant.createdAtUtc | date: 'medium' }}</p>
                   </div>
 
-                  <div class="flex flex-wrap gap-3 rounded-2xl border border-[#eddad4] bg-white px-4 py-4 shadow-[0_8px_20px_rgba(6,25,43,0.06)]">
+                  <div class="flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
                     <button
                       type="button"
                       class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary-700 px-5 text-sm font-extrabold text-white shadow-lg shadow-primary-700/20 transition duration-150 hover:-translate-y-0.5 hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-55"
@@ -177,7 +177,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       <lucide-angular class="h-4 w-4" [img]="circleXIcon" aria-hidden="true"></lucide-angular>
                       Rechazar
                     </button>
-                    <app-button variant="secondary" size="md" [routerLink]="['/admin/restaurants', restaurant.id]">
+                    <app-button variant="secondary" size="md" [routerLink]="['/admin/businesses', restaurant.id]">
                       Ver detalle
                     </app-button>
                   </div>
@@ -232,7 +232,7 @@ export class AdminPendingBusinessesPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar los restaurantes pendientes.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudieron cargar los negocios pendientes.'));
           this.isLoading.set(false);
         },
       });
@@ -260,12 +260,12 @@ export class AdminPendingBusinessesPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.successMessage.set(`Se ${actionLabel} el restaurante ${name}.`);
+          this.successMessage.set(`Se ${actionLabel} el negocio ${name}.`);
           this.actionRestaurantId.set(null);
           this.loadRestaurants();
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, `No se pudo actualizar el restaurante ${name}.`));
+          this.errorMessage.set(getErrorMessage(error, `No se pudo actualizar el negocio ${name}.`));
           this.actionRestaurantId.set(null);
         },
       });

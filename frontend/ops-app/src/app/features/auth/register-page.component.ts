@@ -65,21 +65,21 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
           </div>
 
           <div class="grid gap-2">
-            <article class="flex min-w-0 items-center gap-3 rounded-[20px] border px-4 py-3 transition" [class]="currentStep() === 'start' ? 'border-primary-700 bg-primary-700 text-white' : 'border-[#eddad4] bg-white text-loreto-carbon'">
+            <article class="flex min-w-0 items-center gap-3 rounded-[20px] border px-4 py-3 transition" [class]="currentStep() === 'start' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-200 bg-white text-slate-950'">
               <lucide-angular class="h-4 w-4 shrink-0" [class]="currentStep() === 'start' ? 'text-white' : 'text-primary-700'" [img]="userPlusIcon" aria-hidden="true"></lucide-angular>
               <div class="min-w-0">
                 <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] opacity-80">Paso 1</p>
                 <p class="truncate text-sm font-semibold">Tus datos básicos</p>
               </div>
             </article>
-            <article class="flex min-w-0 items-center gap-3 rounded-[20px] border px-4 py-3 transition" [class]="currentStep() === 'verify' ? 'border-primary-700 bg-primary-700 text-white' : 'border-[#eddad4] bg-white text-loreto-carbon'">
+            <article class="flex min-w-0 items-center gap-3 rounded-[20px] border px-4 py-3 transition" [class]="currentStep() === 'verify' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-200 bg-white text-slate-950'">
               <lucide-angular class="h-4 w-4 shrink-0" [class]="currentStep() === 'verify' ? 'text-white' : 'text-primary-700'" [img]="mailIcon" aria-hidden="true"></lucide-angular>
               <div class="min-w-0">
                 <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] opacity-80">Paso 2</p>
                 <p class="truncate text-sm font-semibold">Verifica tu correo</p>
               </div>
             </article>
-            <article class="flex min-w-0 items-center gap-3 rounded-[20px] border px-4 py-3 transition" [class]="currentStep() === 'complete' ? 'border-primary-700 bg-primary-700 text-white' : 'border-[#eddad4] bg-white text-loreto-carbon'">
+            <article class="flex min-w-0 items-center gap-3 rounded-[20px] border px-4 py-3 transition" [class]="currentStep() === 'complete' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-200 bg-white text-slate-950'">
               <lucide-angular class="h-4 w-4 shrink-0" [class]="currentStep() === 'complete' ? 'text-white' : 'text-primary-700'" [img]="shieldIcon" aria-hidden="true"></lucide-angular>
               <div class="min-w-0">
                 <p class="text-[0.68rem] font-black uppercase tracking-[0.16em] opacity-80">Paso 3</p>
@@ -174,7 +174,7 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
 
                 <label class="grid gap-2">
                   <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Clave</span>
-                  <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-[#ddc8c1] bg-white px-4 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
+                  <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                     <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" class="min-h-0 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none focus:ring-0" />
                     <button type="button" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-soft hover:text-primary-700" (click)="togglePasswordVisibility()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
                       <lucide-angular class="h-4 w-4" [img]="showPassword() ? eyeOffIcon : eyeIcon" aria-hidden="true"></lucide-angular>

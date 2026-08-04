@@ -6,62 +6,105 @@ import { AdminApiService } from '../../core/services/admin-api.service';
 import { CommunityApiService } from '../../core/services/community-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
+import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
+import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
+import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
 @Component({
   selector: 'app-admin-dashboard-page',
   standalone: true,
-  imports: [RouterLink, PageHeaderComponent, AppNoticeComponent],
+  imports: [
+    RouterLink,
+    AppNoticeComponent,
+    AppSurfaceCardComponent,
+    InternalPageSectionHeaderComponent,
+    MobilePageShellComponent,
+    UnifiedLoadingStateComponent,
+  ],
   template: `
-    <section class="grid">
-      <div class="page-card">
-        <app-page-header
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+      <app-surface-card variant="hero" extraClass="p-5">
+        <app-internal-page-section-header
           eyebrow="AppuraPe Admin"
-          title="Panel administrativo"
-          subtitle="Resumen rapido de las revisiones y de la salud de la red."
+          title="Inicio administrativo"
+          subtitle="Resumen rápido de revisiones, pagos y salud de la red."
         />
 
         <app-notice
+          class="mt-5"
           tone="info"
           title="Prioridad de la red"
-          message="Revisa primero las cuentas pendientes. Aprobar habilita la operación; suspender bloquea temporalmente el uso de la plataforma."
+          message="Revisa primero cuentas pendientes y pagos manuales. Aprobar habilita la operación; suspender bloquea temporalmente el uso de la plataforma."
         />
+      </app-surface-card>
 
-        @if (errorMessage()) {
-          <div class="message error">{{ errorMessage() }}</div>
-        } @else if (isLoading()) {
-          <div class="message">Cargando pendientes...</div>
-        } @else {
-          <div class="stats-grid">
-            <div class="stat-card">
-              <span class="muted">Restaurantes pendientes</span>
-              <strong>{{ pendingRestaurantsCount() }}</strong>
+      @if (errorMessage()) {
+        <app-notice tone="danger" [message]="errorMessage()" />
+      } @else if (isLoading()) {
+        <div class="grid gap-3">
+          <app-unified-loading-state label="Cargando pendientes" />
+          <app-unified-loading-state label="Preparando resumen administrativo" />
+        </div>
+      } @else {
+        <app-surface-card variant="page" extraClass="p-4">
+          <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <span class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Negocios</span>
+              <strong class="mt-2 block text-2xl font-black leading-none text-slate-950">{{ pendingRestaurantsCount() }}</strong>
+              <small class="mt-1 block text-xs font-semibold text-slate-500">Pendientes</small>
             </div>
-            <div class="stat-card">
-              <span class="muted">Drivers pendientes</span>
-              <strong>{{ pendingDriversCount() }}</strong>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <span class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Drivers</span>
+              <strong class="mt-2 block text-2xl font-black leading-none text-slate-950">{{ pendingDriversCount() }}</strong>
+              <small class="mt-1 block text-xs font-semibold text-slate-500">Pendientes</small>
             </div>
-            <div class="stat-card">
-              <span class="muted">Comunidad abierta</span>
-              <strong>{{ openCommunityRequestsCount() }}</strong>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <span class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Favores</span>
+              <strong class="mt-2 block text-2xl font-black leading-none text-primary-700">{{ openCommunityRequestsCount() }}</strong>
+              <small class="mt-1 block text-xs font-semibold text-slate-500">Abiertos</small>
             </div>
-            <div class="stat-card">
-              <span class="muted">Colaboradores activos</span>
-              <strong>{{ activeCollaboratorsCount() }}</strong>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <span class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Colaboradores</span>
+              <strong class="mt-2 block text-2xl font-black leading-none text-primary-700">{{ activeCollaboratorsCount() }}</strong>
+              <small class="mt-1 block text-xs font-semibold text-slate-500">Activos</small>
             </div>
           </div>
-        }
+        </app-surface-card>
+      }
 
-        <div class="page-actions">
-          <a class="button" routerLink="/admin/restaurants/pending">Ver restaurantes</a>
-          <a class="button secondary" routerLink="/admin/drivers/pending">Ver drivers</a>
-          <a class="button secondary" routerLink="/admin/community">Ver comunidad</a>
-          <a class="button ghost" routerLink="/admin/restaurants">Todos los restaurantes</a>
-          <a class="button ghost" routerLink="/admin/drivers">Todos los drivers</a>
-          <button class="button ghost" type="button" (click)="loadDashboard()" [disabled]="isLoading()">Recargar</button>
+      <app-surface-card variant="page" extraClass="p-4">
+        <div class="mb-3 flex items-center justify-between gap-3">
+          <h2 class="min-w-0 truncate text-base font-black tracking-[-0.03em] text-slate-950">Acciones del día</h2>
+          <button
+            type="button"
+            class="inline-flex min-h-10 shrink-0 items-center rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-primary-700 shadow-sm disabled:opacity-55"
+            (click)="loadDashboard()"
+            [disabled]="isLoading()"
+          >
+            Recargar
+          </button>
         </div>
-      </div>
-    </section>
+        <div class="grid gap-2">
+          <a routerLink="/admin/businesses/pending" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
+            Negocios pendientes
+            <span class="text-primary-700">Ver</span>
+          </a>
+          <a routerLink="/admin/drivers/pending" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
+            Drivers pendientes
+            <span class="text-primary-700">Ver</span>
+          </a>
+          <a routerLink="/admin/payments" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
+            Pagos manuales
+            <span class="text-primary-700">Revisar</span>
+          </a>
+          <a routerLink="/admin/community" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
+            Favores
+            <span class="text-primary-700">Abrir</span>
+          </a>
+        </div>
+      </app-surface-card>
+    </app-mobile-page-shell>
   `,
 })
 export class AdminDashboardPageComponent {
@@ -99,7 +142,7 @@ export class AdminDashboardPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el dashboard admin.'));
+          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el inicio admin.'));
           this.isLoading.set(false);
         },
       });

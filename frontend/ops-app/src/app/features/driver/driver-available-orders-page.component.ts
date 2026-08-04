@@ -154,8 +154,8 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
 
                 <div class="grid gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="order.status" />
-                    <app-status-badge [status]="order.paymentStatus" [label]="order.paymentMethod" prefix="Pago" />
+                    <app-status-badge [status]="order.status" [label]="readableOrderStatus(order.status)" />
+                    <app-status-badge [status]="order.paymentStatus" [label]="paymentStatusLabel(order.paymentStatus)" prefix="Pago" />
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-2">
@@ -171,7 +171,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
                         <lucide-angular class="h-4 w-4" [img]="receiptIcon" aria-hidden="true"></lucide-angular>
                         Pago
                       </div>
-                      <p class="mt-2 text-sm font-bold text-slate-950">{{ order.paymentMethod }}</p>
+                      <p class="mt-2 text-sm font-bold text-slate-950">{{ paymentMethodLabel(order.paymentMethod) }}</p>
                     </div>
                   </div>
 
@@ -254,6 +254,49 @@ export class DriverAvailableOrdersPageComponent {
       { emitEvent: false },
     );
     this.loadOrders();
+  }
+
+  readableOrderStatus(status: string): string {
+    switch (status) {
+      case 'ReadyForPickup':
+        return 'Listo para recoger';
+      case 'Assigned':
+        return 'Repartidor asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
+      default:
+        return status;
+    }
+  }
+
+  paymentMethodLabel(method: string): string {
+    const labels: Record<string, string> = {
+      Cash: 'Efectivo',
+      Yape: 'Yape',
+      Plin: 'Plin',
+      Card: 'Tarjeta',
+    };
+
+    return labels[method] ?? method;
+  }
+
+  paymentStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      Pending: 'Pendiente',
+      PendingConfirmation: 'Pendiente de confirmación',
+      Paid: 'Pagado',
+      Rejected: 'Rechazado',
+      Failed: 'Fallido',
+      Refunded: 'Reembolsado',
+    };
+
+    return labels[status] ?? status;
   }
 
   takeOrder(order: AvailableDriverOrderListItemResponse): void {
