@@ -14,6 +14,7 @@ public static class AppDbContextSeeder
     private const string DevelopmentQaCustomerEmail = "client.customer.1778016513@appurape.dev";
     private const string DevelopmentQaBusinessEmail = "client.rest.1778016513@appurape.dev";
     private const string DevelopmentQaDriverEmail = "client.driver.1778016513@appurape.dev";
+    private const string ResetExistingSeedPasswordsKey = "SeedUsers:ResetExistingPasswords";
     private static readonly Guid RestaurantBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F15");
     private static readonly Guid HardwareBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F16");
     private static readonly Guid GroceryBusinessTypeId = Guid.Parse("3E34D05A-4E80-4E6D-B3E9-9B80F1A10F17");
@@ -48,9 +49,10 @@ public static class AppDbContextSeeder
             .FirstAsync(cancellationToken);
 
         var qaPassword = ResolveSeedPassword(configuration, "SeedUsers:QaPassword");
-        await UpsertDevelopmentCustomerAsync(dbContext, passwordHasher, qaPassword, cancellationToken);
-        await UpsertDevelopmentBusinessAsync(dbContext, passwordHasher, qaPassword, belenZoneId, cancellationToken);
-        await UpsertDevelopmentDriverAsync(dbContext, passwordHasher, qaPassword, belenZoneId, cancellationToken);
+        var shouldResetPassword = ShouldResetExistingSeedPasswords(configuration);
+        await UpsertDevelopmentCustomerAsync(dbContext, passwordHasher, qaPassword, shouldResetPassword, cancellationToken);
+        await UpsertDevelopmentBusinessAsync(dbContext, passwordHasher, qaPassword, shouldResetPassword, belenZoneId, cancellationToken);
+        await UpsertDevelopmentDriverAsync(dbContext, passwordHasher, qaPassword, shouldResetPassword, belenZoneId, cancellationToken);
     }
 
     private static async Task SeedAdminAsync(
@@ -60,6 +62,7 @@ public static class AppDbContextSeeder
         CancellationToken cancellationToken)
     {
         var adminPassword = ResolveSeedPassword(configuration, "SeedUsers:AdminPassword");
+        var shouldResetPassword = ShouldResetExistingSeedPasswords(configuration);
         var normalizedEmail = AdminEmail.ToLowerInvariant();
         var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
 
@@ -70,7 +73,11 @@ public static class AppDbContextSeeder
             user.Phone = "000000000";
             user.Role = UserRole.Admin;
             user.Status = UserStatus.Active;
-            user.PasswordHash = passwordHasher.Hash(adminPassword);
+            if (shouldResetPassword)
+            {
+                user.PasswordHash = passwordHasher.Hash(adminPassword);
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return;
         }
@@ -94,6 +101,7 @@ public static class AppDbContextSeeder
         AppDbContext dbContext,
         IPasswordHasher passwordHasher,
         string qaPassword,
+        bool shouldResetPassword,
         CancellationToken cancellationToken)
     {
         var email = DevelopmentQaCustomerEmail.ToLowerInvariant();
@@ -131,7 +139,10 @@ public static class AppDbContextSeeder
         user.Phone = "900177651";
         user.Role = UserRole.Customer;
         user.Status = UserStatus.Active;
-        user.PasswordHash = passwordHasher.Hash(qaPassword);
+        if (shouldResetPassword)
+        {
+            user.PasswordHash = passwordHasher.Hash(qaPassword);
+        }
 
         if (user.CustomerProfile is null)
         {
@@ -149,6 +160,7 @@ public static class AppDbContextSeeder
         AppDbContext dbContext,
         IPasswordHasher passwordHasher,
         string qaPassword,
+        bool shouldResetPassword,
         Guid zoneId,
         CancellationToken cancellationToken)
     {
@@ -199,7 +211,10 @@ public static class AppDbContextSeeder
         user.Phone = "900177652";
         user.Role = UserRole.Restaurant;
         user.Status = UserStatus.Active;
-        user.PasswordHash = passwordHasher.Hash(qaPassword);
+        if (shouldResetPassword)
+        {
+            user.PasswordHash = passwordHasher.Hash(qaPassword);
+        }
 
         var restaurant = user.OwnedRestaurants.FirstOrDefault();
         if (restaurant is null)
@@ -241,6 +256,7 @@ public static class AppDbContextSeeder
         AppDbContext dbContext,
         IPasswordHasher passwordHasher,
         string qaPassword,
+        bool shouldResetPassword,
         Guid zoneId,
         CancellationToken cancellationToken)
     {
@@ -287,7 +303,10 @@ public static class AppDbContextSeeder
         user.Phone = "900177653";
         user.Role = UserRole.Driver;
         user.Status = UserStatus.Active;
-        user.PasswordHash = passwordHasher.Hash(qaPassword);
+        if (shouldResetPassword)
+        {
+            user.PasswordHash = passwordHasher.Hash(qaPassword);
+        }
 
         if (user.DriverProfile is null)
         {
@@ -579,4 +598,10 @@ public static class AppDbContextSeeder
             ? DefaultLocalSeedPassword
             : configuredPassword.Trim();
     }
+
+    private static bool ShouldResetExistingSeedPasswords(IConfiguration configuration)
+    {
+        return bool.TryParse(configuration[ResetExistingSeedPasswordsKey], out var shouldReset) && shouldReset;
+    }
+
 }

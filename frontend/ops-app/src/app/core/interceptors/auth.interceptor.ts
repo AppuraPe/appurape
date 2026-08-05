@@ -14,7 +14,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const token = authService.getToken();
   const apiBaseUrl = environment.apiBaseUrl;
 
-  if (!token || !isApiRequest(request.url, apiBaseUrl) || isAuthRequest(request.url, apiBaseUrl)) {
+  if (!token || !isApiRequest(request.url, apiBaseUrl) || isAnonymousAuthRequest(request.url, apiBaseUrl)) {
     return next(request);
   }
 
@@ -40,13 +40,17 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   );
 };
 
-function isAuthRequest(requestUrl: string, apiBaseUrl: string | null | undefined): boolean {
+function isAnonymousAuthRequest(requestUrl: string, apiBaseUrl: string | null | undefined): boolean {
   const normalizedBaseUrl = apiBaseUrl?.trim().replace(/\/$/, '');
   const normalizedUrl = requestUrl.trim();
+  const authPath = normalizedBaseUrl && normalizedUrl.startsWith(normalizedBaseUrl)
+    ? normalizedUrl.slice(normalizedBaseUrl.length)
+    : normalizedUrl;
 
-  if (normalizedBaseUrl) {
-    return normalizedUrl === `${normalizedBaseUrl}/api/auth` || normalizedUrl.startsWith(`${normalizedBaseUrl}/api/auth/`);
-  }
-
-  return normalizedUrl === '/api/auth' || normalizedUrl.startsWith('/api/auth/');
+  return (
+    authPath === '/api/auth/login' ||
+    authPath === '/api/auth/google' ||
+    authPath.startsWith('/api/auth/password/') ||
+    authPath.startsWith('/api/auth/register/')
+  );
 }

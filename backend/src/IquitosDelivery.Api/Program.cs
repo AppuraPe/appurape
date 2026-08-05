@@ -29,19 +29,20 @@ builder.Services.AddCors(options =>
             .GetSection("Cors:AllowedOrigins")
             .Get<string[]>() ?? [];
 
-        var allowedOrigins = builder.Environment.IsDevelopment()
-            ? configuredOrigins
-                .Concat([
-                    "http://localhost:4200",
-                    "http://localhost:4201",
-                    "http://127.0.0.1:4200",
-                    "http://127.0.0.1:4201",
-                    "capacitor://localhost",
-                    "ionic://localhost"
-                ])
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray()
-            : configuredOrigins;
+        var localDevelopmentClientOrigins = new[]
+        {
+            "http://localhost:4200",
+            "http://localhost:4201",
+            "http://127.0.0.1:4200",
+            "http://127.0.0.1:4201",
+            "capacitor://localhost",
+            "ionic://localhost"
+        };
+
+        var allowedOrigins = configuredOrigins
+            .Concat(localDevelopmentClientOrigins)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
         policy
             .AllowAnyHeader()
