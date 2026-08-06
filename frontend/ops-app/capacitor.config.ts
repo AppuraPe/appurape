@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'AppuraPe',
   webDir: 'dist/appurape/browser',
   plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
     SocialLogin: {
       providers: {
         google: true,

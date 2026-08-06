@@ -23,19 +23,19 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
     UnifiedLoadingStateComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(118px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-5 lg:gap-6'">
       <app-surface-card variant="hero" extraClass="p-5">
         <app-internal-page-section-header
-          eyebrow="AppuraPe Admin"
-          title="Inicio administrativo"
-          subtitle="Resumen rápido de revisiones, pagos y salud de la red."
+          eyebrow="Admin"
+          title="Panel administrativo"
+          subtitle="Resumen rápido de la red: pagos, negocios, drivers y solicitudes Community."
         />
 
         <app-notice
           class="mt-5"
           tone="info"
           title="Prioridad de la red"
-          message="Revisa primero cuentas pendientes y pagos manuales. Aprobar habilita la operación; suspender bloquea temporalmente el uso de la plataforma."
+          message="Revisa primero pagos manuales y cuentas pendientes. Aprobar habilita la operación; suspender bloquea temporalmente el uso de la plataforma."
         />
       </app-surface-card>
 
@@ -48,7 +48,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
         </div>
       } @else {
         <app-surface-card variant="page" extraClass="p-4">
-          <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <div class="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-4">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <span class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Negocios</span>
               <strong class="mt-2 block text-2xl font-black leading-none text-slate-950">{{ pendingRestaurantsCount() }}</strong>
@@ -86,20 +86,28 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
           </button>
         </div>
         <div class="grid gap-2">
+          <a routerLink="/admin/payments" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
+            Revisar pagos
+            <span class="text-primary-700">Abrir</span>
+          </a>
           <a routerLink="/admin/businesses/pending" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
-            Negocios pendientes
+            Revisar negocios
             <span class="text-primary-700">Ver</span>
           </a>
           <a routerLink="/admin/drivers/pending" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
-            Drivers pendientes
+            Revisar drivers
             <span class="text-primary-700">Ver</span>
           </a>
-          <a routerLink="/admin/payments" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
-            Pagos manuales
-            <span class="text-primary-700">Revisar</span>
+          <a routerLink="/admin/business-types" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
+            Tipos de negocio
+            <span class="text-primary-700">Editar</span>
+          </a>
+          <a routerLink="/admin/settings/branding" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
+            Configurar marca
+            <span class="text-primary-700">Editar</span>
           </a>
           <a routerLink="/admin/community" class="flex min-h-14 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 no-underline shadow-sm">
-            Favores
+            Solicitudes Community
             <span class="text-primary-700">Abrir</span>
           </a>
         </div>

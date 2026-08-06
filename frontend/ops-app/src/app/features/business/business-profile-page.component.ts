@@ -33,10 +33,10 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
+    <section class="grid gap-4 sm:gap-5">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Business"
+          eyebrow="Negocio"
           title="Perfil del negocio"
           subtitle="Actualiza la cara pública del negocio con una interfaz más clara y moderna."
         />
@@ -85,31 +85,31 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
           <div class="stats-grid">
             <app-metric-card label="Zona" [value]="restaurant()!.zoneName" helper="Cobertura operativa actual" />
             <app-metric-card label="Estado" [value]="restaurant()!.isActive ? 'Activo' : 'Inactivo'" helper="Visibilidad operativa" />
-            <app-metric-card label="Aprobación" [value]="restaurant()!.approvalStatus" helper="Control administrativo" />
+            <app-metric-card label="Aprobación" [value]="approvalStatusLabel(restaurant()!.approvalStatus)" helper="Control administrativo" />
           </div>
         }
       </app-surface-card>
 
       @if (restaurant()) {
-        <div class="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+        <div class="grid gap-4 sm:gap-5 xl:grid-cols-[0.95fr_1.05fr]">
           <app-surface-card variant="page">
-            <div class="grid gap-5">
+            <div class="grid gap-4 sm:gap-5">
               <div class="flex items-start gap-4">
                 <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary-700 text-white shadow-lg shadow-primary-700/20">
                   <lucide-angular class="h-6 w-6" [img]="storeIcon" aria-hidden="true"></lucide-angular>
                 </div>
-                <div class="grid gap-1">
+                <div class="grid min-w-0 gap-1.5">
                   <h2 class="mb-0 text-2xl font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant()!.name }}</h2>
-                  <p class="text-sm text-text-muted">{{ restaurant()!.description }}</p>
+                  <p class="text-sm leading-6 text-text-muted">{{ restaurant()!.description }}</p>
                 </div>
               </div>
 
               @if (logoPreviewUrl()) {
                 <div class="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
-                  <img class="block h-64 w-full object-cover" [src]="logoPreviewUrl()" alt="Logo del negocio" />
+                  <img class="block h-44 w-full object-cover sm:h-64" [src]="logoPreviewUrl()" alt="Logo del negocio" />
                 </div>
               } @else {
-                <div class="grid min-h-56 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
+                <div class="grid min-h-44 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-5 text-center text-sm font-semibold leading-6 text-text-muted sm:min-h-56 sm:p-6">
                   El logo del negocio aparecerá aquí.
                 </div>
               }
@@ -128,7 +128,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 
           <app-surface-card variant="page">
             <form class="grid gap-4" [formGroup]="form" (ngSubmit)="save()">
-              <div class="grid gap-4 sm:grid-cols-2">
+              <div class="grid gap-4 md:grid-cols-2">
                 <label class="grid gap-2">
                   <span class="text-sm font-semibold text-loreto-carbon">Nombre</span>
                   <input id="name" type="text" formControlName="name" />
@@ -136,7 +136,15 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 
                 <label class="grid gap-2">
                   <span class="text-sm font-semibold text-loreto-carbon">Logo</span>
-                  <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" />
+                  <input id="logoFile" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" #logoInput />
+                  <button
+                    class="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary-200 bg-primary-50 px-4 text-sm font-extrabold text-primary-700 transition active:scale-[0.99]"
+                    type="button"
+                    (click)="logoInput.click()"
+                  >
+                    <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
+                    {{ logoFileName() ? 'Cambiar logo' : 'Subir logo' }}
+                  </button>
                   @if (logoFileName()) {
                     <small class="text-sm text-text-muted">Archivo seleccionado: {{ logoFileName() }}</small>
                   }
@@ -171,7 +179,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 
               <input type="hidden" formControlName="logoUrl" />
 
-              <div class="grid gap-3 sm:grid-cols-3">
+              <div class="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-3">
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
@@ -184,7 +192,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                     <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
                     Aprobación
                   </div>
-                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.approvalStatus }}</p>
+                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ approvalStatusLabel(restaurant()!.approvalStatus) }}</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
@@ -195,7 +203,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 </div>
               </div>
 
-              <div class="flex flex-wrap gap-3">
+              <div class="grid gap-3 sm:flex sm:flex-wrap">
                 <app-button size="lg" type="submit" [disabled]="isSaving()">
                   {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
                 </app-button>
@@ -401,6 +409,19 @@ export class BusinessProfilePageComponent {
 
   private toApiTimeValue(value: string): string {
     return value.length === 5 ? `${value}:00` : value;
+  }
+
+  approvalStatusLabel(status: string): string {
+    switch (status) {
+      case 'Pending':
+        return 'Pendiente';
+      case 'Approved':
+        return 'Aprobado';
+      case 'Rejected':
+        return 'Rechazado';
+      default:
+        return status || 'Sin estado';
+    }
   }
 }
 

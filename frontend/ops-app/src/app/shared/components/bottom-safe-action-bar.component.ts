@@ -26,11 +26,11 @@ export class BottomSafeActionBarComponent {
     const modeClass = (() => {
       switch (this.mode()) {
         case 'fixed':
-          return 'fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))]';
+          return 'fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(18px+env(safe-area-inset-bottom,0px))]';
         case 'static':
-          return 'px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))]';
+          return 'px-4 pb-[calc(18px+env(safe-area-inset-bottom,0px))]';
         default:
-          return 'sticky bottom-0 z-30 px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))]';
+          return 'sticky bottom-0 z-30 px-4 pb-[calc(18px+env(safe-area-inset-bottom,0px))]';
       }
     })();
 

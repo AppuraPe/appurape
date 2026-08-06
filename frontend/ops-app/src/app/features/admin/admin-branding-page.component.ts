@@ -19,7 +19,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Admin"
+          eyebrow="Admin"
           title="Marca global"
           subtitle="Gestiona logo, icono, splash y datos principales de la app."
         />

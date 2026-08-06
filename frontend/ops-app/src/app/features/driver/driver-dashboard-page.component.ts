@@ -27,14 +27,14 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
     UnifiedLoadingStateComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(118px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-5 lg:gap-6'">
       <app-surface-card variant="hero" extraClass="p-5">
         <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div class="grid gap-4">
             <app-internal-page-section-header
-              eyebrow="Driver"
-              title="Inicio del driver"
-              subtitle="Tu operación combina pedidos disponibles, reputación y colaboración comunitaria dentro de la misma red."
+              eyebrow="Repartidor"
+              title="Tu ruta"
+              subtitle="Pedidos disponibles, entrega activa e historial en una experiencia móvil rápida."
             />
 
             <div class="flex flex-wrap items-center gap-3">
@@ -52,15 +52,14 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
           <app-surface-card variant="page" extraClass="min-w-[18rem] p-5">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
               <lucide-angular class="h-4 w-4" [img]="compassIcon" aria-hidden="true"></lucide-angular>
-              Estado operativo
+              Estado de ruta
             </div>
             <p class="mt-3 text-sm leading-6 text-slate-500">
               {{ trustLevelHint() }}
             </p>
-            <div class="mt-4 flex flex-wrap gap-3">
-              <app-button [routerLink]="'/driver/orders'">Ver disponibles</app-button>
-              <app-button variant="secondary" [routerLink]="'/driver/active-order'">Pedido activo</app-button>
-              <app-button variant="ghost" [routerLink]="'/community'">Ir a comunidad</app-button>
+            <div class="mt-4 grid gap-2">
+              <app-button [routerLink]="'/driver/orders'" block>Ver disponibles</app-button>
+              <app-button variant="secondary" [routerLink]="'/driver/active-order'" block>Pedido activo</app-button>
             </div>
           </app-surface-card>
         </div>
@@ -79,11 +78,11 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
         <app-surface-card variant="page" extraClass="p-5">
           <app-notice
             tone="info"
-            title="Operación del driver"
+            title="Operación del repartidor"
             message="Solo puedes tomar pedidos cuando tu cuenta está aprobada y no tienes otro pedido activo. Si una acción falla, revisa el mensaje del backend."
           />
 
-          <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div class="mt-5 grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-4">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Pedidos disponibles</p>
               <p class="mt-2 text-2xl font-black leading-none text-slate-950">{{ availableOrdersCount() }}</p>
@@ -112,9 +111,9 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             <div class="grid gap-4">
               <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
                 <lucide-angular class="h-4 w-4" [img]="boltIcon" aria-hidden="true"></lucide-angular>
-                Acciones rápidas
+              Acciones principales
               </div>
-              <div class="grid gap-3 sm:grid-cols-2">
+              <div class="grid gap-3">
                 <app-button size="lg" [routerLink]="'/driver/orders'" block>
                   <lucide-angular class="h-4 w-4" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
                   Pedidos disponibles
@@ -129,7 +128,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
                 </app-button>
                 <app-button variant="ghost" size="lg" [routerLink]="'/community'" block>
                   <lucide-angular class="h-4 w-4" [img]="compassIcon" aria-hidden="true"></lucide-angular>
-                  Red comunitaria
+                  Favores Community
                 </app-button>
                 <app-button variant="ghost" size="lg" type="button" [disabled]="isLoading()" (click)="loadDashboard()" block>
                   <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>

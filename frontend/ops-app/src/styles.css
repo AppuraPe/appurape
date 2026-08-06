@@ -23,13 +23,22 @@
   --color-surface-card: #ffffff;
   --color-surface-soft: #fff3ea;
 
-  --color-loreto-carbon: #0f172a;
-  --color-loreto-cecina: #64748b;
-  --color-loreto-crema: #fff3ea;
-  --color-loreto-hoja: #dcfce7;
-  --color-loreto-rio: #2563eb;
-  --color-loreto-tacacho: #e5eaf2;
-  --color-loreto-verde: #10b981;
+  --color-brand-text: #0f172a;
+  --color-brand-muted: #64748b;
+  --color-brand-soft: #fff3ea;
+  --color-brand-success-soft: #dcfce7;
+  --color-brand-info: #2563eb;
+  --color-brand-border: #e5eaf2;
+  --color-brand-success: #10b981;
+
+  /* Backward-compatible aliases for older Tailwind utility names. */
+  --color-loreto-carbon: var(--color-brand-text);
+  --color-loreto-cecina: var(--color-brand-muted);
+  --color-loreto-crema: var(--color-brand-soft);
+  --color-loreto-hoja: var(--color-brand-success-soft);
+  --color-loreto-rio: var(--color-brand-info);
+  --color-loreto-tacacho: var(--color-brand-border);
+  --color-loreto-verde: var(--color-brand-success);
 
   --color-border: #e5eaf2;
   --color-border-strong: #cbd5e1;
@@ -40,7 +49,8 @@
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
 
-  --shadow-loreto: 0 18px 48px rgba(15, 23, 42, 0.12);
+  --shadow-app-deep: 0 18px 48px rgba(15, 23, 42, 0.12);
+  --shadow-loreto: var(--shadow-app-deep);
   --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
@@ -163,11 +173,11 @@
 }
 
 @utility eyebrow {
-  @apply inline-flex w-fit items-center rounded-full bg-primary-100 px-3 py-1 text-[0.78rem] font-black uppercase tracking-[0.08em] text-primary-700;
+  @apply inline-flex w-fit items-center rounded-full bg-primary-100 px-2.5 py-1 text-[0.68rem] font-black uppercase tracking-[0.07em] text-primary-700;
 }
 
 @utility badge {
-  @apply inline-flex min-h-8 items-center rounded-full border border-slate-200 bg-surface-soft px-3 py-1 text-xs font-extrabold uppercase tracking-[0.08em] text-loreto-carbon;
+  @apply inline-flex min-h-7 items-center rounded-full border border-slate-200 bg-surface-soft px-2.5 py-1 text-[0.72rem] font-extrabold uppercase tracking-[0.07em] text-loreto-carbon;
 }
 
 @utility text-link {
@@ -260,11 +270,11 @@
 }
 
 @utility stats-grid {
-  @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+  @apply grid gap-3 min-[390px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4;
 }
 
 @utility stat-card {
-  @apply grid gap-1 rounded-[22px] border border-slate-200 bg-white p-4 shadow-soft;
+  @apply grid gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 shadow-soft sm:rounded-[20px] sm:px-4 sm:py-3.5;
 }
 
 @utility section-heading {
@@ -312,11 +322,11 @@
 }
 
 @utility page-shell {
-  @apply mx-auto w-full max-w-[1160px] px-3 py-4 sm:px-4 sm:py-6 lg:py-8;
+  @apply mx-auto w-full max-w-[1160px] px-4 py-5 sm:px-5 sm:py-6 lg:py-8;
 }
 
 @utility main-stack {
-  @apply grid gap-4 sm:gap-5 lg:gap-6;
+  @apply grid gap-5 lg:gap-6;
 }
 
 @utility hero-card {
@@ -336,13 +346,53 @@
 }
 
 @utility metric-value {
-  @apply text-2xl font-black tracking-[-0.04em] text-loreto-carbon;
+  @apply text-[1.35rem] font-black leading-tight tracking-[-0.035em] text-loreto-carbon sm:text-[1.55rem];
 }
 
 @utility metric-label {
-  @apply text-xs font-extrabold uppercase tracking-[0.18em] text-text-muted;
+  @apply text-[0.66rem] font-extrabold uppercase tracking-[0.08em] text-text-muted sm:text-[0.7rem];
 }
 
 @utility metric-helper {
-  @apply text-sm text-text-muted;
+  @apply text-[0.78rem] leading-5 text-text-muted sm:text-[0.82rem];
+}
+
+@layer components {
+  input[type='file'] {
+    min-height: 3rem;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 1.125rem;
+    border: 1px dashed color-mix(in srgb, var(--color-primary-600) 28%, white);
+    background: color-mix(in srgb, var(--color-surface-soft) 72%, white);
+    padding: 0.55rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    box-shadow: var(--shadow-soft);
+    outline: none;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  input[type='file']::file-selector-button {
+    min-height: 2.1rem;
+    margin-right: 0.75rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-primary-600);
+    padding: 0 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: white;
+  }
+
+  input[type='file']:hover {
+    border-color: color-mix(in srgb, var(--color-primary-600) 42%, white);
+    background: var(--color-surface-soft);
+  }
+
+  input[type='file']:focus {
+    border-color: var(--color-primary-600);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-600) 16%, transparent);
+  }
 }

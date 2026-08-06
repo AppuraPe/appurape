@@ -7,16 +7,16 @@ import { Component, input } from '@angular/core';
     class: 'block w-full',
   },
   template: `
-    <div class="flex w-full min-w-0 items-start justify-between gap-3 px-1">
+    <div class="flex w-full min-w-0 items-start justify-between gap-3 px-0.5">
       <div class="min-w-0 flex-1">
         @if (eyebrow()) {
-          <span class="inline-flex min-h-8 items-center rounded-full bg-primary-100 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-primary-700">
+          <span class="inline-flex min-h-7 items-center rounded-full bg-primary-100 px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.07em] text-primary-700">
             {{ eyebrow() }}
           </span>
         }
-        <h2 class="mt-2 text-xl font-extrabold tracking-tight text-slate-950 md:text-2xl">{{ title() }}</h2>
+        <h2 class="mt-2 text-[1.15rem] font-extrabold leading-tight tracking-tight text-slate-950 md:text-[1.35rem]">{{ title() }}</h2>
         @if (subtitle()) {
-          <p class="mt-1 text-sm leading-6 text-slate-500 md:text-[15px]">{{ subtitle() }}</p>
+          <p class="mt-1 text-sm leading-6 text-slate-500">{{ subtitle() }}</p>
         }
       </div>
 

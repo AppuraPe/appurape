@@ -44,7 +44,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Admin"
+          eyebrow="Admin"
           title="Detalle de negocio"
           subtitle="Información administrativa, branding y control operativo."
         />

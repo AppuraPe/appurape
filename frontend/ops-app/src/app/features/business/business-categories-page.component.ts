@@ -38,10 +38,10 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
+    <section class="grid gap-4 sm:gap-5">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Menu"
+          eyebrow="Catálogo"
           title="Categorías"
           subtitle="Crea y edita categorías para ordenar mejor el catálogo del negocio."
         />
@@ -65,7 +65,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         </div>
       </app-surface-card>
 
-      <div class="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+      <div class="grid gap-4 sm:gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <app-surface-card variant="page">
           <form class="grid gap-4" [formGroup]="form" (ngSubmit)="submit()">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
@@ -73,14 +73,14 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               {{ editingCategory() ? 'Editar categoría' : 'Nueva categoría' }}
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2">
                 <span class="text-sm font-semibold text-loreto-carbon">Nombre</span>
                 <input id="categoryName" type="text" formControlName="name" />
               </label>
 
               <label class="grid gap-2">
-                <span class="text-sm font-semibold text-loreto-carbon">SortOrder</span>
+                <span class="text-sm font-semibold text-loreto-carbon">Orden</span>
                 <input id="categorySortOrder" type="number" min="0" formControlName="sortOrder" />
               </label>
             </div>
@@ -92,7 +92,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               </label>
             }
 
-            <div class="flex flex-wrap gap-3">
+            <div class="grid gap-3 sm:flex sm:flex-wrap">
               <app-button size="lg" type="submit" [disabled]="isSubmitting()">
                 {{
                   isSubmitting()
@@ -172,7 +172,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
                     <div class="grid gap-2">
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ category.name }}</strong>
-                      <span class="text-sm text-text-muted">SortOrder: {{ category.sortOrder }}</span>
+                      <span class="text-sm text-text-muted">Orden: {{ category.sortOrder }}</span>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3 xl:justify-end">

@@ -41,7 +41,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Admin"
+          eyebrow="Admin"
           title="Drivers pendientes"
           subtitle="Valida nuevos colaboradores de reparto antes de darles acceso operativo dentro de la red."
         />

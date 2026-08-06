@@ -1,5 +1,20 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  Bike,
+  ClipboardList,
+  CreditCard,
+  Ellipsis,
+  HeartHandshake,
+  Home,
+  LucideAngularModule,
+  Package,
+  Palette,
+  UserRound,
+  Store,
+  Tags,
+  UsersRound,
+} from 'lucide-angular';
 import { AuthService } from '../core/services/auth.service';
 import { PlatformSettingsApiService } from '../core/services/platform-settings-api.service';
 import { MobilePageShellComponent } from '../shared/components/mobile-page-shell.component';
@@ -10,12 +25,13 @@ interface NavItem {
   path: string;
   helper?: string;
   exact?: boolean;
+  icon?: typeof Home;
 }
 
 @Component({
   selector: 'app-ops-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, StatusBadgeComponent, MobilePageShellComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, StatusBadgeComponent, MobilePageShellComponent],
   template: `
     <div class="grid min-h-dvh bg-slate-50 xl:grid-cols-[304px_minmax(0,1fr)]">
       <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-slate-50/95 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top,0px))] backdrop-blur xl:hidden">
@@ -35,18 +51,17 @@ interface NavItem {
             <span class="min-w-0">
               <strong class="block truncate text-sm font-black leading-5">{{ navHeading() }}</strong>
               <small class="block truncate text-xs font-semibold text-slate-500">
-                {{ currentUser()?.fullName || currentUser()?.email || 'Operador' }}
+                {{ mobileHeaderSubtitle() }}
               </small>
             </span>
           </a>
 
-          <button
+          <a
             class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-primary-700 shadow-sm transition active:scale-[0.98]"
-            type="button"
-            (click)="logout()"
+            [routerLink]="mobileAccountRoute()"
           >
-            Salir
-          </button>
+            Cuenta
+          </a>
         </div>
       </header>
 
@@ -109,9 +124,9 @@ interface NavItem {
       <main class="min-w-0 overflow-x-hidden">
         <app-mobile-page-shell
           [backgroundClass]="'bg-slate-50'"
-          [bottomSpacingClass]="'pb-[calc(96px+env(safe-area-inset-bottom,0px))]'"
+          [bottomSpacingClass]="'pb-[calc(140px+env(safe-area-inset-bottom,0px))]'"
           [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'"
-          [extraClass]="'px-3 md:px-4 xl:px-6'"
+          [extraClass]="'px-4 pt-4 md:px-6 md:pt-5 xl:px-6 xl:pt-0'"
         >
           <router-outlet />
         </app-mobile-page-shell>
@@ -126,7 +141,9 @@ interface NavItem {
               [routerLink]="item.path"
               class="group flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center text-[0.68rem] font-black leading-tight text-slate-500 no-underline transition active:scale-[0.98]"
             >
-              <span class="h-1.5 w-1.5 rounded-full bg-slate-300 transition group-[.text-primary-700]:w-5 group-[.text-primary-700]:bg-primary-700"></span>
+              @if (item.icon) {
+                <lucide-angular class="h-5 w-5 transition group-[.text-primary-700]:scale-110" [img]="item.icon" aria-hidden="true"></lucide-angular>
+              }
               <span class="line-clamp-2">{{ item.label }}</span>
             </a>
           }
@@ -162,6 +179,42 @@ export class OpsLayoutComponent {
     return this.branding()?.appName || 'AppuraPe';
   });
 
+  readonly mobileHeaderSubtitle = computed(() => {
+    const role = this.authService.getCurrentRole();
+
+    if (role === 'Admin') {
+      return 'Control de red';
+    }
+
+    if (role === 'Restaurant') {
+      return 'Pedidos y catálogo';
+    }
+
+    if (role === 'Driver') {
+      return 'Entregas activas';
+    }
+
+    return this.currentUser()?.fullName || this.currentUser()?.email || 'Operador';
+  });
+
+  readonly mobileAccountRoute = computed(() => {
+    const role = this.authService.getCurrentRole();
+
+    if (role === 'Admin') {
+      return '/admin/dashboard';
+    }
+
+    if (role === 'Restaurant') {
+      return '/business/profile';
+    }
+
+    if (role === 'Driver') {
+      return '/driver/dashboard';
+    }
+
+    return this.authService.getDefaultRoute();
+  });
+
   readonly navItems = computed<NavItem[]>(() => {
     const role = this.authService.getCurrentRole();
 
@@ -169,7 +222,7 @@ export class OpsLayoutComponent {
       case 'Restaurant':
         return [
           { label: 'Inicio', path: '/business/dashboard', helper: 'Estado y resumen' },
-          { label: 'Pedidos', path: '/business/orders', helper: 'Preparación y pickup', exact: false },
+          { label: 'Pedidos', path: '/business/orders', helper: 'Preparación y recojo', exact: false },
           { label: 'Perfil', path: '/business/profile', helper: 'Visibilidad pública' },
           { label: 'Categorías', path: '/business/menu/categories', helper: 'Organiza catálogo' },
           { label: 'Productos', path: '/business/menu/items', helper: 'Disponibilidad' },
@@ -206,32 +259,32 @@ export class OpsLayoutComponent {
     switch (role) {
       case 'Restaurant':
         return [
-          { label: 'Inicio', path: '/business/dashboard', exact: true },
-          { label: 'Pedidos', path: '/business/orders', exact: false },
-          { label: 'Productos', path: '/business/menu/items', exact: false },
-          { label: 'Perfil', path: '/business/profile', exact: false },
-          { label: 'Favores', path: '/community', exact: false },
+          { label: 'Pedidos', path: '/business/orders', exact: false, icon: ClipboardList },
+          { label: 'Catálogo', path: '/business/menu/items', exact: false, icon: Package },
+          { label: 'Perfil', path: '/business/profile', exact: false, icon: Store },
+          { label: 'Favores', path: '/community', exact: false, icon: HeartHandshake },
+          { label: 'Más', path: '/business/dashboard', exact: true, icon: Ellipsis },
         ];
       case 'Driver':
         return [
-          { label: 'Inicio', path: '/driver/dashboard', exact: true },
-          { label: 'Disponibles', path: '/driver/orders', exact: true },
-          { label: 'Activo', path: '/driver/active-order', exact: false },
-          { label: 'Historial', path: '/driver/orders/my', exact: false },
-          { label: 'Favores', path: '/community', exact: false },
+          { label: 'Disponibles', path: '/driver/orders', exact: true, icon: Bike },
+          { label: 'Activo', path: '/driver/active-order', exact: false, icon: ClipboardList },
+          { label: 'Historial', path: '/driver/orders/my', exact: false, icon: Tags },
+          { label: 'Favores', path: '/community', exact: false, icon: HeartHandshake },
+          { label: 'Cuenta', path: '/driver/dashboard', exact: true, icon: UserRound },
         ];
       case 'Admin':
         return [
-          { label: 'Inicio', path: '/admin/dashboard', exact: true },
-          { label: 'Pagos', path: '/admin/payments', exact: false },
-          { label: 'Negocios', path: '/admin/businesses', exact: false },
-          { label: 'Drivers', path: '/admin/drivers', exact: false },
-          { label: 'Marca', path: '/admin/settings/branding', exact: false },
+          { label: 'Inicio', path: '/admin/dashboard', exact: true, icon: Home },
+          { label: 'Pagos', path: '/admin/payments', exact: false, icon: CreditCard },
+          { label: 'Negocios', path: '/admin/businesses', exact: false, icon: Store },
+          { label: 'Drivers', path: '/admin/drivers', exact: false, icon: UsersRound },
+          { label: 'Más', path: '/admin/settings/branding', exact: false, icon: Ellipsis },
         ];
       default:
         return [
-          { label: 'Inicio', path: this.authService.getDefaultRoute(), exact: true },
-          { label: 'Favores', path: '/community', exact: false },
+          { label: 'Inicio', path: this.authService.getDefaultRoute(), exact: true, icon: Home },
+          { label: 'Favores', path: '/community', exact: false, icon: HeartHandshake },
         ];
     }
   });

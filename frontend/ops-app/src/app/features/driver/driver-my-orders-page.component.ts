@@ -45,7 +45,7 @@ interface DriverOrderAction {
     ActionChipRowComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(118px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-5 lg:gap-6'">
       <app-surface-card variant="page" extraClass="p-5">
         <app-internal-page-section-header
           eyebrow="Driver"
@@ -58,7 +58,7 @@ interface DriverOrderAction {
           <app-notice class="mt-4" tone="danger" [message]="errorMessage()" />
         }
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-3">
+        <div class="mt-5 grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-3">
           <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Pedidos</p>
             <p class="mt-2 text-2xl font-black leading-none text-slate-950">{{ orders().length }}</p>
@@ -135,7 +135,7 @@ interface DriverOrderAction {
       <app-notice
         tone="info"
         title="Siguiente acción"
-        message="Un pedido Assigned pasa a PickedUp, luego OnTheWay y finalmente Delivered."
+        message="Tu entrega avanza de asignada a recogida, luego en camino y finalmente entregada."
       />
 
       @if (isLoading()) {

@@ -42,10 +42,10 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
+    <section class="grid gap-4 sm:gap-5">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Menu"
+          eyebrow="Catálogo"
           title="Productos"
           subtitle="Crea, edita y controla disponibilidad de productos desde una sola vista."
         />
@@ -77,7 +77,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         </div>
       </app-surface-card>
 
-      <div class="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+      <div class="grid gap-4 sm:gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <app-surface-card variant="page">
           <form class="grid gap-4" [formGroup]="form" (ngSubmit)="submit()">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
@@ -85,7 +85,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               {{ editingItem() ? 'Editar producto' : 'Nuevo producto' }}
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2">
                 <span class="text-sm font-semibold text-loreto-carbon">Categoría</span>
                 <select id="itemCategoryId" formControlName="categoryId">
@@ -118,10 +118,10 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
             @if (imagePreviewUrl()) {
               <div class="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
-                <img class="block h-64 w-full object-cover" [src]="imagePreviewUrl()" alt="Vista previa del producto" />
+                <img class="block h-44 w-full object-cover sm:h-64" [src]="imagePreviewUrl()" alt="Vista previa del producto" />
               </div>
             } @else {
-              <div class="grid min-h-56 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-6 text-center text-sm font-semibold text-text-muted">
+              <div class="grid min-h-44 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-5 text-center text-sm font-semibold leading-6 text-text-muted sm:min-h-56 sm:p-6">
                 La imagen del producto aparecerá aquí.
               </div>
             }
@@ -132,7 +132,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             </label>
 
             @if (editingItem()) {
-              <div class="grid gap-3 sm:grid-cols-2">
+              <div class="grid gap-3 min-[390px]:grid-cols-2">
                 <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950">
                   <input type="checkbox" formControlName="isAvailable" />
                   <span>Disponible</span>
@@ -145,7 +145,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               </div>
             }
 
-            <div class="flex flex-wrap gap-3">
+            <div class="grid gap-3 sm:flex sm:flex-wrap">
               <app-button size="lg" type="submit" [disabled]="isSubmitting() || !categories().length">
                 {{
                   isSubmitting()

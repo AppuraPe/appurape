@@ -42,10 +42,10 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
+    <section class="grid gap-5 lg:gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Admin"
+          eyebrow="Admin"
           title="Drivers"
           subtitle="Listado completo de drivers registrados en la red AppuraPe."
         />
@@ -94,9 +94,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             <span class="text-sm font-semibold text-loreto-carbon">Aprobación</span>
             <select id="approvalStatus" formControlName="approvalStatus">
               <option value="">Todos</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
+              <option value="Pending">Pendiente</option>
+              <option value="Approved">Aprobado</option>
+              <option value="Rejected">Rechazado</option>
             </select>
           </label>
 
@@ -113,9 +113,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             <span class="text-sm font-semibold text-loreto-carbon">Usuario</span>
             <select id="userStatus" formControlName="userStatus">
               <option value="">Todos</option>
-              <option value="Pending">Pending</option>
-              <option value="Active">Active</option>
-              <option value="Suspended">Suspended</option>
+              <option value="Pending">Pendiente</option>
+              <option value="Active">Activo</option>
+              <option value="Suspended">Suspendido</option>
             </select>
           </label>
 
@@ -191,7 +191,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     <app-status-badge [status]="driver.userStatus" prefix="Usuario" />
                   </div>
 
-                  <div class="grid gap-3 sm:grid-cols-3">
+                  <div class="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-3">
                     <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>

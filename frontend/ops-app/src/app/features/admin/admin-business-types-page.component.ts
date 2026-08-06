@@ -44,7 +44,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Admin"
+          eyebrow="Admin"
           title="Categorías de negocios"
           subtitle="Gestiona las categorías disponibles para exploración y registro."
         />

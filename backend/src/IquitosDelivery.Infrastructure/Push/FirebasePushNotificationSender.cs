@@ -12,6 +12,7 @@ namespace IquitosDelivery.Infrastructure.Push;
 public class FirebasePushNotificationSender : IPushNotificationSender
 {
     private const string FirebaseMessagingScope = "https://www.googleapis.com/auth/firebase.messaging";
+    private const string AndroidNotificationChannelId = "appurape_default";
 
     private readonly HttpClient _httpClient;
     private readonly FirebasePushSettings _settings;
@@ -173,9 +174,32 @@ public class FirebasePushNotificationSender : IPushNotificationSender
                     title,
                     body
                 },
-                data = data ?? new Dictionary<string, string>()
+                data = NormalizeData(data),
+                android = new
+                {
+                    priority = "HIGH",
+                    notification = new
+                    {
+                        channel_id = AndroidNotificationChannelId
+                    }
+                }
             }
         };
+    }
+
+    private static IReadOnlyDictionary<string, string> NormalizeData(IReadOnlyDictionary<string, string>? data)
+    {
+        if (data is null || data.Count == 0)
+        {
+            return new Dictionary<string, string>();
+        }
+
+        return data
+            .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+            .ToDictionary(
+                item => item.Key.Trim(),
+                item => item.Value?.Trim() ?? string.Empty,
+                StringComparer.OrdinalIgnoreCase);
     }
 
     private static string? TryReadProviderMessageId(string responseBody)

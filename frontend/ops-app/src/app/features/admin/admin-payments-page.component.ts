@@ -35,7 +35,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
     ActionChipRowComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(118px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-5 lg:gap-6'">
       <app-surface-card variant="page" extraClass="p-5">
         <app-internal-page-section-header
           eyebrow="Admin"
@@ -55,7 +55,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
           message="Solo los pedidos con pago manual pendiente aparecen aquí. Los pedidos Cash no forman parte de esta bandeja."
         />
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="mt-5 grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-4">
           <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Pendientes</p>
             <p class="mt-2 text-2xl font-black leading-none text-slate-950">{{ payments().length }}</p>
@@ -127,7 +127,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
                     <app-status-badge [status]="payment.paymentStatus" [label]="paymentStatusLabel(payment.paymentStatus)" prefix="Pago" />
                   </div>
 
-                  <div class="grid gap-3 sm:grid-cols-3">
+                  <div class="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-3">
                     <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="userIcon" aria-hidden="true"></lucide-angular>

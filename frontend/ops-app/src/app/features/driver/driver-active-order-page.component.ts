@@ -32,7 +32,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
     UnifiedLoadingStateComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(118px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-5 lg:gap-6'">
       <app-surface-card variant="page" extraClass="p-5">
         <app-internal-page-section-header
           eyebrow="Driver"

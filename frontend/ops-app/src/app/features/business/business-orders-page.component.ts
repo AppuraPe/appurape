@@ -29,7 +29,6 @@ import { ActionChipRowComponent } from '../../shared/components/action-chip-row.
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
-import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
@@ -56,53 +55,64 @@ type PaymentActionMode = 'confirm' | 'reject';
     AppButtonComponent,
     AppSurfaceCardComponent,
     MobilePageShellComponent,
-    InternalPageSectionHeaderComponent,
     UnifiedEmptyStateComponent,
     UnifiedLoadingStateComponent,
     ActionChipRowComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
-      <app-surface-card variant="page" extraClass="p-5">
-        <app-internal-page-section-header
-          eyebrow="Negocio"
-          title="Pedidos del negocio"
-          subtitle="Gestiona el tramo operativo real desde que entra el pedido hasta que queda listo para pickup."
-          [meta]="orders().length + ' visibles'"
-        />
+    <app-mobile-page-shell
+      [topSafeArea]="false"
+      [bottomSpacingClass]="'pb-[calc(128px+env(safe-area-inset-bottom,0px))]'"
+      [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'"
+      [extraClass]="'grid gap-4 pt-1 lg:gap-5'"
+    >
+      <app-surface-card variant="page" extraClass="grid gap-4 p-5 sm:p-5">
+        <div class="min-w-0">
+          <div class="flex min-w-0 items-center justify-between gap-3">
+            <span class="inline-flex min-h-7 items-center rounded-full bg-primary-100 px-2.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary-700">
+              Negocio
+            </span>
+            <span class="shrink-0 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
+              {{ orders().length }} visibles
+            </span>
+          </div>
+          <h1 class="mt-3 text-[1.35rem] font-black leading-tight tracking-[-0.04em] text-slate-950 sm:text-2xl">
+            Pedidos del negocio
+          </h1>
+          <p class="mt-2 max-w-full text-sm leading-6 text-slate-500">
+            Bandeja móvil para aceptar, preparar y dejar pedidos listos.
+          </p>
+        </div>
 
         @if (errorMessage()) {
-          <app-notice class="mt-4" tone="danger" [message]="errorMessage()" />
+          <app-notice tone="danger" [message]="errorMessage()" />
         }
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Pedidos</p>
-            <p class="mt-2 text-2xl font-black leading-none text-slate-950">{{ orders().length }}</p>
-            <p class="mt-1 text-xs text-slate-500">Resultados visibles en la lista</p>
+        <div class="grid grid-cols-2 gap-3 rounded-[22px] border border-slate-200 bg-slate-50 p-2.5 md:grid-cols-4">
+          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Total</p>
+            <p class="mt-1 text-[1.35rem] font-black leading-none text-slate-950">{{ orders().length }}</p>
           </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Pendientes</p>
-            <p class="mt-2 text-2xl font-black leading-none text-amber-700">{{ ordersByStatus('Pending') }}</p>
+          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Nuevos</p>
+            <p class="mt-1 text-[1.35rem] font-black leading-none text-amber-700">{{ ordersByStatus('Pending') }}</p>
             <p class="mt-1 text-xs text-slate-500">Aún sin aceptar</p>
           </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Preparando</p>
-            <p class="mt-2 text-2xl font-black leading-none text-sky-700">{{ ordersByStatus('Preparing') }}</p>
+          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Preparando</p>
+            <p class="mt-1 text-[1.35rem] font-black leading-none text-sky-700">{{ ordersByStatus('Preparing') }}</p>
             <p class="mt-1 text-xs text-slate-500">En cocina ahora</p>
           </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p class="text-[0.64rem] font-black uppercase tracking-[0.12em] text-slate-500">Listos pickup</p>
-            <p class="mt-2 text-2xl font-black leading-none text-emerald-700">{{ ordersByStatus('ReadyForPickup') }}</p>
+          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Listos</p>
+            <p class="mt-1 text-[1.35rem] font-black leading-none text-emerald-700">{{ ordersByStatus('ReadyForPickup') }}</p>
             <p class="mt-1 text-xs text-slate-500">Esperando recolección</p>
           </div>
         </div>
-      </app-surface-card>
 
-      <app-surface-card variant="page" extraClass="p-4 sm:p-5">
-        <form class="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto]" [formGroup]="filtersForm" (ngSubmit)="loadOrders()">
-          <label class="grid gap-2">
-            <span class="text-sm font-semibold text-slate-900">Buscar pedido</span>
+        <form class="grid gap-2.5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto]" [formGroup]="filtersForm" (ngSubmit)="loadOrders()">
+          <label class="grid gap-1.5">
+            <span class="sr-only">Buscar pedido</span>
             <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 shadow-sm focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/15">
               <lucide-angular class="h-4 w-4 text-primary-700" [img]="searchIcon" aria-hidden="true"></lucide-angular>
               <input
@@ -116,8 +126,8 @@ type PaymentActionMode = 'confirm' | 'reject';
             </div>
           </label>
 
-          <label class="grid gap-2">
-            <span class="text-sm font-semibold text-slate-900">Estado</span>
+          <label class="grid gap-1.5">
+            <span class="sr-only">Estado</span>
             <select
               id="restaurantOrderStatus"
               formControlName="status"
@@ -136,14 +146,15 @@ type PaymentActionMode = 'confirm' | 'reject';
             </select>
           </label>
 
-          <div class="flex flex-wrap items-end gap-3 xl:justify-end">
-            <app-button type="submit" [disabled]="isLoading() || !!actionOrderId() || paymentSheetSubmitting()">
+          <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:items-end xl:justify-end">
+            <app-button type="submit" size="sm" [disabled]="isLoading() || !!actionOrderId() || paymentSheetSubmitting()">
               <lucide-angular class="h-4 w-4" [img]="searchIcon" aria-hidden="true"></lucide-angular>
               Aplicar
             </app-button>
             <app-button
               variant="secondary"
               type="button"
+              size="sm"
               (click)="clearFilters()"
               [disabled]="isLoading() || !!actionOrderId() || paymentSheetSubmitting()"
             >
@@ -153,9 +164,9 @@ type PaymentActionMode = 'confirm' | 'reject';
           </div>
         </form>
 
-        <app-action-chip-row class="mt-4">
+        <app-action-chip-row>
           <button
-            class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-bold transition"
+            class="min-h-11 shrink-0 rounded-full border px-3.5 text-xs font-bold transition"
             [class]="!filtersForm.controls.status.value ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700'"
             type="button"
             (click)="filtersForm.controls.status.setValue('')"
@@ -164,7 +175,7 @@ type PaymentActionMode = 'confirm' | 'reject';
           </button>
           @for (status of ['Pending', 'Accepted', 'Preparing', 'ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay', 'Delivered', 'Cancelled']; track status) {
             <button
-              class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-bold transition"
+              class="min-h-11 shrink-0 rounded-full border px-3.5 text-xs font-bold transition"
               [class]="filtersForm.controls.status.value === status ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700'"
               type="button"
               (click)="filtersForm.controls.status.setValue(status)"
@@ -175,10 +186,10 @@ type PaymentActionMode = 'confirm' | 'reject';
         </app-action-chip-row>
       </app-surface-card>
 
-      <app-notice
+      <app-notice class="hidden"
         tone="info"
         title="Flujo permitido"
-        message="Los pedidos avanzan Pending -> Accepted -> Preparing -> ReadyForPickup. Solo puedes cancelar antes de que estén listos para pickup."
+        message="El flujo del negocio es: pendiente, aceptado, en preparación y listo para recoger. Solo puedes cancelar antes de que el pedido esté listo."
       />
 
       @if (isLoading()) {

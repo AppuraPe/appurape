@@ -41,7 +41,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Admin"
+          eyebrow="Admin"
           title="Negocios pendientes"
           subtitle="Revisa nuevas altas de comercios y habilita solo los perfiles listos para operar dentro de la red."
         />

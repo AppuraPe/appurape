@@ -15,7 +15,7 @@ type BadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'muted'
       @if (prefix()) {
         <span class="opacity-70">{{ prefix() }}</span>
       }
-      {{ label() || status() }}
+      {{ displayLabel() }}
     </span>
   `,
 })
@@ -23,6 +23,8 @@ export class StatusBadgeComponent {
   readonly status = input.required<string | boolean | null | undefined>();
   readonly label = input<string>('');
   readonly prefix = input<string>('');
+
+  readonly displayLabel = computed(() => this.label() || this.resolveLabel(this.status()));
 
   readonly toneClass = computed(() => {
     switch (this.resolveTone(this.status())) {
@@ -69,5 +71,85 @@ export class StatusBadgeComponent {
     }
 
     return 'neutral';
+  }
+
+  private resolveLabel(status: string | boolean | null | undefined): string {
+    if (status === true) {
+      return 'Activo';
+    }
+
+    if (status === false) {
+      return 'Inactivo';
+    }
+
+    switch (String(status ?? '')) {
+      case 'Pending':
+        return 'Pendiente';
+      case 'PendingConfirmation':
+        return 'Pendiente de confirmación';
+      case 'Accepted':
+        return 'Aceptado';
+      case 'Preparing':
+        return 'En preparación';
+      case 'ReadyForPickup':
+        return 'Listo para recoger';
+      case 'Assigned':
+        return 'Asignado';
+      case 'PickedUp':
+        return 'Recogido';
+      case 'OnTheWay':
+        return 'En camino';
+      case 'Delivered':
+        return 'Entregado';
+      case 'Cancelled':
+        return 'Cancelado';
+      case 'Paid':
+        return 'Pagado';
+      case 'Rejected':
+        return 'Rechazado';
+      case 'Failed':
+        return 'Fallido';
+      case 'Refunded':
+        return 'Reembolsado';
+      case 'Approved':
+        return 'Aprobado';
+      case 'Active':
+        return 'Activo';
+      case 'Inactive':
+        return 'Inactivo';
+      case 'Suspended':
+        return 'Suspendido';
+      case 'Available':
+        return 'Disponible';
+      case 'NotAvailable':
+        return 'No disponible';
+      case 'Busy':
+        return 'Ocupado';
+      case 'Published':
+        return 'Publicado';
+      case 'Searching':
+        return 'Buscando';
+      case 'InProgress':
+      case 'InProcess':
+        return 'En proceso';
+      case 'Confirmed':
+        return 'Confirmado';
+      case 'Applied':
+        return 'Postulación enviada';
+      case 'Selected':
+        return 'Seleccionado';
+      case 'MarketPurchase':
+        return 'Compra';
+      case 'Errand':
+        return 'Mandado';
+      case 'ProductPickup':
+        return 'Recojo';
+      case 'PackageDelivery':
+        return 'Entrega';
+      case 'CompensatedFavor':
+        return 'Favor';
+      default:
+        return String(status ?? 'Sin estado') || 'Sin estado';
+    }
   }
 }

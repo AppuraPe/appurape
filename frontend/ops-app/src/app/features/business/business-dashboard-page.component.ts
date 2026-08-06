@@ -33,14 +33,14 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
-      <app-surface-card variant="hero">
-        <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+    <section class="grid gap-5 lg:gap-6">
+      <app-surface-card variant="hero" extraClass="p-5">
+        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] xl:items-start">
           <div class="grid gap-4">
             <app-page-header
-              eyebrow="AppuraPe Business"
-              title="Inicio del negocio"
-              subtitle="Resumen operativo, visibilidad pública y estado real del negocio dentro de la red."
+              eyebrow="Negocio"
+              title="Mi negocio"
+              subtitle="Pedidos, catálogo y visibilidad pública en un solo lugar."
             />
 
             @if (restaurant()) {
@@ -51,23 +51,23 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 </div>
                 <div class="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/90 px-4 py-2 text-sm font-semibold text-primary-900">
                   <lucide-angular class="h-4 w-4 text-primary-700" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
-                  {{ restaurant()!.approvalStatus }}
+                  {{ approvalStatusLabel(restaurant()!.approvalStatus) }}
                 </div>
               </div>
             }
           </div>
 
-          <div class="grid min-w-[18rem] gap-3 rounded-[24px] border border-white/80 bg-white/85 p-5 shadow-[0_12px_28px_rgba(6,25,43,0.08)]">
+          <div class="grid gap-3 rounded-[24px] border border-white/80 bg-white/85 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
               <lucide-angular class="h-4 w-4" [img]="clipboardListIcon" aria-hidden="true"></lucide-angular>
-              Operación
+              Hoy
             </div>
             <p class="text-sm leading-6 text-text-muted">
-              Prepara catálogo, horarios y perfil para que el negocio se vea sólido tanto en delivery como en la capa comunitaria.
+              Mantén el catálogo listo y revisa pedidos nuevos sin salir del flujo móvil.
             </p>
-            <div class="flex flex-wrap gap-3">
-              <app-button [routerLink]="'/business/orders'">Ver pedidos</app-button>
-              <app-button variant="ghost" [routerLink]="'/business/profile'">Ver perfil</app-button>
+            <div class="grid gap-2">
+              <app-button [routerLink]="'/business/orders'" block>Ver pedidos</app-button>
+              <app-button variant="secondary" [routerLink]="'/business/menu/items'" block>Gestionar catálogo</app-button>
             </div>
           </div>
         </div>
@@ -99,39 +99,38 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
             />
           }
 
-          <div class="stats-grid">
+          <div class="mt-4 grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-4">
             <app-metric-card label="Negocio" [value]="restaurant()!.name" helper="Nombre visible en la plataforma" />
             <app-metric-card label="Zona" [value]="restaurant()!.zoneName" helper="Área de cobertura actual" />
             <app-metric-card label="Pedidos totales" [value]="ordersCount()" helper="Historial cargado en este contexto" />
             <app-metric-card label="Pendientes o activos" [value]="activeOrdersCount()" helper="Requieren seguimiento operativo" />
-            <app-metric-card label="Aprobación" [value]="restaurant()!.approvalStatus" helper="Estado administrativo actual" />
           </div>
         }
       </app-surface-card>
 
-      <div class="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+      <div class="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <app-surface-card variant="page">
           <div class="grid gap-4">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
               <lucide-angular class="h-4 w-4" [img]="layoutGridIcon" aria-hidden="true"></lucide-angular>
-              Acciones rápidas
+              Acciones principales
             </div>
-            <div class="grid gap-3 sm:grid-cols-2">
+            <div class="grid gap-3">
               <app-button size="lg" [routerLink]="'/business/orders'" block>
                 <lucide-angular class="h-4 w-4" [img]="clipboardListIcon" aria-hidden="true"></lucide-angular>
-                Pedidos
+                Ver pedidos
               </app-button>
               <app-button variant="secondary" size="lg" [routerLink]="'/business/profile'" block>
                 <lucide-angular class="h-4 w-4" [img]="storeIcon" aria-hidden="true"></lucide-angular>
-                Perfil
+                Editar perfil
               </app-button>
               <app-button variant="ghost" size="lg" [routerLink]="'/business/menu/categories'" block>
                 <lucide-angular class="h-4 w-4" [img]="layoutGridIcon" aria-hidden="true"></lucide-angular>
-                Categorías
+                Gestionar categorías
               </app-button>
               <app-button variant="ghost" size="lg" [routerLink]="'/business/menu/items'" block>
                 <lucide-angular class="h-4 w-4" [img]="menuSquareIcon" aria-hidden="true"></lucide-angular>
-                Productos
+                Gestionar productos
               </app-button>
             </div>
           </div>
@@ -200,6 +199,19 @@ export class BusinessDashboardPageComponent {
     return orders.filter((order) =>
       ['Pending', 'Accepted', 'Preparing', 'ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay'].includes(order.status),
     ).length;
+  }
+
+  approvalStatusLabel(status: string): string {
+    switch (status) {
+      case 'Pending':
+        return 'Pendiente';
+      case 'Approved':
+        return 'Aprobado';
+      case 'Rejected':
+        return 'Rechazado';
+      default:
+        return status || 'Sin estado';
+    }
   }
 }
 

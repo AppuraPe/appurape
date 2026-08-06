@@ -35,7 +35,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     <section class="grid gap-6">
       <app-surface-card variant="page">
         <app-page-header
-          eyebrow="AppuraPe Admin"
+          eyebrow="Admin"
           title="Favores y confianza"
           subtitle="Monitorea colaboradores, solicitudes comunitarias y la salud distribuida de la red."
         />

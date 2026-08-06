@@ -3,7 +3,7 @@ import { Component, DestroyRef, computed, effect, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of } from 'rxjs';
+import { catchError, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CommunityApiService } from '../../core/services/community-api.service';
 import {
@@ -53,13 +53,13 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
     <app-mobile-page-shell
       [topSafeArea]="false"
       extraClass="space-y-4 px-4 pt-4 sm:px-5 lg:px-0 lg:pt-0"
-      bottomSpacingClass="pb-[calc(88px+env(safe-area-inset-bottom,0px))]"
+      bottomSpacingClass="pb-[calc(118px+env(safe-area-inset-bottom,0px))]"
     >
       <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
 
       <app-surface-card variant="page" extraClass="grid gap-4 p-5">
         <app-internal-page-section-header
-          eyebrow="AppuraPe Community"
+          eyebrow="Community"
           title="Favores y encargos"
           subtitle="Publica un favor, revisa solicitudes disponibles y coordina entregas rápidas desde una experiencia móvil más clara."
           meta="MVP"
@@ -71,7 +71,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
           message="Los favores se coordinan aparte del delivery tradicional. Puedes pedir ayuda, ofrecerte como colaborador y confirmar la entrega desde el mismo módulo."
         />
 
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-4">
           <app-metric-card label="Disponibilidad" [value]="availabilitySummary()" helper="Tu estado actual como colaborador" />
           <app-metric-card label="Solicitudes" [value]="requests().length.toString()" helper="Favores visibles para tu cuenta" />
           <app-metric-card label="Completadas" [value]="completedRequestsCount().toString()" helper="Solicitudes cerradas correctamente" />
@@ -581,9 +581,21 @@ export class CommunityHubPageComponent {
     this.errorMessage.set('');
     this.hubWarnings.set([]);
 
+    const collaboratorLoad$ = this.wrapLoad(
+      this.communityApi.getMyCollaborator(),
+      null,
+      'No pudimos cargar tu perfil colaborador',
+    ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+
     forkJoin({
-      collaborator: this.wrapLoad(this.communityApi.getMyCollaborator(), null, 'No pudimos cargar tu perfil colaborador'),
-      routes: this.wrapLoad(this.communityApi.getMyRoutes(), [], 'No pudimos cargar rutas disponibles'),
+      collaborator: collaboratorLoad$,
+      routes: collaboratorLoad$.pipe(
+        switchMap((collaborator) =>
+          collaborator.data
+            ? this.wrapLoad(this.communityApi.getMyRoutes(), [], 'No pudimos cargar rutas disponibles')
+            : of({ data: [], warning: null } satisfies HubLoadResult<CommunityRouteResponse[]>),
+        ),
+      ),
       requests: this.wrapLoad(this.communityApi.getRequests(), [], 'No pudimos cargar tus solicitudes'),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
