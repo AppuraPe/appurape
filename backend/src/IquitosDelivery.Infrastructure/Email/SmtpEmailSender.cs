@@ -9,7 +9,7 @@ namespace IquitosDelivery.Infrastructure.Email;
 
 public class SmtpEmailSender : IEmailSender
 {
-    private const string VerificationSubject = "Codigo de verificacion";
+    private const string VerificationSubject = "Código de verificación";
     private const string PasswordResetSubject = "Recupera tu contraseña en AppuraPe";
 
     private readonly ILogger<SmtpEmailSender> _logger;
@@ -42,9 +42,9 @@ public class SmtpEmailSender : IEmailSender
                 Body = $"""
                         Hola {recipientName},
 
-                        Tu codigo de verificacion es: {code}
+                        Tu código de verificación es: {code}
 
-                        Este codigo vence en {expiresInMinutes} minutos.
+                        Este código vence en {expiresInMinutes} minutos.
                         """,
                 IsBodyHtml = false
             };

@@ -6,7 +6,7 @@ namespace IquitosDelivery.Infrastructure.Email;
 
 public class LoggingEmailSender : IEmailSender
 {
-    private const string VerificationSubject = "Codigo de verificacion";
+    private const string VerificationSubject = "Código de verificación";
     private const string PasswordResetSubject = "Recupera tu contraseña en AppuraPe";
 
     private readonly IConfiguration _configuration;
@@ -58,7 +58,7 @@ public class LoggingEmailSender : IEmailSender
             PasswordResetCode: {Code}
             ExpiresInMinutes: {ExpiresInMinutes}
             RecipientName: {RecipientName}
-            Note: Usa este codigo para actualizar tu contraseña. Si no hiciste esta solicitud, ignora este mensaje.
+            Note: Usa este código para actualizar tu contraseña. Si no hiciste esta solicitud, ignora este mensaje.
             """,
             MaskEmail(toEmail),
             PasswordResetSubject,
