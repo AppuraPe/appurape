@@ -22,7 +22,7 @@ public class JwtTokenService : IJwtTokenService
         var issuer = _configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is not configured.");
         var audience = _configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
         var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
-        var expirationMinutes = int.TryParse(_configuration["Jwt:ExpirationMinutes"], out var minutes) ? minutes : 60;
+        var expirationMinutes = ResolveAccessTokenLifetimeMinutes();
 
         var claims = new List<Claim>
         {
@@ -45,5 +45,22 @@ public class JwtTokenService : IJwtTokenService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private int ResolveAccessTokenLifetimeMinutes()
+    {
+        if (int.TryParse(_configuration["Jwt:AccessTokenLifetimeMinutes"], out var accessTokenLifetimeMinutes)
+            && accessTokenLifetimeMinutes > 0)
+        {
+            return accessTokenLifetimeMinutes;
+        }
+
+        if (int.TryParse(_configuration["Jwt:ExpirationMinutes"], out var legacyExpirationMinutes)
+            && legacyExpirationMinutes > 0)
+        {
+            return legacyExpirationMinutes;
+        }
+
+        return 60;
     }
 }
