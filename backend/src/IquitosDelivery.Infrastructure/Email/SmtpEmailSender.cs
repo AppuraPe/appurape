@@ -14,11 +14,16 @@ public class SmtpEmailSender : IEmailSender
 
     private readonly ILogger<SmtpEmailSender> _logger;
     private readonly EmailSettings _settings;
+    private readonly EmailTemplateRenderer _templateRenderer;
 
-    public SmtpEmailSender(IOptions<EmailSettings> settings, ILogger<SmtpEmailSender> logger)
+    public SmtpEmailSender(
+        IOptions<EmailSettings> settings,
+        EmailTemplateRenderer templateRenderer,
+        ILogger<SmtpEmailSender> logger)
     {
         _logger = logger;
         _settings = settings.Value;
+        _templateRenderer = templateRenderer;
     }
 
     public async Task SendVerificationCodeAsync(
@@ -30,37 +35,19 @@ public class SmtpEmailSender : IEmailSender
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(_settings.SmtpHost) || string.IsNullOrWhiteSpace(_settings.FromAddress))
-            {
-                throw new AppException("SMTP email provider is not fully configured.");
-            }
+            EnsureConfigured();
 
             using var message = new MailMessage
             {
                 From = new MailAddress(_settings.FromAddress, _settings.FromName),
                 Subject = VerificationSubject,
-                Body = $"""
-                        Hola {recipientName},
-
-                        Tu código de verificación es: {code}
-
-                        Este código vence en {expiresInMinutes} minutos.
-                        """,
-                IsBodyHtml = false
+                Body = _templateRenderer.RenderVerificationCodeEmail(recipientName, code, expiresInMinutes),
+                IsBodyHtml = true
             };
 
             message.To.Add(toEmail);
 
-            using var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
-            {
-                EnableSsl = _settings.UseSsl
-            };
-
-            if (!string.IsNullOrWhiteSpace(_settings.SmtpUser))
-            {
-                client.Credentials = new NetworkCredential(_settings.SmtpUser, _settings.SmtpPassword);
-            }
-
+            using var client = CreateClient();
             await client.SendMailAsync(message, cancellationToken);
         }
         catch (Exception exception)
@@ -81,40 +68,19 @@ public class SmtpEmailSender : IEmailSender
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(_settings.SmtpHost) || string.IsNullOrWhiteSpace(_settings.FromAddress))
-            {
-                throw new AppException("SMTP email provider is not fully configured.");
-            }
+            EnsureConfigured();
 
             using var message = new MailMessage
             {
                 From = new MailAddress(_settings.FromAddress, _settings.FromName),
                 Subject = PasswordResetSubject,
-                Body = $"""
-                        Hola {recipientName},
-
-                        Recibimos una solicitud para actualizar tu contraseña en AppuraPe.
-
-                        Tu código de recuperación es: {code}
-
-                        Este código vence en {expiresInMinutes} minutos.
-                        Si no solicitaste este cambio, puedes ignorar este correo con tranquilidad.
-                        """,
-                IsBodyHtml = false
+                Body = _templateRenderer.RenderPasswordResetEmail(recipientName, code, expiresInMinutes),
+                IsBodyHtml = true
             };
 
             message.To.Add(toEmail);
 
-            using var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
-            {
-                EnableSsl = _settings.UseSsl
-            };
-
-            if (!string.IsNullOrWhiteSpace(_settings.SmtpUser))
-            {
-                client.Credentials = new NetworkCredential(_settings.SmtpUser, _settings.SmtpPassword);
-            }
-
+            using var client = CreateClient();
             await client.SendMailAsync(message, cancellationToken);
         }
         catch (Exception exception)
@@ -124,6 +90,29 @@ public class SmtpEmailSender : IEmailSender
                 ? appException
                 : new AppException("Password reset email could not be sent.");
         }
+    }
+
+    private void EnsureConfigured()
+    {
+        if (string.IsNullOrWhiteSpace(_settings.SmtpHost) || string.IsNullOrWhiteSpace(_settings.FromAddress))
+        {
+            throw new AppException("SMTP email provider is not fully configured.");
+        }
+    }
+
+    private SmtpClient CreateClient()
+    {
+        var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
+        {
+            EnableSsl = _settings.UseSsl
+        };
+
+        if (!string.IsNullOrWhiteSpace(_settings.SmtpUser))
+        {
+            client.Credentials = new NetworkCredential(_settings.SmtpUser, _settings.SmtpPassword);
+        }
+
+        return client;
     }
 
     private static string MaskEmail(string email)

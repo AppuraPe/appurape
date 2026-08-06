@@ -39,7 +39,10 @@ public static class DependencyInjection
                 SmtpPort = smtpPort,
                 SmtpUser = emailSection["SmtpUser"] ?? string.Empty,
                 SmtpPassword = emailSection["SmtpPassword"] ?? string.Empty,
-                UseSsl = useSsl
+                UseSsl = useSsl,
+                BrandLogoUrl = emailSection["BrandLogoUrl"] ?? string.Empty,
+                BrandPrimaryColor = emailSection["BrandPrimaryColor"] ?? "#F97316",
+                SupportEmail = emailSection["SupportEmail"] ?? string.Empty
             });
         });
         services.AddSingleton<IOptions<StorageSettings>>(_ =>
@@ -93,6 +96,7 @@ public static class DependencyInjection
             };
         });
         services.AddScoped<LoggingEmailSender>();
+        services.AddScoped<EmailTemplateRenderer>();
         services.AddScoped<SmtpEmailSender>();
         services.AddHttpClient<IFileStorageService, SupabaseFileStorageService>((provider, client) =>
         {

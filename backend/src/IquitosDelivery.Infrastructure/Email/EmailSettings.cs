@@ -17,4 +17,10 @@ public class EmailSettings
     public string SmtpPassword { get; set; } = string.Empty;
 
     public bool UseSsl { get; set; } = true;
+
+    public string BrandLogoUrl { get; set; } = string.Empty;
+
+    public string BrandPrimaryColor { get; set; } = "#F97316";
+
+    public string SupportEmail { get; set; } = string.Empty;
 }
