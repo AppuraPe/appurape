@@ -15,6 +15,10 @@ public class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
         RuleFor(x => x.DeliveryReference).NotEmpty().MaximumLength(300);
         RuleFor(x => x.Notes).MaximumLength(1000);
         RuleFor(x => x.PaymentMethod).IsInEnum();
+        RuleFor(x => x.DeliveryMode).IsInEnum();
+        RuleFor(x => x.OfferedDeliveryAmount)
+            .GreaterThanOrEqualTo(0)
+            .When(x => x.OfferedDeliveryAmount.HasValue);
         RuleFor(x => x.Items).NotEmpty().Must(x => x.Count > 0);
         RuleForEach(x => x.Items).SetValidator(new CreateOrderItemRequestValidator());
     }

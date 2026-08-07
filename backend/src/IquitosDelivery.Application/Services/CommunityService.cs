@@ -205,6 +205,12 @@ public class CommunityService : ICommunityService
         await _createRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
         var user = await GetCurrentActiveUserAsync(cancellationToken);
         var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommunityRequest, cancellationToken);
+        var minimumFavorAmount = ResolveRuleAmount(commissionRules, FinancialRuleCodes.SimpleFavorMinimum, 2m);
+        if (request.CompensationAmount < minimumFavorAmount)
+        {
+            throw new AppException($"El pago al colaborador debe ser como mínimo S/ {minimumFavorAmount:0.00}.");
+        }
+
         var financialBreakdown = FinancialCalculator.CalculateCommunityRequest(
             request.CompensationAmount,
             request.EstimatedPurchaseAmount,
@@ -860,6 +866,12 @@ public class CommunityService : ICommunityService
 
         AddCommunityMovement(request, null, FinancialMovementType.CourierEarning, request.CollaboratorEarningAmount, "Collaborator earning reserved for the community request.", occurredAtUtc, requestReference);
         AddCommunityMovement(request, null, FinancialMovementType.FavorPlatformCommission, request.FavorPlatformCommissionAmount, "Platform commission retained from the favor reward.", occurredAtUtc, requestReference);
+    }
+
+    private static decimal ResolveRuleAmount(IReadOnlyCollection<CommissionRule> rules, string code, decimal fallback)
+    {
+        var rule = rules.FirstOrDefault(x => x.Code == code && x.IsEnabled);
+        return rule is null ? fallback : Math.Round(Math.Max(0m, rule.Value), 2, MidpointRounding.AwayFromZero);
     }
 
     private void AddCommunityMovement(

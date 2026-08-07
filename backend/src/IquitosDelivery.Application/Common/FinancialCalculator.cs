@@ -8,10 +8,15 @@ public static class FinancialCalculator
 {
     public static CommercialFinancialBreakdown CalculateCommercialOrder(
         decimal subtotal,
-        decimal deliveryFee,
+        DeliveryMode deliveryMode,
+        decimal? offeredDeliveryAmount,
+        bool businessHasOwnDelivery,
+        decimal? businessOwnDeliveryFee,
         IReadOnlyCollection<CommissionRule> rules)
     {
         var businessCommission = ApplyRule(GetRule(rules, FinancialRuleCodes.CommercialBusinessCommission), subtotal);
+        var deliveryMinimumAmount = ResolveDeliveryMinimum(subtotal, deliveryMode, businessHasOwnDelivery, businessOwnDeliveryFee, rules);
+        var deliveryFee = ResolveDeliveryFee(deliveryMode, offeredDeliveryAmount, deliveryMinimumAmount);
         var deliveryPlatformCommission = Clamp(ApplyRule(GetRule(rules, FinancialRuleCodes.CommercialDeliveryPlatformCommission), deliveryFee), 0m, deliveryFee);
         var serviceFee = ApplyRule(GetRule(rules, FinancialRuleCodes.CommercialServiceFee), subtotal);
         var discount = 0m;
@@ -24,7 +29,9 @@ public static class FinancialCalculator
             subtotal,
             businessCommission,
             businessNetAmount,
+            deliveryMode,
             deliveryFee,
+            deliveryMinimumAmount,
             deliveryPlatformCommission,
             courierEarning,
             serviceFee,
@@ -38,12 +45,9 @@ public static class FinancialCalculator
         decimal estimatedPurchaseAmount,
         IReadOnlyCollection<CommissionRule> rules)
     {
-        var favorPlatformCommission = Clamp(
-            ApplyRule(GetRule(rules, FinancialRuleCodes.CommunityFavorPlatformCommission), compensationAmount),
-            0m,
-            compensationAmount);
-        var collaboratorEarning = Math.Max(0m, compensationAmount - favorPlatformCommission);
-        var totalClientAmount = compensationAmount + estimatedPurchaseAmount;
+        var favorPlatformCommission = ApplyRule(GetRule(rules, FinancialRuleCodes.CommunityFavorPlatformCommission), compensationAmount);
+        var collaboratorEarning = Math.Max(0m, compensationAmount);
+        var totalClientAmount = compensationAmount + estimatedPurchaseAmount + favorPlatformCommission;
 
         return new CommunityFinancialBreakdown(
             compensationAmount,
@@ -61,7 +65,9 @@ public static class FinancialCalculator
             breakdown.Subtotal,
             breakdown.BusinessCommissionAmount,
             breakdown.BusinessNetAmount,
+            DeliveryMode = breakdown.DeliveryMode.ToString(),
             breakdown.DeliveryFee,
+            breakdown.DeliveryMinimumAmount,
             breakdown.DeliveryPlatformCommissionAmount,
             breakdown.CourierEarningAmount,
             breakdown.ServiceFeeAmount,
@@ -132,13 +138,48 @@ public static class FinancialCalculator
     {
         return Math.Min(max, Math.Max(min, amount));
     }
+
+    private static decimal ResolveDeliveryMinimum(
+        decimal subtotal,
+        DeliveryMode deliveryMode,
+        bool businessHasOwnDelivery,
+        decimal? businessOwnDeliveryFee,
+        IReadOnlyCollection<CommissionRule> rules)
+    {
+        return deliveryMode switch
+        {
+            DeliveryMode.PickupOrDirect => 0m,
+            DeliveryMode.BusinessDelivery => businessHasOwnDelivery ? RoundMoney(businessOwnDeliveryFee ?? 0m) : 0m,
+            DeliveryMode.VerifiedDriverDelivery => subtotal < 20m
+                ? ApplyRule(GetRule(rules, FinancialRuleCodes.VerifiedDriverDeliveryUnder20), subtotal)
+                : ApplyRule(GetRule(rules, FinancialRuleCodes.VerifiedDriverDeliveryFrom20), subtotal),
+            _ => 0m
+        };
+    }
+
+    private static decimal ResolveDeliveryFee(DeliveryMode deliveryMode, decimal? offeredDeliveryAmount, decimal deliveryMinimumAmount)
+    {
+        if (deliveryMode != DeliveryMode.VerifiedDriverDelivery)
+        {
+            return RoundMoney(deliveryMinimumAmount);
+        }
+
+        return RoundMoney(Math.Max(deliveryMinimumAmount, offeredDeliveryAmount ?? deliveryMinimumAmount));
+    }
+
+    private static decimal RoundMoney(decimal amount)
+    {
+        return Math.Round(Math.Max(0m, amount), 2, MidpointRounding.AwayFromZero);
+    }
 }
 
 public sealed record CommercialFinancialBreakdown(
     decimal Subtotal,
     decimal BusinessCommissionAmount,
     decimal BusinessNetAmount,
+    DeliveryMode DeliveryMode,
     decimal DeliveryFee,
+    decimal DeliveryMinimumAmount,
     decimal DeliveryPlatformCommissionAmount,
     decimal CourierEarningAmount,
     decimal ServiceFeeAmount,

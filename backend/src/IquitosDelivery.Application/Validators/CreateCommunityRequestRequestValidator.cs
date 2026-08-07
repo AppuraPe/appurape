@@ -24,7 +24,8 @@ public class CreateCommunityRequestRequestValidator : AbstractValidator<CreateCo
             .MaximumLength(200);
 
         RuleFor(x => x.CompensationAmount)
-            .GreaterThanOrEqualTo(0);
+            .GreaterThanOrEqualTo(2)
+            .WithMessage("El pago al colaborador debe ser como mínimo S/ 2.00.");
 
         RuleFor(x => x.EstimatedPurchaseAmount)
             .GreaterThanOrEqualTo(0);

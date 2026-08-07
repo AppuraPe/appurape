@@ -28,6 +28,12 @@ public class MyRestaurantResponse
 
     public string? LogoUrl { get; set; }
 
+    public bool HasOwnDelivery { get; set; }
+
+    public decimal? OwnDeliveryFee { get; set; }
+
+    public string? OwnDeliveryNote { get; set; }
+
     public bool IsActive { get; set; }
 
     public string ApprovalStatus { get; set; } = string.Empty;

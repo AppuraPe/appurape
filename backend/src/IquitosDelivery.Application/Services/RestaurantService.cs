@@ -232,6 +232,9 @@ public class RestaurantService : IRestaurantService
                 OpenTime = x.OpenTime,
                 CloseTime = x.CloseTime,
                 LogoUrl = x.LogoUrl,
+                HasOwnDelivery = x.HasOwnDelivery,
+                OwnDeliveryFee = x.OwnDeliveryFee,
+                OwnDeliveryNote = x.OwnDeliveryNote,
                 IsActive = x.IsActive,
                 ApprovalStatus = x.ApprovalStatus.ToString()
             })
@@ -271,6 +274,11 @@ public class RestaurantService : IRestaurantService
         restaurant.OpenTime = request.OpenTime;
         restaurant.CloseTime = request.CloseTime;
         restaurant.LogoUrl = string.IsNullOrWhiteSpace(request.LogoUrl) ? null : request.LogoUrl.Trim();
+        restaurant.HasOwnDelivery = request.HasOwnDelivery;
+        restaurant.OwnDeliveryFee = request.HasOwnDelivery ? request.OwnDeliveryFee : null;
+        restaurant.OwnDeliveryNote = request.HasOwnDelivery && !string.IsNullOrWhiteSpace(request.OwnDeliveryNote)
+            ? request.OwnDeliveryNote.Trim()
+            : null;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         restaurant = await GetCurrentRestaurantAsync(cancellationToken);
@@ -331,6 +339,9 @@ public class RestaurantService : IRestaurantService
             OpenTime = restaurant.OpenTime,
             CloseTime = restaurant.CloseTime,
             LogoUrl = restaurant.LogoUrl,
+            HasOwnDelivery = restaurant.HasOwnDelivery,
+            OwnDeliveryFee = restaurant.OwnDeliveryFee,
+            OwnDeliveryNote = restaurant.OwnDeliveryNote,
             IsActive = restaurant.IsActive,
             ApprovalStatus = restaurant.ApprovalStatus.ToString(),
             OwnerUserId = restaurant.OwnerUserId

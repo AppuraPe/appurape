@@ -26,7 +26,11 @@ public class CustomerOrderDetailResponse
 
     public decimal BusinessNetAmount { get; set; }
 
+    public string DeliveryMode { get; set; } = string.Empty;
+
     public decimal DeliveryFee { get; set; }
+
+    public decimal DeliveryMinimumAmount { get; set; }
 
     public decimal DeliveryPlatformCommissionAmount { get; set; }
 

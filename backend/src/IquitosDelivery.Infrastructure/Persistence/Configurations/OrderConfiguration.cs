@@ -19,6 +19,8 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.BusinessCommissionAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.BusinessNetAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.DeliveryFee).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.DeliveryMode).IsRequired();
+        builder.Property(x => x.DeliveryMinimumAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.DeliveryPlatformCommissionAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.CourierEarningAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.ServiceFeeAmount).HasPrecision(10, 2).IsRequired();

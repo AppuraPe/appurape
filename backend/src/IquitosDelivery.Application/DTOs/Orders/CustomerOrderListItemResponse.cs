@@ -12,7 +12,11 @@ public class CustomerOrderListItemResponse
 
     public decimal Subtotal { get; set; }
 
+    public string DeliveryMode { get; set; } = string.Empty;
+
     public decimal DeliveryFee { get; set; }
+
+    public decimal DeliveryMinimumAmount { get; set; }
 
     public decimal BusinessCommissionAmount { get; set; }
 

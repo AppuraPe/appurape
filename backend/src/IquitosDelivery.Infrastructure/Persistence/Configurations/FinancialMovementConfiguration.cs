@@ -28,6 +28,12 @@ public class FinancialMovementConfiguration : IEntityTypeConfiguration<Financial
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.Type);
         builder.HasIndex(x => x.Status);
+        builder.HasIndex(x => new { x.OrderId, x.Type })
+            .IsUnique()
+            .HasFilter("\"OrderId\" IS NOT NULL");
+        builder.HasIndex(x => new { x.CommunityRequestId, x.Type })
+            .IsUnique()
+            .HasFilter("\"CommunityRequestId\" IS NOT NULL");
 
         builder.HasOne(x => x.Order)
             .WithMany()

@@ -39,6 +39,10 @@ public class Order : BaseEntity
 
     public decimal DeliveryFee { get; set; }
 
+    public DeliveryMode DeliveryMode { get; set; } = DeliveryMode.VerifiedDriverDelivery;
+
+    public decimal DeliveryMinimumAmount { get; set; }
+
     public decimal DeliveryPlatformCommissionAmount { get; set; }
 
     public decimal CourierEarningAmount { get; set; }

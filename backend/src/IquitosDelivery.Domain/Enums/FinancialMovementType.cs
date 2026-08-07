@@ -11,5 +11,7 @@ public enum FinancialMovementType
     Refund = 6,
     Adjustment = 7,
     BusinessSettlement = 8,
-    CourierSettlement = 9
+    CourierSettlement = 9,
+    CashOrderDebt = 10,
+    CollaboratorVerificationFee = 11
 }

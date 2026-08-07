@@ -30,6 +30,12 @@ public interface IAppDbContext
 
     IQueryable<FinancialMovement> FinancialMovements { get; }
 
+    IQueryable<SettlementBatch> SettlementBatches { get; }
+
+    IQueryable<SettlementItem> SettlementItems { get; }
+
+    IQueryable<CollaboratorVerification> CollaboratorVerifications { get; }
+
     IQueryable<Restaurant> Restaurants { get; }
 
     IQueryable<DriverProfile> Drivers { get; }

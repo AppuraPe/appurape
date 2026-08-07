@@ -14,7 +14,11 @@ public class DriverAssignedOrderListItemResponse
 
     public decimal CourierEarningAmount { get; set; }
 
+    public string DeliveryMode { get; set; } = string.Empty;
+
     public decimal DeliveryFee { get; set; }
+
+    public decimal DeliveryMinimumAmount { get; set; }
 
     public decimal Total { get; set; }
 

@@ -45,4 +45,62 @@ public class AdminFinanceController : ControllerBase
         var response = await _adminFinanceService.GetFinancialMovementsAsync(filters, cancellationToken);
         return Ok(response);
     }
+
+    [HttpGet("commissions/summary")]
+    [ProducesResponseType(typeof(AdminCommissionSummaryResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdminCommissionSummaryResponse>> GetCommissionSummary(CancellationToken cancellationToken)
+    {
+        var response = await _adminFinanceService.GetCommissionSummaryAsync(cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("movements/{id:guid}/waive")]
+    [ProducesResponseType(typeof(FinancialMovementResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<FinancialMovementResponse>> WaiveMovement(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await _adminFinanceService.WaiveMovementAsync(id, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpGet("settlements")]
+    [ProducesResponseType(typeof(IReadOnlyList<SettlementBatchResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<SettlementBatchResponse>>> GetSettlements(CancellationToken cancellationToken)
+    {
+        var response = await _adminFinanceService.GetSettlementsAsync(cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpGet("settlements/{id:guid}")]
+    [ProducesResponseType(typeof(SettlementBatchResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SettlementBatchResponse>> GetSettlement(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await _adminFinanceService.GetSettlementByIdAsync(id, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("settlements")]
+    [ProducesResponseType(typeof(SettlementBatchResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SettlementBatchResponse>> CreateSettlement(
+        [FromBody] CreateSettlementBatchRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _adminFinanceService.CreateSettlementAsync(request, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("settlements/{id:guid}/mark-paid")]
+    [ProducesResponseType(typeof(SettlementBatchResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SettlementBatchResponse>> MarkSettlementPaid(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await _adminFinanceService.MarkSettlementPaidAsync(id, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("settlements/{id:guid}/cancel")]
+    [ProducesResponseType(typeof(SettlementBatchResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SettlementBatchResponse>> CancelSettlement(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await _adminFinanceService.CancelSettlementAsync(id, cancellationToken);
+        return Ok(response);
+    }
 }

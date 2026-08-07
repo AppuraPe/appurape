@@ -180,10 +180,18 @@ public class OrderService : IOrderService
 
             order.Subtotal = order.Items.Sum(x => x.Subtotal);
             var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommercialOrder, cancellationToken);
-            var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(order.Subtotal, validationContext.Zone.DeliveryFee, commissionRules);
+            var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(
+                order.Subtotal,
+                request.DeliveryMode,
+                request.OfferedDeliveryAmount,
+                validationContext.Restaurant.HasOwnDelivery,
+                validationContext.Restaurant.OwnDeliveryFee,
+                commissionRules);
             order.BusinessCommissionAmount = financialBreakdown.BusinessCommissionAmount;
             order.BusinessNetAmount = financialBreakdown.BusinessNetAmount;
+            order.DeliveryMode = financialBreakdown.DeliveryMode;
             order.DeliveryFee = financialBreakdown.DeliveryFee;
+            order.DeliveryMinimumAmount = financialBreakdown.DeliveryMinimumAmount;
             order.DeliveryPlatformCommissionAmount = financialBreakdown.DeliveryPlatformCommissionAmount;
             order.CourierEarningAmount = financialBreakdown.CourierEarningAmount;
             order.ServiceFeeAmount = financialBreakdown.ServiceFeeAmount;
@@ -236,7 +244,9 @@ public class OrderService : IOrderService
                 Subtotal = x.Subtotal,
                 BusinessCommissionAmount = x.BusinessCommissionAmount,
                 BusinessNetAmount = x.BusinessNetAmount,
+                DeliveryMode = x.DeliveryMode.ToString(),
                 DeliveryFee = x.DeliveryFee,
+                DeliveryMinimumAmount = x.DeliveryMinimumAmount,
                 DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
                 CourierEarningAmount = x.CourierEarningAmount,
                 ServiceFeeAmount = x.ServiceFeeAmount,
@@ -320,7 +330,9 @@ public class OrderService : IOrderService
                 Subtotal = x.Subtotal,
                 BusinessCommissionAmount = x.BusinessCommissionAmount,
                 BusinessNetAmount = x.BusinessNetAmount,
+                DeliveryMode = x.DeliveryMode.ToString(),
                 DeliveryFee = x.DeliveryFee,
+                DeliveryMinimumAmount = x.DeliveryMinimumAmount,
                 DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
                 CourierEarningAmount = x.CourierEarningAmount,
                 ServiceFeeAmount = x.ServiceFeeAmount,
@@ -407,6 +419,8 @@ public class OrderService : IOrderService
         {
             throw new NotFoundException("Restaurant is not available for orders.");
         }
+
+        EnsureDeliveryModeCanBeRequested(restaurant, request);
 
         var resolvedDeliveryAddress = await ResolveDeliveryAddressAsync(customer.Id, request, cancellationToken);
 
@@ -554,10 +568,25 @@ public class OrderService : IOrderService
 
         response.Subtotal = validLines.Sum(x => x.UnitPrice * x.Quantity);
         var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommercialOrder, cancellationToken);
-        var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(response.Subtotal, resolvedDeliveryAddress.Zone.DeliveryFee, commissionRules);
+        var financialBreakdown = FinancialCalculator.CalculateCommercialOrder(
+            response.Subtotal,
+            request.DeliveryMode,
+            request.OfferedDeliveryAmount,
+            restaurant.HasOwnDelivery,
+            restaurant.OwnDeliveryFee,
+            commissionRules);
+        if (request.DeliveryMode == DeliveryMode.VerifiedDriverDelivery &&
+            request.OfferedDeliveryAmount.HasValue &&
+            request.OfferedDeliveryAmount.Value < financialBreakdown.DeliveryMinimumAmount)
+        {
+            throw new AppException($"La entrega con driver verificado debe ser como mínimo S/ {financialBreakdown.DeliveryMinimumAmount:0.00}.");
+        }
+
         response.BusinessCommissionAmount = financialBreakdown.BusinessCommissionAmount;
         response.BusinessNetAmount = financialBreakdown.BusinessNetAmount;
+        response.DeliveryMode = financialBreakdown.DeliveryMode.ToString();
         response.DeliveryFee = financialBreakdown.DeliveryFee;
+        response.DeliveryMinimumAmount = financialBreakdown.DeliveryMinimumAmount;
         response.DeliveryPlatformCommissionAmount = financialBreakdown.DeliveryPlatformCommissionAmount;
         response.CourierEarningAmount = financialBreakdown.CourierEarningAmount;
         response.ServiceFeeAmount = financialBreakdown.ServiceFeeAmount;
@@ -664,6 +693,9 @@ public class OrderService : IOrderService
                 ItemCount = x.Items.Sum(i => i.Quantity),
                 Status = x.Status.ToString(),
                 BusinessNetAmount = x.BusinessNetAmount,
+                DeliveryMode = x.DeliveryMode.ToString(),
+                DeliveryFee = x.DeliveryFee,
+                DeliveryMinimumAmount = x.DeliveryMinimumAmount,
                 PlatformRevenueAmount = x.PlatformRevenueAmount,
                 Total = x.Total,
                 PaymentMethod = x.PaymentMethod.ToString(),
@@ -795,7 +827,9 @@ public class OrderService : IOrderService
                 Subtotal = x.Subtotal,
                 BusinessCommissionAmount = x.BusinessCommissionAmount,
                 BusinessNetAmount = x.BusinessNetAmount,
+                DeliveryMode = x.DeliveryMode.ToString(),
                 DeliveryFee = x.DeliveryFee,
+                DeliveryMinimumAmount = x.DeliveryMinimumAmount,
                 DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
                 CourierEarningAmount = x.CourierEarningAmount,
                 ServiceFeeAmount = x.ServiceFeeAmount,
@@ -1114,6 +1148,19 @@ public class OrderService : IOrderService
         }
 
         throw new AppException("Solo los pagos Yape o Plin pueden gestionarse manualmente por el negocio.");
+    }
+
+    private static void EnsureDeliveryModeCanBeRequested(Restaurant restaurant, CreateOrderRequest request)
+    {
+        if (request.DeliveryMode != DeliveryMode.BusinessDelivery)
+        {
+            return;
+        }
+
+        if (!restaurant.HasOwnDelivery || restaurant.OwnDeliveryFee is null || restaurant.OwnDeliveryFee < 0m)
+        {
+            throw new AppException("Este negocio todavía no tiene delivery propio configurado.");
+        }
     }
 
     private static string? NormalizeOptionalValue(string? value)
@@ -1515,6 +1562,12 @@ public class OrderService : IOrderService
     {
         var occurredAtUtc = DateTime.UtcNow;
         var orderReference = $"ORDER-{order.Id:N}";
+
+        if (order.PaymentMethod == PaymentMethod.Cash)
+        {
+            AddOrderMovement(order, null, FinancialMovementType.CashOrderDebt, order.PlatformRevenueAmount, "Pending AppuraPe commission and service fee debt generated by a cash order.", occurredAtUtc, orderReference);
+            return;
+        }
 
         AddOrderMovement(order, restaurantOwnerUserId, FinancialMovementType.BusinessNetAmount, order.BusinessNetAmount, "Net amount payable to the business for the order.", occurredAtUtc, orderReference);
         AddOrderMovement(order, null, FinancialMovementType.BusinessCommission, order.BusinessCommissionAmount, "Platform commission charged on the business sale.", occurredAtUtc, orderReference);

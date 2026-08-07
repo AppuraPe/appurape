@@ -24,6 +24,10 @@ public static class AppDbContextSeeder
     private static readonly Guid CommercialDeliveryCommissionRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F102");
     private static readonly Guid CommercialServiceFeeRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F103");
     private static readonly Guid CommunityFavorCommissionRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F104");
+    private static readonly Guid VerifiedDriverDeliveryUnder20RuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F105");
+    private static readonly Guid VerifiedDriverDeliveryFrom20RuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F106");
+    private static readonly Guid SimpleFavorMinimumRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F107");
+    private static readonly Guid CollaboratorVerificationFeeRuleId = Guid.Parse("840B73AB-9D8E-4A51-B95E-34A8F3A4F108");
 
     public static async Task SeedBaseDataAsync(
         AppDbContext dbContext,
@@ -500,22 +504,23 @@ public static class AppDbContextSeeder
             "Percentage commission charged to the business subtotal on commercial orders.",
             CommissionRuleScope.CommercialOrder,
             CommissionValueType.Percentage,
-            12m,
+            10m,
             10,
             true,
             cancellationToken);
+        await SetCommissionRuleMinimumAsync(dbContext, FinancialRuleCodes.CommercialBusinessCommission, 1m, cancellationToken);
 
         await UpsertCommissionRuleAsync(
             dbContext,
             CommercialDeliveryCommissionRuleId,
             FinancialRuleCodes.CommercialDeliveryPlatformCommission,
             "Commercial delivery platform commission",
-            "Percentage retained by the platform from the delivery fee.",
+            "MVP keeps delivery outside percentage commission.",
             CommissionRuleScope.CommercialOrder,
             CommissionValueType.Percentage,
-            15m,
+            0m,
             20,
-            true,
+            false,
             cancellationToken);
 
         await UpsertCommissionRuleAsync(
@@ -523,12 +528,38 @@ public static class AppDbContextSeeder
             CommercialServiceFeeRuleId,
             FinancialRuleCodes.CommercialServiceFee,
             "Commercial service fee",
-            "Optional service fee added to commercial orders. Seeded at zero for compatibility.",
+            "Visible AppuraPe service fee charged to the customer.",
             CommissionRuleScope.CommercialOrder,
             CommissionValueType.FlatAmount,
-            0m,
+            1m,
             30,
-            false,
+            true,
+            cancellationToken);
+
+        await UpsertCommissionRuleAsync(
+            dbContext,
+            VerifiedDriverDeliveryUnder20RuleId,
+            FinancialRuleCodes.VerifiedDriverDeliveryUnder20,
+            "Verified driver delivery under S/ 20",
+            "Minimum verified driver earning when product subtotal is under S/ 20.",
+            CommissionRuleScope.CommercialOrder,
+            CommissionValueType.FlatAmount,
+            4m,
+            40,
+            true,
+            cancellationToken);
+
+        await UpsertCommissionRuleAsync(
+            dbContext,
+            VerifiedDriverDeliveryFrom20RuleId,
+            FinancialRuleCodes.VerifiedDriverDeliveryFrom20,
+            "Verified driver delivery from S/ 20",
+            "Minimum verified driver earning when product subtotal is S/ 20 or more.",
+            CommissionRuleScope.CommercialOrder,
+            CommissionValueType.FlatAmount,
+            5m,
+            50,
+            true,
             cancellationToken);
 
         await UpsertCommissionRuleAsync(
@@ -536,15 +567,54 @@ public static class AppDbContextSeeder
             CommunityFavorCommissionRuleId,
             FinancialRuleCodes.CommunityFavorPlatformCommission,
             "Community favor platform commission",
-            "Percentage retained by the platform from the collaborator reward.",
+            "Visible AppuraPe service fee charged on community favors.",
             CommissionRuleScope.CommunityRequest,
-            CommissionValueType.Percentage,
-            10m,
+            CommissionValueType.FlatAmount,
+            1m,
             10,
             true,
             cancellationToken);
 
+        await UpsertCommissionRuleAsync(
+            dbContext,
+            SimpleFavorMinimumRuleId,
+            FinancialRuleCodes.SimpleFavorMinimum,
+            "Simple favor minimum collaborator pay",
+            "Minimum collaborator earning for a simple community favor.",
+            CommissionRuleScope.CommunityRequest,
+            CommissionValueType.FlatAmount,
+            2m,
+            20,
+            true,
+            cancellationToken);
+
+        await UpsertCommissionRuleAsync(
+            dbContext,
+            CollaboratorVerificationFeeRuleId,
+            FinancialRuleCodes.CollaboratorVerificationFee,
+            "Collaborator verification fee",
+            "One-time AppuraPe collaborator verification fee.",
+            CommissionRuleScope.CommunityRequest,
+            CommissionValueType.FlatAmount,
+            5m,
+            30,
+            true,
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SetCommissionRuleMinimumAsync(
+        AppDbContext dbContext,
+        string code,
+        decimal minAmount,
+        CancellationToken cancellationToken)
+    {
+        var rule = await dbContext.CommissionRules.FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+        if (rule is not null)
+        {
+            rule.MinAmount = minAmount;
+        }
     }
 
     private static async Task UpsertCommissionRuleAsync(

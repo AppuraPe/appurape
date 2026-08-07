@@ -38,6 +38,12 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<FinancialMovement> FinancialMovements => Set<FinancialMovement>();
 
+    public DbSet<SettlementBatch> SettlementBatches => Set<SettlementBatch>();
+
+    public DbSet<SettlementItem> SettlementItems => Set<SettlementItem>();
+
+    public DbSet<CollaboratorVerification> CollaboratorVerifications => Set<CollaboratorVerification>();
+
     public DbSet<Restaurant> Restaurants => Set<Restaurant>();
 
     public DbSet<MenuCategory> MenuCategories => Set<MenuCategory>();
@@ -89,6 +95,12 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<CommissionRule> IAppDbContext.CommissionRules => CommissionRules;
 
     IQueryable<FinancialMovement> IAppDbContext.FinancialMovements => FinancialMovements;
+
+    IQueryable<SettlementBatch> IAppDbContext.SettlementBatches => SettlementBatches;
+
+    IQueryable<SettlementItem> IAppDbContext.SettlementItems => SettlementItems;
+
+    IQueryable<CollaboratorVerification> IAppDbContext.CollaboratorVerifications => CollaboratorVerifications;
 
     IQueryable<Restaurant> IAppDbContext.Restaurants => Restaurants;
 

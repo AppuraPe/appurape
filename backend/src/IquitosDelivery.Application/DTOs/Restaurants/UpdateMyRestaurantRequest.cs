@@ -17,4 +17,10 @@ public class UpdateMyRestaurantRequest
     public TimeSpan CloseTime { get; set; }
 
     public string? LogoUrl { get; set; }
+
+    public bool HasOwnDelivery { get; set; }
+
+    public decimal? OwnDeliveryFee { get; set; }
+
+    public string? OwnDeliveryNote { get; set; }
 }

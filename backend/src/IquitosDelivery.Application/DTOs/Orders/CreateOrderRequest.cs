@@ -20,5 +20,9 @@ public class CreateOrderRequest
 
     public PaymentMethod PaymentMethod { get; set; }
 
+    public DeliveryMode DeliveryMode { get; set; } = DeliveryMode.VerifiedDriverDelivery;
+
+    public decimal? OfferedDeliveryAmount { get; set; }
+
     public List<CreateOrderItemRequest> Items { get; set; } = new();
 }

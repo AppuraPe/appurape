@@ -33,6 +33,12 @@ public class Restaurant : BaseEntity
 
     public string? LogoUrl { get; set; }
 
+    public bool HasOwnDelivery { get; set; }
+
+    public decimal? OwnDeliveryFee { get; set; }
+
+    public string? OwnDeliveryNote { get; set; }
+
     public bool IsActive { get; set; }
 
     public ICollection<MenuCategory> Categories { get; set; } = new List<MenuCategory>();

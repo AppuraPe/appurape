@@ -41,6 +41,7 @@ public class DriverOrderService : IDriverOrderService
         var query = _dbContext.Orders
             .Where(x =>
                 x.Status == OrderStatus.ReadyForPickup &&
+                x.DeliveryMode == DeliveryMode.VerifiedDriverDelivery &&
                 x.DriverId == null &&
                 x.AssignedCourierUserId == null &&
                 x.ZoneId == driver.ZoneId);
@@ -69,7 +70,9 @@ public class DriverOrderService : IDriverOrderService
                 DeliveryAddress = x.DeliveryAddress,
                 DeliveryReference = x.DeliveryReference,
                 CourierEarningAmount = x.CourierEarningAmount,
+                DeliveryMode = x.DeliveryMode.ToString(),
                 DeliveryFee = x.DeliveryFee,
+                DeliveryMinimumAmount = x.DeliveryMinimumAmount,
                 Total = x.Total,
                 PaymentMethod = x.PaymentMethod.ToString(),
                 PaymentStatus = x.Payment != null ? x.Payment.Status.ToString() : string.Empty,
@@ -89,6 +92,7 @@ public class DriverOrderService : IDriverOrderService
             .Where(x =>
                 x.Id == orderId &&
                 x.Status == OrderStatus.ReadyForPickup &&
+                x.DeliveryMode == DeliveryMode.VerifiedDriverDelivery &&
                 x.DriverId == null &&
                 x.AssignedCourierUserId == null &&
                 x.ZoneId == driver.ZoneId)
@@ -127,6 +131,7 @@ public class DriverOrderService : IDriverOrderService
             {
                 x.Id,
                 x.Status,
+                x.DeliveryMode,
                 x.ZoneId,
                 x.AssignedCourierUserId,
                 x.AssignedCourierType
@@ -146,6 +151,7 @@ public class DriverOrderService : IDriverOrderService
 
         var canSeeAvailable =
             order.Status == OrderStatus.ReadyForPickup &&
+            order.DeliveryMode == DeliveryMode.VerifiedDriverDelivery &&
             order.AssignedCourierUserId == null &&
             order.ZoneId == driver.ZoneId;
 
@@ -208,6 +214,11 @@ public class DriverOrderService : IDriverOrderService
             if (order.Status != OrderStatus.ReadyForPickup)
             {
                 throw new AppException("Order is not ready for pickup.");
+            }
+
+            if (order.DeliveryMode != DeliveryMode.VerifiedDriverDelivery)
+            {
+                throw new AppException("Este pedido no solicita entrega con driver verificado.");
             }
 
             var payment = await _dbContext.Payments
@@ -276,7 +287,9 @@ public class DriverOrderService : IDriverOrderService
                 CustomerName = x.Customer.User.FirstName + " " + x.Customer.User.LastName,
                 Status = x.Status.ToString(),
                 CourierEarningAmount = x.CourierEarningAmount,
+                DeliveryMode = x.DeliveryMode.ToString(),
                 DeliveryFee = x.DeliveryFee,
+                DeliveryMinimumAmount = x.DeliveryMinimumAmount,
                 Total = x.Total,
                 DeliveryAddress = x.DeliveryAddress,
                 PaymentMethod = x.PaymentMethod.ToString(),
@@ -525,7 +538,9 @@ public class DriverOrderService : IDriverOrderService
             Subtotal = x.Subtotal,
             BusinessCommissionAmount = x.BusinessCommissionAmount,
             BusinessNetAmount = x.BusinessNetAmount,
+            DeliveryMode = x.DeliveryMode.ToString(),
             DeliveryFee = x.DeliveryFee,
+            DeliveryMinimumAmount = x.DeliveryMinimumAmount,
             DeliveryPlatformCommissionAmount = x.DeliveryPlatformCommissionAmount,
             CourierEarningAmount = x.CourierEarningAmount,
             ServiceFeeAmount = x.ServiceFeeAmount,

@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.IAdminBusinessTypeService, Services.AdminBusinessTypeService>();
         services.AddScoped<Interfaces.ICommunityService, Services.CommunityService>();
         services.AddScoped<Interfaces.IAdminCommunityService, Services.AdminCommunityService>();
+        services.AddScoped<Interfaces.ICollaboratorVerificationService, Services.CollaboratorVerificationService>();
         services.AddScoped<Interfaces.IZoneService, Services.ZoneService>();
         services.AddScoped<Interfaces.ISearchService, Services.SearchService>();
         services.AddScoped<Interfaces.IBusinessTypeService, Services.BusinessTypeService>();
