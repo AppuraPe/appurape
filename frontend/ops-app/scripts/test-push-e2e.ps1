@@ -2,7 +2,7 @@
 param(
     [Parameter()]
     [ValidateNotNullOrEmpty()]
-    [string]$BaseUrl = "https://appurape-mvp.onrender.com",
+    [string]$BaseUrl = "https://appurape.onrender.com",
 
     [Parameter()]
     [string]$Email,

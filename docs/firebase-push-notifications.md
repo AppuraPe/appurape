@@ -97,7 +97,7 @@ Usa una cuenta dedicada de QA que haya iniciado sesión en la APK. El script ini
 
 ```powershell
 cd frontend/ops-app
-.\scripts\test-push-e2e.ps1 -BaseUrl "https://appurape-mvp.onrender.com"
+.\scripts\test-push-e2e.ps1 -BaseUrl "https://appurape.onrender.com"
 ```
 
 También puedes pasar `-Email qa@appurape.test`; nunca pases la contraseña ni un JWT como argumento de línea de comandos. El resultado seguro solo muestra contadores:
