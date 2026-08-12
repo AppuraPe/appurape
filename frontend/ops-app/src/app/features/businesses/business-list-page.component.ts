@@ -251,7 +251,7 @@ export class BusinessListPageComponent {
       return `No encontramos negocios en ${this.appliedZoneName()}`;
     }
 
-    return 'No hay negocios disponibles ahora';
+    return 'No hay negocios disponibles';
   }
 
   emptyStateMessage(): string {
@@ -259,7 +259,7 @@ export class BusinessListPageComponent {
       return 'Prueba con otra categoría, otra zona o limpia los filtros para ver más negocios disponibles.';
     }
 
-    return 'Vuelve a intentarlo en unos minutos. Cuando haya negocios activos, aparecerán aquí con su horario y zona.';
+    return 'Aún no hay negocios activos. Vuelve a intentarlo más tarde.';
   }
 
   searchEmptyMessage(): string {

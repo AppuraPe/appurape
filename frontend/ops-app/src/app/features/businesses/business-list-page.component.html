@@ -129,7 +129,12 @@
     } @else {
       @if (showMobileHome()) {
         @if (!popularCategories().length && !homeSections().length) {
-          <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted" />
+          <app-state-card
+            class="mx-4 block lg:hidden"
+            [title]="emptyStateTitle()"
+            [message]="emptyStateMessage()"
+            containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted !rounded-2xl !p-4 !shadow-sm [&>strong]:text-base [&>p]:mt-1.5 [&>p]:leading-5"
+          />
         } @else {
           <app-popular-category-carousel [categories]="popularCategories()" (selectCategory)="selectCategory($event)" />
 
@@ -274,7 +279,12 @@
         }
       } @else if (showFilteredList()) {
         @if (!restaurants().length && !errorMessage()) {
-          <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted">
+          <app-state-card
+            class="mx-4 block lg:hidden"
+            [title]="emptyStateTitle()"
+            [message]="emptyStateMessage()"
+            containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted !rounded-2xl !p-4 !shadow-sm [&>strong]:text-base [&>p]:mt-1.5 [&>p]:leading-5"
+          >
             @if (hasActiveFilters()) {
               <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearFilters()">Quitar filtros</button>
             }
@@ -299,7 +309,12 @@
 
     <div class="hidden lg:block">
       @if (!isSearchResults() && !restaurants().length && !errorMessage()) {
-        <app-state-card [title]="emptyStateTitle()" [message]="emptyStateMessage()" containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted">
+        <app-state-card
+          class="block max-w-2xl"
+          [title]="emptyStateTitle()"
+          [message]="emptyStateMessage()"
+          containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted !rounded-2xl !p-5 !shadow-sm"
+        >
           @if (hasActiveFilters()) {
             <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearFilters()">Quitar filtros</button>
           }
