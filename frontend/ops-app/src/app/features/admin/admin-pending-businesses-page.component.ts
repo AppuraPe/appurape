@@ -25,6 +25,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
 @Component({
   selector: 'app-admin-pending-businesses-page',
+  host: { class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden' },
   standalone: true,
   imports: [
     DatePipe,
@@ -38,7 +39,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
+    <section class="grid w-full min-w-0 max-w-full gap-5 overflow-x-hidden lg:gap-6">
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="Admin"
@@ -102,8 +103,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               </p>
             </div>
             <div class="flex flex-wrap justify-center gap-3">
-              <app-button size="lg" [routerLink]="'/admin/businesses'">Ver todos los negocios</app-button>
-              <app-button size="lg" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
+              <app-button size="md" [routerLink]="'/admin/businesses'">Ver todos los negocios</app-button>
+              <app-button size="md" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
         </app-surface-card>
@@ -120,7 +121,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     <div class="grid gap-1">
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant.name }}</strong>
                       <span class="text-sm text-text-muted">Tipo de negocio: {{ restaurant.businessTypeName || 'Sin categoría' }}</span>
-                      <span class="text-sm text-text-muted">Owner: {{ restaurant.ownerFullName }}</span>
+                      <span class="text-sm text-text-muted">Responsable: {{ restaurant.ownerFullName }}</span>
                       <span class="text-sm text-text-muted">{{ restaurant.email }} · {{ restaurant.phone }}</span>
                     </div>
                   </div>

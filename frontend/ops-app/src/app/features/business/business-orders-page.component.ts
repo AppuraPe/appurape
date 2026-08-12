@@ -44,6 +44,9 @@ type PaymentActionMode = 'confirm' | 'reject';
 
 @Component({
   selector: 'app-business-orders-page',
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   standalone: true,
   imports: [
     CurrencyPipe,
@@ -62,11 +65,11 @@ type PaymentActionMode = 'confirm' | 'reject';
   template: `
     <app-mobile-page-shell
       [topSafeArea]="false"
-      [bottomSpacingClass]="'pb-[calc(128px+env(safe-area-inset-bottom,0px))]'"
+      [bottomSpacingClass]="'pb-0'"
       [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'"
-      [extraClass]="'grid gap-4 pt-1 lg:gap-5'"
+      [extraClass]="'grid w-full min-w-0 max-w-4xl gap-3.5 overflow-x-hidden pt-1 lg:gap-4'"
     >
-      <app-surface-card variant="page" extraClass="grid gap-4 p-5 sm:p-5">
+      <section class="grid w-full min-w-0 max-w-full gap-3.5 px-0.5" aria-labelledby="business-orders-title">
         <div class="min-w-0">
           <div class="flex min-w-0 items-center justify-between gap-3">
             <span class="inline-flex min-h-7 items-center rounded-full bg-primary-100 px-2.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary-700">
@@ -76,37 +79,26 @@ type PaymentActionMode = 'confirm' | 'reject';
               {{ orders().length }} visibles
             </span>
           </div>
-          <h1 class="mt-3 text-[1.35rem] font-black leading-tight tracking-[-0.04em] text-slate-950 sm:text-2xl">
+          <h1 id="business-orders-title" class="mt-2 text-[1.35rem] font-black leading-tight tracking-[-0.04em] text-slate-950 sm:text-2xl">
             Pedidos del negocio
           </h1>
-          <p class="mt-2 max-w-full text-sm leading-6 text-slate-500">
+          <p class="mt-1 max-w-full text-sm leading-5 text-slate-500">
             Bandeja móvil para aceptar, preparar y dejar pedidos listos.
           </p>
         </div>
 
-        @if (errorMessage()) {
-          <app-notice tone="danger" [message]="errorMessage()" />
-        }
-
-        <div class="grid grid-cols-2 gap-3 rounded-[22px] border border-slate-200 bg-slate-50 p-2.5 md:grid-cols-4">
-          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
-            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Total</p>
-            <p class="mt-1 text-[1.35rem] font-black leading-none text-slate-950">{{ orders().length }}</p>
-          </div>
-          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
-            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Nuevos</p>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="min-w-0 rounded-2xl bg-white px-2.5 py-3 text-center shadow-sm">
+            <p class="text-[10px] font-black uppercase tracking-[0.05em] text-slate-500">Nuevos</p>
             <p class="mt-1 text-[1.35rem] font-black leading-none text-amber-700">{{ ordersByStatus('Pending') }}</p>
-            <p class="mt-1 text-xs text-slate-500">Aún sin aceptar</p>
           </div>
-          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
-            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Preparando</p>
+          <div class="min-w-0 rounded-2xl bg-white px-2.5 py-3 text-center shadow-sm">
+            <p class="text-[10px] font-black uppercase tracking-[0.05em] text-slate-500">En cocina</p>
             <p class="mt-1 text-[1.35rem] font-black leading-none text-sky-700">{{ ordersByStatus('Preparing') }}</p>
-            <p class="mt-1 text-xs text-slate-500">En cocina ahora</p>
           </div>
-          <div class="min-w-0 rounded-2xl bg-white px-3 py-3 text-center shadow-sm">
-            <p class="text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">Listos</p>
+          <div class="min-w-0 rounded-2xl bg-white px-2.5 py-3 text-center shadow-sm">
+            <p class="text-[10px] font-black uppercase tracking-[0.05em] text-slate-500">Listos</p>
             <p class="mt-1 text-[1.35rem] font-black leading-none text-emerald-700">{{ ordersByStatus('ReadyForPickup') }}</p>
-            <p class="mt-1 text-xs text-slate-500">Esperando recolección</p>
           </div>
         </div>
 
@@ -164,18 +156,18 @@ type PaymentActionMode = 'confirm' | 'reject';
           </div>
         </form>
 
-        <app-action-chip-row>
+        <app-action-chip-row class="[contain:inline-size]" aria-label="Accesos rápidos por estado">
           <button
-            class="min-h-11 shrink-0 rounded-full border px-3.5 text-xs font-bold transition"
+            class="min-h-9 shrink-0 rounded-full border px-3 text-xs font-bold transition"
             [class]="!filtersForm.controls.status.value ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700'"
             type="button"
             (click)="filtersForm.controls.status.setValue('')"
           >
             Todos
           </button>
-          @for (status of ['Pending', 'Accepted', 'Preparing', 'ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay', 'Delivered', 'Cancelled']; track status) {
+          @for (status of ['Pending', 'Preparing', 'ReadyForPickup']; track status) {
             <button
-              class="min-h-11 shrink-0 rounded-full border px-3.5 text-xs font-bold transition"
+              class="min-h-9 shrink-0 rounded-full border px-3 text-xs font-bold transition"
               [class]="filtersForm.controls.status.value === status ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700'"
               type="button"
               (click)="filtersForm.controls.status.setValue(status)"
@@ -184,7 +176,7 @@ type PaymentActionMode = 'confirm' | 'reject';
             </button>
           }
         </app-action-chip-row>
-      </app-surface-card>
+      </section>
 
       <app-notice class="hidden"
         tone="info"
@@ -193,9 +185,19 @@ type PaymentActionMode = 'confirm' | 'reject';
       />
 
       @if (isLoading()) {
-        <div class="grid gap-3">
-          <app-unified-loading-state label="Cargando pedidos" />
-          <app-unified-loading-state label="Actualizando operación" />
+        <div class="grid gap-2" aria-label="Cargando pedidos" aria-busy="true">
+          @for (skeleton of [1, 2, 3]; track skeleton) {
+            <div class="h-[84px] animate-pulse rounded-2xl border border-slate-200 bg-white p-3.5">
+              <div class="flex h-full min-w-0 items-center gap-3">
+                <div class="h-10 w-10 shrink-0 rounded-xl bg-slate-200"></div>
+                <div class="min-w-0 flex-1 space-y-2">
+                  <div class="h-3 w-2/3 rounded-full bg-slate-200"></div>
+                  <div class="h-2.5 w-1/2 rounded-full bg-slate-100"></div>
+                </div>
+                <div class="h-6 w-16 shrink-0 rounded-full bg-slate-100"></div>
+              </div>
+            </div>
+          }
         </div>
       } @else if (errorMessage()) {
         <app-surface-card variant="page" extraClass="p-5">
@@ -207,130 +209,68 @@ type PaymentActionMode = 'confirm' | 'reject';
       } @else if (!orders().length) {
         <app-unified-empty-state title="Aún no tienes pedidos" message="Cuando entren pedidos al negocio aparecerán aquí para gestionarlos."></app-unified-empty-state>
       } @else {
-        <div class="grid gap-4">
+        <div class="grid gap-3">
           @for (order of orders(); track order.id) {
-            <app-surface-card variant="page" extraClass="p-4 sm:p-5">
-              <div class="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] xl:items-start">
-                <div class="grid gap-4">
-                  <div class="flex items-start gap-4">
-                    <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary-700 text-white shadow-lg shadow-primary-700/20">
-                      <lucide-angular class="h-6 w-6" [img]="receiptIcon" aria-hidden="true"></lucide-angular>
-                    </div>
-                    <div class="grid gap-1 min-w-0">
-                      <strong class="text-lg font-extrabold tracking-[-0.03em] text-slate-950">{{ order.customerName }}</strong>
-                      <span class="text-sm text-slate-500">Pedido {{ shortId(order.id) }}</span>
-                      <span class="text-sm text-slate-500">{{ order.createdAtUtc | date: 'medium' }}</span>
-                      <span class="text-sm text-slate-500">{{ order.itemCount }} ítems</span>
-                    </div>
-                  </div>
+            <app-surface-card variant="default" extraClass="w-full min-w-0 max-w-full p-3.5 sm:p-4">
+              <div class="grid min-w-0 gap-2 min-[390px]:grid-cols-[minmax(0,1fr)_auto] min-[390px]:items-start">
+                <div class="min-w-0">
+                  <strong class="block truncate text-[15px] font-extrabold tracking-[-0.02em] text-slate-950" [title]="order.customerName">{{ order.customerName }}</strong>
+                  <p class="mt-1 truncate text-xs text-slate-500">
+                    Pedido {{ shortId(order.id) }} · {{ order.createdAtUtc | date: 'short' }}
+                  </p>
                 </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <app-status-badge [status]="order.status" />
+                  <app-status-badge [status]="order.paymentStatus" [label]="paymentStatusLabel(order.paymentStatus)" prefix="Pago" />
+                </div>
+              </div>
 
-                <div class="grid gap-4">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <app-status-badge [status]="order.status" />
-                    <app-status-badge [status]="order.paymentStatus" [label]="paymentStatusLabel(order.paymentStatus)" prefix="Pago" />
-                  </div>
+              <div class="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 border-t border-slate-100 pt-3">
+                <div class="min-w-0">
+                  <p class="truncate text-xs font-bold text-slate-700">{{ order.itemCount }} productos</p>
+                  <p class="mt-1 truncate text-xs text-slate-500">{{ paymentMethodLabel(order.paymentMethod) }}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-400">Total</p>
+                  <p class="whitespace-nowrap text-base font-black tabular-nums tracking-[-0.04em] text-slate-950 min-[360px]:text-lg">{{ order.total | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
+                </div>
+              </div>
 
-                  <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                      <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                        <lucide-angular class="h-4 w-4" [img]="walletIcon" aria-hidden="true"></lucide-angular>
-                        Total
-                      </div>
-                      <p class="mt-2 text-xl font-black tracking-[-0.03em] text-slate-950">{{ order.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
-                    </div>
-
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                      <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                        <lucide-angular class="h-4 w-4" [img]="creditCardIcon" aria-hidden="true"></lucide-angular>
-                        Pago
-                      </div>
-                      <p class="mt-2 text-sm font-bold text-slate-950">{{ order.paymentMethod }}</p>
-                      <p class="mt-1 text-xs font-semibold" [class]="paymentStatusClass(order.paymentStatus)">
-                        {{ paymentStatusLabel(order.paymentStatus) }}
-                      </p>
-
-                      @if (isManualPayment(order.paymentMethod)) {
-                        <div class="mt-3 rounded-2xl border border-primary-100 bg-primary-50/80 px-3 py-2">
-                          <div class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                            <lucide-angular class="h-3.5 w-3.5" [img]="mobileWalletIcon" aria-hidden="true"></lucide-angular>
-                            Pago manual
-                          </div>
-                          <p class="mt-1 text-xs text-slate-500">
-                            Estado actual:
-                            <span class="font-semibold text-slate-900">{{ paymentStatusLabel(order.paymentStatus) }}</span>
-                          </p>
-                          @if (paymentSummary(order.id); as paymentSummary) {
-                            @if (paymentSummary.manualReference) {
-                              <p class="mt-1 text-xs text-slate-500">Referencia: {{ paymentSummary.manualReference }}</p>
-                            }
-                            @if (paymentSummary.failureReason) {
-                              <p class="mt-1 text-xs text-red-700">{{ paymentSummary.failureReason }}</p>
-                            }
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
-
-                  <div class="flex flex-wrap gap-3">
-                    <app-button size="md" type="button" variant="secondary" [routerLink]="['/business/orders', order.id]">
-                      Ver detalle
-                    </app-button>
-                  </div>
-
-                  @if (canManagePayment(order)) {
-                    <div class="flex flex-wrap gap-3">
-                      <app-button
-                        variant="secondary"
-                        size="md"
-                        type="button"
-                        (click)="openPaymentSheet(order, 'confirm')"
-                        [disabled]="actionOrderId() === order.id || paymentSheetSubmitting()"
-                      >
-                        Confirmar pago
-                      </app-button>
-                      <app-button
-                        variant="ghost"
-                        size="md"
-                        type="button"
-                        (click)="openPaymentSheet(order, 'reject')"
-                        [disabled]="actionOrderId() === order.id || paymentSheetSubmitting()"
-                      >
-                        Rechazar pago
-                      </app-button>
-                    </div>
-                  }
-
-                  @if (getActions(order.status).length) {
-                    <div class="flex flex-wrap gap-3">
-                      @for (action of getActions(order.status); track action.label) {
-                        <app-button
-                          [variant]="action.variant === 'danger' ? 'danger' : 'primary'"
-                          size="md"
-                          type="button"
-                          (click)="updateStatus(order, action)"
-                          [disabled]="actionOrderId() === order.id || paymentSheetSubmitting()"
-                        >
-                          @if (action.variant === 'danger') {
-                            <lucide-angular class="h-4 w-4" [img]="cancelIcon" aria-hidden="true"></lucide-angular>
-                          } @else if (action.status === 'Preparing') {
-                            <lucide-angular class="h-4 w-4" [img]="cookingIcon" aria-hidden="true"></lucide-angular>
-                          } @else {
-                            <lucide-angular class="h-4 w-4" [img]="shieldIcon" aria-hidden="true"></lucide-angular>
-                          }
-                          {{ actionOrderId() === order.id ? 'Procesando...' : action.label }}
-                        </app-button>
-                      }
-                    </div>
-                  } @else {
-                    @if (order.status === 'ReadyForPickup') {
-                      <app-notice tone="info" title="Pedido listo" message="Pedido listo para recojo o asignación de delivery." />
-                    } @else {
-                      <app-notice tone="info" title="Sin acciones disponibles" message="Este pedido ya está fuera del tramo operativo que puede modificar el negocio." />
+              @if (isManualPayment(order.paymentMethod)) {
+                <div class="mt-3 rounded-xl border border-primary-100 bg-primary-50/70 px-3 py-2">
+                  <p class="text-xs font-bold text-primary-800">Pago manual</p>
+                  @if (paymentSummary(order.id); as paymentSummary) {
+                    @if (paymentSummary.manualReference) {
+                      <p class="mt-0.5 truncate text-xs text-slate-600">Referencia: {{ paymentSummary.manualReference }}</p>
+                    }
+                    @if (paymentSummary.failureReason) {
+                      <p class="mt-0.5 break-words text-xs text-red-700">{{ paymentSummary.failureReason }}</p>
                     }
                   }
                 </div>
+              }
+
+              <div class="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                <app-button size="sm" type="button" variant="secondary" [routerLink]="['/business/orders', order.id]">
+                  Ver detalle
+                </app-button>
+
+                  @if (canManagePayment(order)) {
+                  <app-button variant="secondary" size="sm" type="button" (click)="openPaymentSheet(order, 'confirm')" [disabled]="actionOrderId() === order.id || paymentSheetSubmitting()">
+                    Confirmar pago
+                  </app-button>
+                  <app-button variant="ghost" size="sm" type="button" (click)="openPaymentSheet(order, 'reject')" [disabled]="actionOrderId() === order.id || paymentSheetSubmitting()">
+                    Rechazar pago
+                  </app-button>
+                  }
+
+                  @if (getActions(order.status).length) {
+                  @for (action of getActions(order.status); track action.label) {
+                    <app-button [variant]="action.variant === 'danger' ? 'danger' : 'primary'" size="sm" type="button" (click)="updateStatus(order, action)" [disabled]="actionOrderId() === order.id || paymentSheetSubmitting()">
+                      {{ actionOrderId() === order.id ? 'Procesando...' : action.label }}
+                    </app-button>
+                  }
+                }
               </div>
             </app-surface-card>
           }
@@ -397,11 +337,11 @@ type PaymentActionMode = 'confirm' | 'reject';
                 <div class="grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
                   <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                     <lucide-angular class="h-4 w-4" [img]="mobileWalletIcon" aria-hidden="true"></lucide-angular>
-                    {{ payment.method }}
+                    {{ paymentMethodLabel(payment.method) }}
                   </div>
                   <div class="grid gap-2 text-sm text-slate-900">
                     <p>Estado: <span class="font-bold" [class]="paymentStatusClass(payment.status)">{{ paymentStatusLabel(payment.status) }}</span></p>
-                    <p>Monto: <span class="font-bold">{{ payment.amount | currency: payment.currency : 'symbol' : '1.2-2' }}</span></p>
+                    <p>Monto: <span class="font-bold">{{ payment.amount | currency: payment.currency : 'S/ ' : '1.2-2' }}</span></p>
                     @if (payment.manualReference) {
                       <p>Referencia actual: <span class="font-bold">{{ payment.manualReference }}</span></p>
                     }
@@ -554,6 +494,21 @@ export class BusinessOrdersPageComponent {
     return ['yape', 'plin'].includes(method.trim().toLowerCase());
   }
 
+  paymentMethodLabel(method: string): string {
+    switch (method.trim().toLowerCase()) {
+      case 'cash':
+        return 'Efectivo';
+      case 'card':
+        return 'Tarjeta';
+      case 'yape':
+        return 'Yape';
+      case 'plin':
+        return 'Plin';
+      default:
+        return 'Método registrado';
+    }
+  }
+
   canManagePayment(order: BusinessOrderListItemResponse): boolean {
     return this.isManualPayment(order.paymentMethod) && order.paymentStatus === 'PendingConfirmation';
   }
@@ -573,7 +528,7 @@ export class BusinessOrdersPageComponent {
       case 'Refunded':
         return 'Reembolsado';
       default:
-        return status || 'Sin estado';
+        return 'Estado por revisar';
     }
   }
 
@@ -598,7 +553,7 @@ export class BusinessOrdersPageComponent {
       case 'Cancelled':
         return 'Cancelado';
       default:
-        return status;
+        return 'En proceso';
     }
   }
 

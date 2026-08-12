@@ -28,6 +28,9 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
 
 @Component({
   selector: 'app-community-request-detail-page',
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   standalone: true,
   imports: [
     CurrencyPipe,
@@ -50,7 +53,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
   template: `
     <app-mobile-page-shell
       [topSafeArea]="false"
-      extraClass="space-y-4 px-4 pt-4 sm:px-5 lg:px-0 lg:pt-0"
+      extraClass="w-full min-w-0 max-w-full space-y-4 overflow-x-hidden px-4 pt-4 sm:px-5 lg:px-0 lg:pt-0"
       bottomSpacingClass="pb-[calc(104px+env(safe-area-inset-bottom,0px))]"
     >
       <app-back-button fallbackUrl="/community" label="Volver a favores" />
@@ -63,14 +66,14 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
         <app-unified-loading-state label="Cargando favor" />
       } @else if (!request()) {
         <app-unified-empty-state
-          eyebrow="Community"
+          eyebrow="Favores"
           title="No encontramos esta solicitud"
           message="Revisa el enlace o vuelve al listado para elegir otro favor disponible."
         >
           <app-button routerLink="/community" variant="secondary">Volver al hub</app-button>
         </app-unified-empty-state>
       } @else if (request(); as currentRequest) {
-        <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+        <app-surface-card variant="page" extraClass="grid w-full min-w-0 max-w-full gap-4 overflow-hidden p-4 min-[390px]:p-5">
           <app-internal-page-section-header
             eyebrow="Detalle del favor"
             [title]="currentRequest.title"
@@ -78,11 +81,17 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             [meta]="requestStatusLabel(currentRequest.status)"
           />
 
-          <div class="flex flex-wrap gap-2">
+          <div class="flex w-full min-w-0 max-w-full flex-wrap gap-2">
             <app-status-badge [status]="currentRequest.status" [label]="requestStatusLabel(currentRequest.status)" />
             <app-status-badge [status]="currentRequest.type" [label]="requestTypeLabel(currentRequest.type)" />
             @if (currentRequest.assignedCollaboratorName) {
-              <app-status-badge status="trusted" prefix="Asignado" [label]="currentRequest.assignedCollaboratorName" />
+              <div
+                class="flex w-full min-w-0 max-w-full items-center gap-2 rounded-[14px] bg-emerald-50 px-3 py-2 text-xs text-emerald-700"
+                [title]="'Asignado a ' + currentRequest.assignedCollaboratorName"
+              >
+                <span class="shrink-0 font-black uppercase tracking-[0.12em]">Asignado</span>
+                <span class="min-w-0 flex-1 truncate font-semibold">{{ currentRequest.assignedCollaboratorName }}</span>
+              </div>
             }
           </div>
 
@@ -104,7 +113,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             <app-notice
               tone="warning"
               title="Activa tu disponibilidad"
-              message="Activa tu disponibilidad en Community para poder postularte a este favor."
+              message="Activa tu disponibilidad en Favores para poder postularte a este encargo."
             />
           }
 
@@ -156,7 +165,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             <div class="rounded-[20px] bg-slate-50 px-4 py-4">
               <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Recompensa</p>
               <p class="mt-2 text-sm font-semibold text-slate-950">
-                {{ currentRequest.compensationAmount | currency:'PEN':'symbol-narrow':'1.2-2' }}
+                {{ currentRequest.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}
               </p>
             </div>
 
@@ -351,7 +360,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             <app-internal-page-section-header
               eyebrow="Calificación"
               title="Valora al colaborador"
-              subtitle="Tu comentario ayuda a mejorar el matching futuro dentro de Community."
+              subtitle="Tu comentario ayuda a mejorar futuras coincidencias en Favores."
             />
 
             <form class="grid gap-4" [formGroup]="ratingForm" (ngSubmit)="rateCollaborator()">
@@ -524,7 +533,7 @@ export class CommunityRequestDetailPageComponent {
         }
       },
       error: (error) => {
-        this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar la solicitud Community.'));
+        this.errorMessage.set(getErrorMessage(error, 'No pudimos cargar este favor. Intenta nuevamente.'));
         this.isLoading.set(false);
       },
     });
@@ -644,7 +653,7 @@ export class CommunityRequestDetailPageComponent {
 
   runPrimaryAction(): void {
     if (this.primaryActionDisabled()) {
-      const message = 'Activa tu disponibilidad en Community antes de postularte a este favor.';
+      const message = 'Activa tu disponibilidad en Favores antes de postularte a este encargo.';
       this.errorMessage.set(message);
       this.notificationService.warning(message);
       return;
@@ -838,7 +847,7 @@ export class CommunityRequestDetailPageComponent {
   }
 
   private mapActionError(error: unknown): string {
-    const message = getErrorMessage(error, 'No se pudo actualizar la solicitud Community.');
+    const message = getErrorMessage(error, 'No pudimos actualizar este favor. Intenta nuevamente.');
     const knownMessages: Record<string, string> = {
       'Community request is no longer accepting applications.': 'Esta solicitud ya no acepta postulaciones.',
       'Community request is no longer accepting collaborator selection.': 'Esta solicitud ya no permite seleccionar colaborador.',
@@ -855,7 +864,7 @@ export class CommunityRequestDetailPageComponent {
       'You cannot confirm this community request.': 'Solo el solicitante puede confirmar la recepción.',
       'This community request is not assigned to you.': 'Solo el colaborador asignado puede avanzar este favor.',
       'You cannot apply to your own community request.': 'No puedes postularte a tu propia solicitud.',
-      'Activate your community availability before accepting requests.': 'Activa tu disponibilidad en Community antes de postularte a este favor.',
+      'Activate your community availability before accepting requests.': 'Activa tu disponibilidad en Favores antes de postularte a este encargo.',
     };
 
     return knownMessages[message] ?? message;

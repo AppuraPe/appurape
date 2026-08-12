@@ -14,7 +14,9 @@ export interface CustomerOrderListItemResponse {
   subtotal: number;
   businessCommissionAmount: number;
   businessNetAmount: number;
+  deliveryMode: DeliveryMode | string;
   deliveryFee: number;
+  deliveryMinimumAmount: number;
   deliveryPlatformCommissionAmount: number;
   courierEarningAmount: number;
   serviceFeeAmount: number;
@@ -43,7 +45,9 @@ export interface CustomerOrderDetailResponse {
   subtotal: number;
   businessCommissionAmount: number;
   businessNetAmount: number;
+  deliveryMode: DeliveryMode | string;
   deliveryFee: number;
+  deliveryMinimumAmount: number;
   deliveryPlatformCommissionAmount: number;
   courierEarningAmount: number;
   serviceFeeAmount: number;
@@ -65,6 +69,7 @@ export interface CustomerOrderDetailResponse {
 export type CreateOrderResponse = CustomerOrderDetailResponse;
 
 export type PaymentMethod = 'Cash' | 'Card' | 'Yape' | 'Plin';
+export type DeliveryMode = 'PickupOrDirect' | 'BusinessDelivery' | 'VerifiedDriverDelivery';
 
 export interface CreateOrderItemRequest {
   menuItemId: string;
@@ -81,6 +86,8 @@ export interface CreateOrderRequest {
   deliveryReference: string;
   notes?: string;
   paymentMethod: number;
+  deliveryMode?: number;
+  offeredDeliveryAmount?: number;
   items: CreateOrderItemRequest[];
 }
 
@@ -109,7 +116,9 @@ export interface ValidateOrderResponse {
   subtotal: number;
   businessCommissionAmount: number;
   businessNetAmount: number;
+  deliveryMode: DeliveryMode | string;
   deliveryFee: number;
+  deliveryMinimumAmount: number;
   deliveryPlatformCommissionAmount: number;
   courierEarningAmount: number;
   serviceFeeAmount: number;

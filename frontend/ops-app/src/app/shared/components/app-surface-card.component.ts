@@ -7,6 +7,9 @@ type SurfaceVariant = 'default' | 'page' | 'hero' | 'soft' | 'stat';
   selector: 'app-surface-card',
   standalone: true,
   imports: [NgClass],
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border',
+  },
   template: `
     <article [ngClass]="surfaceClass()">
       <ng-content />
@@ -21,9 +24,9 @@ export class AppSurfaceCardComponent {
     const baseClass = (() => {
       switch (this.variant()) {
         case 'page':
-          return 'rounded-[24px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.07)] backdrop-blur-sm sm:rounded-[26px] sm:p-5 lg:rounded-[30px] lg:p-6 lg:shadow-[0_16px_38px_rgba(15,23,42,0.09)]';
+          return 'rounded-[20px] border border-slate-200/80 bg-white/95 p-4 shadow-sm backdrop-blur-sm sm:rounded-[22px] sm:p-5 lg:rounded-[26px] lg:p-6 lg:shadow-[0_12px_30px_rgba(15,23,42,0.08)]';
         case 'hero':
-          return 'rounded-[26px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.12),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:rounded-[28px] sm:p-6 lg:rounded-[32px] lg:p-7 lg:shadow-[0_18px_44px_rgba(15,23,42,0.1)]';
+          return 'rounded-[20px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.1),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm sm:rounded-[22px] sm:p-5 lg:rounded-[28px] lg:p-7 lg:shadow-[0_14px_36px_rgba(15,23,42,0.09)]';
         case 'soft':
           return 'rounded-2xl border border-slate-200 bg-slate-50/85 p-4 shadow-sm sm:rounded-[22px] sm:p-5 lg:rounded-[24px] lg:shadow-[0_12px_28px_rgba(15,23,42,0.06)]';
         case 'stat':
@@ -38,6 +41,8 @@ export class AppSurfaceCardComponent {
         ? 'transition-transform duration-300 ease-out md:will-change-transform md:hover:-translate-y-1'
         : 'transition-all duration-300 ease-out md:will-change-transform md:hover:-translate-y-0.5 md:hover:shadow-[0_18px_34px_rgba(6,25,43,0.12)]';
 
-    return [baseClass, motionClass, this.extraClass()].filter(Boolean).join(' ');
+    return ['box-border w-full min-w-0 max-w-full', baseClass, motionClass, this.extraClass()]
+      .filter(Boolean)
+      .join(' ');
   });
 }

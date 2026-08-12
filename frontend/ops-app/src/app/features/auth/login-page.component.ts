@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, LucideAngularModule, Mail, ShieldCheck, Store, Truck } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { GoogleSignInService } from '../../core/services/google-sign-in.service';
+import { getApiErrorMessage } from '../../core/utils/api-utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -138,10 +139,10 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
 
               <div class="grid gap-3 rounded-[20px] border border-slate-200 bg-slate-50 p-4">
                 <span class="text-sm font-black text-loreto-carbon">Crear cuenta</span>
-                <div class="flex flex-wrap gap-2 text-sm font-semibold text-primary-700">
-                  <a class="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-3 py-2 transition hover:border-orange-200 hover:text-orange-600" routerLink="/register">Cliente</a>
-                  <a class="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-3 py-2 transition hover:border-orange-200 hover:text-orange-600" routerLink="/register/restaurant">Negocio</a>
-                  <a class="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-3 py-2 transition hover:border-orange-200 hover:text-orange-600" routerLink="/register/driver">Driver</a>
+                <div class="mobile-choice-group" aria-label="Tipo de cuenta">
+                  <a class="mobile-choice-item" routerLink="/register"><span class="min-w-0 truncate">Cliente</span></a>
+                  <a class="mobile-choice-item" routerLink="/register/restaurant"><span class="min-w-0 truncate">Negocio</span></a>
+                  <a class="mobile-choice-item" routerLink="/register/driver"><span class="min-w-0 truncate">Repartidor</span></a>
                 </div>
               </div>
             </form>
@@ -216,7 +217,7 @@ export class LoginPageComponent implements AfterViewInit {
         },
         error: (error) => {
           this.isSubmitting.set(false);
-          this.errorMessage.set(error?.error?.message || 'No se pudo iniciar sesión.');
+          this.errorMessage.set(getApiErrorMessage(error, 'No pudimos iniciar sesión. Revisa tus datos e intenta nuevamente.'));
         },
       });
   }
@@ -239,7 +240,7 @@ export class LoginPageComponent implements AfterViewInit {
         return;
       }
 
-      this.googleErrorMessage.set(error instanceof Error ? error.message : 'No se pudo iniciar sesión con Google.');
+      this.googleErrorMessage.set('No pudimos iniciar sesión con Google. Intenta nuevamente.');
     }
   }
 
@@ -258,8 +259,8 @@ export class LoginPageComponent implements AfterViewInit {
       await this.googleSignInService.renderWebButton(container, (credential) => {
         this.submitGoogleCredential(credential);
       });
-    } catch (error) {
-      this.googleErrorMessage.set(error instanceof Error ? error.message : 'No se pudo cargar el acceso con Google.');
+    } catch {
+      this.googleErrorMessage.set('No pudimos cargar el acceso con Google. Intenta nuevamente.');
     }
   }
 
@@ -281,7 +282,7 @@ export class LoginPageComponent implements AfterViewInit {
         },
         error: (error) => {
           this.isGoogleSubmitting.set(false);
-          this.googleErrorMessage.set(error?.error?.message || 'No se pudo iniciar sesión con Google.');
+          this.googleErrorMessage.set(getApiErrorMessage(error, 'No pudimos iniciar sesión con Google. Intenta nuevamente.'));
         },
       });
   }

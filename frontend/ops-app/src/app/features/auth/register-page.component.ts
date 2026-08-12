@@ -93,6 +93,18 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
           <div class="grid gap-5">
             <app-page-header eyebrow="Registro" title="Crear cuenta" subtitle="Una experiencia corta, móvil y sin pasos sobrantes." />
 
+            <section class="grid gap-2.5 rounded-[16px] border border-slate-200 bg-slate-50 p-3" aria-labelledby="account-type-title">
+              <div class="min-w-0">
+                <p id="account-type-title" class="text-sm font-black text-slate-950">Tipo de cuenta</p>
+                <p class="mt-0.5 text-xs leading-5 text-slate-500">Elige cómo usarás AppuraPe.</p>
+              </div>
+              <div class="mobile-choice-group">
+                <a class="mobile-choice-item !border-primary-700 !bg-primary-50 !text-primary-700" routerLink="/register" aria-current="page"><span class="min-w-0 truncate">Cliente</span></a>
+                <a class="mobile-choice-item" routerLink="/register/restaurant"><span class="min-w-0 truncate">Negocio</span></a>
+                <a class="mobile-choice-item" routerLink="/register/driver"><span class="min-w-0 truncate">Repartidor</span></a>
+              </div>
+            </section>
+
             <div class="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-2">
               <span class="inline-flex min-w-0 items-center justify-center rounded-full border px-2.5 py-1.5 text-center text-[0.64rem] font-black uppercase tracking-[0.14em] transition sm:min-w-fit sm:px-3 sm:text-[0.68rem] sm:tracking-[0.18em]" [class]="currentStep() === 'start' ? 'border-primary-700 bg-primary-700 text-white' : 'border-primary-100 bg-white text-primary-700'">1. Datos</span>
               <span class="hidden h-px min-w-4 flex-1 bg-primary-100 sm:block"></span>

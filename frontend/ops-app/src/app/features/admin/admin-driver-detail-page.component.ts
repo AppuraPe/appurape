@@ -157,7 +157,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                     <lucide-angular class="h-4 w-4" [img]="trophyIcon" aria-hidden="true"></lucide-angular>
                     Usuario
                   </div>
-                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ driver()!.userStatus }}</p>
+                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ userStatusLabel(driver()!.userStatus) }}</p>
                 </div>
               </div>
 
@@ -319,11 +319,11 @@ export class AdminDriverDetailPageComponent {
       .subscribe({
         next: (driver) => {
           this.driver.set(driver);
-          this.successMessage.set(`Accion ${action} aplicada correctamente.`);
+          this.successMessage.set(`${this.actionLabel(action)} correctamente.`);
           this.actionInProgress.set(null);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, `No se pudo aplicar la acción ${action}.`));
+          this.errorMessage.set(getErrorMessage(error, `No se pudo completar la acción: ${this.actionLabel(action).toLowerCase()}.`));
           this.actionInProgress.set(null);
         },
       });
@@ -337,6 +337,36 @@ export class AdminDriverDetailPageComponent {
         return 'Verificado';
       default:
         return 'Sin nivel';
+    }
+  }
+
+  userStatusLabel(status: string): string {
+    switch (status) {
+      case 'Active':
+        return 'Activo';
+      case 'Inactive':
+        return 'Inactivo';
+      case 'Suspended':
+        return 'Suspendido';
+      default:
+        return 'Sin estado';
+    }
+  }
+
+  private actionLabel(action: AdminStatusAction): string {
+    switch (action) {
+      case 'approve':
+        return 'Aprobado';
+      case 'reject':
+        return 'Rechazado';
+      case 'suspend':
+        return 'Suspendido';
+      case 'reactivate':
+        return 'Reactivado';
+      case 'trust':
+        return 'Marcado como de confianza';
+      case 'verify':
+        return 'Verificado';
     }
   }
 }

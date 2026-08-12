@@ -1,21 +1,23 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   Bike,
   ClipboardList,
+  CircleDollarSign,
   CreditCard,
   Ellipsis,
   HeartHandshake,
   Home,
   LucideAngularModule,
   Package,
-  Palette,
+  ReceiptText,
   UserRound,
   Store,
   Tags,
-  UsersRound,
 } from 'lucide-angular';
 import { AuthService } from '../core/services/auth.service';
+import { MyBusinessApiService } from '../core/services/my-business-api.service';
 import { PlatformSettingsApiService } from '../core/services/platform-settings-api.service';
 import { MobilePageShellComponent } from '../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../shared/components/status-badge.component';
@@ -37,16 +39,15 @@ interface NavItem {
       <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-slate-50/95 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top,0px))] backdrop-blur xl:hidden">
         <div class="flex min-w-0 items-center justify-between gap-3">
           <a class="flex min-w-0 items-center gap-3 text-slate-950 no-underline" [routerLink]="defaultRoute()">
-            @if (branding()?.logoUrl && !brandingLogoFailed()) {
+            @if (headerImageUrl() && !headerImageFailed()) {
               <img
-                class="h-9 w-9 shrink-0 rounded-2xl object-contain"
-                [src]="branding()!.logoUrl!"
-                alt=""
-                aria-hidden="true"
-                (error)="markBrandingLogoFailed()"
+                class="h-9 w-9 shrink-0 rounded-xl border border-slate-200 bg-white object-cover"
+                [src]="headerImageUrl()!"
+                [alt]="headerImageAlt()"
+                (error)="markHeaderImageFailed()"
               />
             } @else {
-              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-primary-700 text-xs font-black text-white shadow-lg shadow-primary-700/20">AP</span>
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-700 text-xs font-black uppercase text-white shadow-lg shadow-primary-700/20">{{ headerInitials() }}</span>
             }
             <span class="min-w-0">
               <strong class="block truncate text-sm font-black leading-5">{{ navHeading() }}</strong>
@@ -90,10 +91,17 @@ interface NavItem {
           </a>
 
           <div class="grid gap-2 rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-sm">
-            <div class="grid gap-1">
-              <span class="text-[0.76rem] font-black uppercase tracking-[0.08em] text-slate-500">Sesión activa</span>
-              <strong class="text-base text-loreto-carbon">{{ currentUser()?.fullName || 'Operador' }}</strong>
-              <small class="text-sm text-text-muted">{{ currentUser()?.email || 'Sin email' }}</small>
+            <div class="flex min-w-0 items-center gap-3">
+              @if (headerImageUrl() && !headerImageFailed()) {
+                <img class="h-11 w-11 shrink-0 rounded-xl border border-slate-200 bg-white object-cover" [src]="headerImageUrl()!" [alt]="headerImageAlt()" (error)="markHeaderImageFailed()" />
+              } @else {
+                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary-700 text-xs font-black uppercase text-white">{{ headerInitials() }}</span>
+              }
+              <div class="grid min-w-0 gap-0.5">
+                <span class="text-[0.7rem] font-black uppercase tracking-[0.08em] text-slate-500">Sesión activa</span>
+                <strong class="truncate text-base text-loreto-carbon">{{ headerDisplayName() }}</strong>
+                <small class="truncate text-sm text-text-muted">{{ currentUser()?.email || 'Sin email' }}</small>
+              </div>
             </div>
             <app-status-badge [status]="currentUser()?.role" prefix="Rol" />
           </div>
@@ -124,7 +132,7 @@ interface NavItem {
       <main class="min-w-0 overflow-x-hidden">
         <app-mobile-page-shell
           [backgroundClass]="'bg-slate-50'"
-          [bottomSpacingClass]="'pb-[calc(140px+env(safe-area-inset-bottom,0px))]'"
+          [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'"
           [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'"
           [extraClass]="'px-4 pt-4 md:px-6 md:pt-5 xl:px-6 xl:pt-0'"
         >
@@ -133,7 +141,10 @@ interface NavItem {
       </main>
 
       <nav class="fixed inset-x-0 bottom-0 z-[100] border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.10)] backdrop-blur xl:hidden" aria-label="Navegación operativa móvil">
-        <div class="mx-auto grid max-w-[520px] grid-cols-5 gap-1">
+        <div
+          class="mx-auto grid max-w-[520px] gap-1"
+          [style.grid-template-columns]="'repeat(' + mobileNavItems().length + ', minmax(0, 1fr))'"
+        >
           @for (item of mobileNavItems(); track item.path) {
             <a
               routerLinkActive="text-primary-700"
@@ -156,11 +167,44 @@ export class OpsLayoutComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly platformSettingsApi = inject(PlatformSettingsApiService);
+  private readonly myBusinessApi = inject(MyBusinessApiService);
 
   readonly currentUser = computed(() => this.authService.currentUser());
   readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
   readonly branding = this.platformSettingsApi.settings;
   readonly brandingLogoFailed = signal(false);
+  readonly headerImageFailed = signal(false);
+  readonly currentBusiness = this.myBusinessApi.currentBusiness;
+  readonly headerDisplayName = computed(() => {
+    if (this.authService.getCurrentRole() === 'Restaurant') {
+      return this.currentBusiness()?.name || this.currentUser()?.fullName || 'Negocio';
+    }
+
+    return this.currentUser()?.fullName || this.currentUser()?.email || 'Operador';
+  });
+  readonly headerImageUrl = computed(() => {
+    const role = this.authService.getCurrentRole();
+
+    if (role === 'Restaurant') {
+      return this.currentBusiness()?.logoUrl?.trim() || null;
+    }
+
+    if (role === 'Admin') {
+      return this.branding()?.logoUrl?.trim() || null;
+    }
+
+    return null;
+  });
+  readonly headerImageAlt = computed(() =>
+    this.authService.getCurrentRole() === 'Restaurant'
+      ? `Logo de ${this.headerDisplayName()}`
+      : `Foto de ${this.headerDisplayName()}`,
+  );
+  readonly headerInitials = computed(() => {
+    const words = this.headerDisplayName().trim().split(/\s+/).filter(Boolean);
+    return words.slice(0, 2).map((word) => word.charAt(0)).join('').toUpperCase() || 'AP';
+  });
+
   readonly navHeading = computed(() => {
     const role = this.authService.getCurrentRole();
 
@@ -226,7 +270,6 @@ export class OpsLayoutComponent {
           { label: 'Perfil', path: '/business/profile', helper: 'Visibilidad pública' },
           { label: 'Categorías', path: '/business/menu/categories', helper: 'Organiza catálogo' },
           { label: 'Productos', path: '/business/menu/items', helper: 'Disponibilidad' },
-          { label: 'Favores', path: '/community', helper: 'Solicitudes y trayectos', exact: false },
         ];
       case 'Driver':
         return [
@@ -234,7 +277,6 @@ export class OpsLayoutComponent {
           { label: 'Pedidos disponibles', path: '/driver/orders', helper: 'Listos para tomar' },
           { label: 'Pedido activo', path: '/driver/active-order', helper: 'Entrega en curso', exact: false },
           { label: 'Mis pedidos', path: '/driver/orders/my', helper: 'Historial operativo', exact: false },
-          { label: 'Favores', path: '/community', helper: 'Red distribuida', exact: false },
         ];
       case 'Admin':
         return [
@@ -242,6 +284,9 @@ export class OpsLayoutComponent {
           { label: 'Favores', path: '/admin/community', helper: 'Colaboradores y métricas', exact: false },
           { label: 'Marca', path: '/admin/settings/branding', helper: 'Logo, icono y splash' },
           { label: 'Pagos', path: '/admin/payments', helper: 'Yape y Plin pendientes', exact: false },
+          { label: 'Comisiones', path: '/admin/commissions', helper: 'Ingresos y deuda Cash', exact: false },
+          { label: 'Liquidaciones', path: '/admin/settlements', helper: 'Pagos manuales', exact: false },
+          { label: 'Verificaciones', path: '/admin/collaborator-verifications', helper: 'Colaboradores', exact: false },
           { label: 'Categorías de negocios', path: '/admin/business-types', helper: 'Tipos, iconos y estado' },
           { label: 'Negocios pendientes', path: '/admin/businesses/pending', helper: 'Aprobar o rechazar' },
           { label: 'Drivers pendientes', path: '/admin/drivers/pending', helper: 'Aprobar o rechazar' },
@@ -262,7 +307,6 @@ export class OpsLayoutComponent {
           { label: 'Pedidos', path: '/business/orders', exact: false, icon: ClipboardList },
           { label: 'Catálogo', path: '/business/menu/items', exact: false, icon: Package },
           { label: 'Perfil', path: '/business/profile', exact: false, icon: Store },
-          { label: 'Favores', path: '/community', exact: false, icon: HeartHandshake },
           { label: 'Más', path: '/business/dashboard', exact: true, icon: Ellipsis },
         ];
       case 'Driver':
@@ -270,16 +314,15 @@ export class OpsLayoutComponent {
           { label: 'Disponibles', path: '/driver/orders', exact: true, icon: Bike },
           { label: 'Activo', path: '/driver/active-order', exact: false, icon: ClipboardList },
           { label: 'Historial', path: '/driver/orders/my', exact: false, icon: Tags },
-          { label: 'Favores', path: '/community', exact: false, icon: HeartHandshake },
           { label: 'Cuenta', path: '/driver/dashboard', exact: true, icon: UserRound },
         ];
       case 'Admin':
         return [
           { label: 'Inicio', path: '/admin/dashboard', exact: true, icon: Home },
           { label: 'Pagos', path: '/admin/payments', exact: false, icon: CreditCard },
+          { label: 'Comisiones', path: '/admin/commissions', exact: false, icon: CircleDollarSign },
+          { label: 'Liquidar', path: '/admin/settlements', exact: false, icon: ReceiptText },
           { label: 'Negocios', path: '/admin/businesses', exact: false, icon: Store },
-          { label: 'Drivers', path: '/admin/drivers', exact: false, icon: UsersRound },
-          { label: 'Más', path: '/admin/settings/branding', exact: false, icon: Ellipsis },
         ];
       default:
         return [
@@ -291,6 +334,18 @@ export class OpsLayoutComponent {
 
   constructor() {
     void this.platformSettingsApi.ensureLoaded();
+
+    effect(() => {
+      this.headerImageUrl();
+      this.headerImageFailed.set(false);
+    });
+
+    if (this.authService.getCurrentRole() === 'Restaurant') {
+      this.myBusinessApi
+        .getMyBusiness()
+        .pipe(takeUntilDestroyed())
+        .subscribe({ error: () => undefined });
+    }
 
     if (this.router.url === '/' || this.router.url === '') {
       void this.router.navigateByUrl(this.authService.getDefaultRoute());
@@ -304,5 +359,9 @@ export class OpsLayoutComponent {
 
   markBrandingLogoFailed(): void {
     this.brandingLogoFailed.set(true);
+  }
+
+  markHeaderImageFailed(): void {
+    this.headerImageFailed.set(true);
   }
 }

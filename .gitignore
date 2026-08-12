@@ -25,6 +25,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Android / Gradle
+.gradle/
+local.properties
+*.jks
+*.keystore
+*.apk
+*.aab
+captures/
+
 # Environment / secrets
 .env
 .env.*

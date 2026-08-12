@@ -9,7 +9,7 @@ import { AppNavigationService } from '../../core/services/app-navigation.service
   template: `
     <button
       type="button"
-      class="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/15"
+      class="inline-flex min-h-11 items-center gap-2 rounded-[13px] border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/15"
       (click)="goBack()"
     >
       <lucide-angular class="h-4 w-4 shrink-0" [img]="arrowLeftIcon" aria-hidden="true"></lucide-angular>

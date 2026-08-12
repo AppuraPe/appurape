@@ -13,10 +13,8 @@ import {
 } from '../../core/models/community.models';
 import { NotificationService } from '../../core/services/notification.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
-import { ActionChipRowComponent } from '../../shared/components/action-chip-row.component';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
-import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
@@ -25,7 +23,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
 import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
-type RequestScope = 'all' | 'mine' | 'available';
+type RequestScope = 'active' | 'completed' | 'cancelled' | 'available' | 'taken' | 'history';
 type HubWarning = { title: string; message: string };
 type HubLoadResult<T> = { data: T; warning: HubWarning | null };
 
@@ -41,43 +39,27 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
     AppNoticeComponent,
     StatusBadgeComponent,
     AppButtonComponent,
-    AppMetricCardComponent,
     AppSurfaceCardComponent,
     MobilePageShellComponent,
     InternalPageSectionHeaderComponent,
     UnifiedEmptyStateComponent,
     UnifiedLoadingStateComponent,
-    ActionChipRowComponent,
   ],
   template: `
     <app-mobile-page-shell
       [topSafeArea]="false"
       extraClass="space-y-4 px-4 pt-4 sm:px-5 lg:px-0 lg:pt-0"
-      bottomSpacingClass="pb-[calc(118px+env(safe-area-inset-bottom,0px))]"
+      bottomSpacingClass="pb-0"
     >
       <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
 
-      <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+      <section class="grid min-w-0 gap-3 rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <app-internal-page-section-header
-          eyebrow="Community"
-          title="Favores y encargos"
-          subtitle="Publica un favor, revisa solicitudes disponibles y coordina entregas rápidas desde una experiencia móvil más clara."
-          meta="MVP"
+          eyebrow="Favores"
+          [title]="pageTitle()"
+          [subtitle]="pageSubtitle()"
         />
-
-        <app-notice
-          tone="info"
-          title="Cómo funciona"
-          message="Los favores se coordinan aparte del delivery tradicional. Puedes pedir ayuda, ofrecerte como colaborador y confirmar la entrega desde el mismo módulo."
-        />
-
-        <div class="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-4">
-          <app-metric-card label="Disponibilidad" [value]="availabilitySummary()" helper="Tu estado actual como colaborador" />
-          <app-metric-card label="Solicitudes" [value]="requests().length.toString()" helper="Favores visibles para tu cuenta" />
-          <app-metric-card label="Completadas" [value]="completedRequestsCount().toString()" helper="Solicitudes cerradas correctamente" />
-          <app-metric-card label="Confianza" [value]="trustSummary()" helper="Reputación dentro de la red comunitaria" />
-        </div>
-      </app-surface-card>
+      </section>
 
       @if (errorMessage()) {
         <app-notice tone="danger" title="No pudimos cargar tus solicitudes" [message]="errorMessage()" />
@@ -93,12 +75,22 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
 
       @if (isLoading()) {
         <app-unified-loading-state label="Cargando favores" />
-      } @else if (collaborator()) {
-        <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+      } @else {
+        @if (isDriverView() && collaborator()) {
+        <details class="group min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
+          <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
+            <span class="min-w-0">
+              <strong class="block text-sm text-slate-950">Mi disponibilidad</strong>
+              <span class="block truncate text-xs text-slate-500">Configura cuándo quieres colaborar</span>
+            </span>
+            <span class="shrink-0 text-xs font-semibold text-red-500 group-open:hidden">Configurar</span>
+            <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
+          </summary>
+          <div class="grid gap-4 border-t border-slate-100 p-4 sm:p-5">
           <app-internal-page-section-header
             eyebrow="Tu perfil"
             title="Participa como solicitante o colaborador"
-            subtitle="Activa tu disponibilidad cuando quieras recibir solicitudes y mantén tus datos de ruta al día para mejorar el matching."
+            subtitle="Activa tu disponibilidad y mantén tus rutas al día para recibir mejores coincidencias."
             [meta]="availabilityStatusLabel(collaborator()!.availabilityStatus)"
           />
 
@@ -156,9 +148,21 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
               {{ isSavingAvailability() ? 'Guardando disponibilidad...' : 'Guardar disponibilidad' }}
             </app-button>
           </form>
-        </app-surface-card>
+          </div>
+        </details>
+        }
 
-        <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+        @if (isCustomerView()) {
+        <details class="group min-w-0 overflow-hidden rounded-[20px] border border-red-100 bg-white shadow-sm">
+          <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
+            <span class="min-w-0">
+              <strong class="block text-sm text-slate-950">Publicar un favor</strong>
+              <span class="block truncate text-xs text-slate-500">Crea una solicitud válida por un máximo de 24 horas</span>
+            </span>
+            <span class="shrink-0 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 group-open:hidden">Nuevo</span>
+            <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
+          </summary>
+          <div class="grid gap-4 border-t border-red-50 p-4 sm:p-5">
           <app-internal-page-section-header
             eyebrow="Crear favor"
             title="Nueva solicitud"
@@ -178,9 +182,13 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                 </select>
               </label>
 
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Compensación</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.01" min="0" formControlName="compensationAmount" />
+              <label class="grid min-w-0 gap-2">
+                <span class="text-sm font-semibold text-slate-700">Pago al colaborador</span>
+                <div class="relative min-w-0">
+                  <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-500">S/</span>
+                  <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700" type="number" step="0.01" min="0" formControlName="compensationAmount" />
+                </div>
+                <small class="text-xs leading-5 text-slate-500">La tarifa de servicio AppuraPe se muestra por separado antes de confirmar.</small>
               </label>
 
               <label class="grid gap-2 sm:col-span-2">
@@ -203,29 +211,42 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                 <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" />
               </label>
 
-              <label class="grid gap-2">
+              <details class="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:col-span-2">
+                <summary class="cursor-pointer text-sm font-semibold text-slate-700">Ubicación precisa (opcional)</summary>
+                <p class="mt-1 text-xs leading-5 text-slate-500">Completa coordenadas solo si necesitas mejorar la coincidencia por cercanía.</p>
+                <div class="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
+              <label class="grid min-w-0 gap-2">
                 <span class="text-sm font-semibold text-slate-700">Latitud origen</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLatitude" />
+                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLatitude" />
               </label>
 
-              <label class="grid gap-2">
+              <label class="grid min-w-0 gap-2">
                 <span class="text-sm font-semibold text-slate-700">Longitud origen</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLongitude" />
+                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLongitude" />
               </label>
 
-              <label class="grid gap-2">
+              <label class="grid min-w-0 gap-2">
                 <span class="text-sm font-semibold text-slate-700">Latitud destino</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLatitude" />
+                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLatitude" />
               </label>
 
-              <label class="grid gap-2">
+              <label class="grid min-w-0 gap-2">
                 <span class="text-sm font-semibold text-slate-700">Longitud destino</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLongitude" />
+                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLongitude" />
               </label>
+                </div>
+              </details>
 
               <label class="grid gap-2 sm:col-span-2">
                 <span class="text-sm font-semibold text-slate-700">Fecha límite</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="datetime-local" formControlName="deadlineUtc" />
+                <input
+                  class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                  type="datetime-local"
+                  formControlName="deadlineUtc"
+                  [min]="deadlineMinimum()"
+                  [max]="deadlineMaximum()"
+                />
+                <small class="text-xs leading-5 text-slate-500">Debe vencer dentro de las próximas 24 horas.</small>
               </label>
             </div>
 
@@ -233,13 +254,25 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
               {{ isCreatingRequest() ? 'Publicando solicitud...' : 'Publicar solicitud' }}
             </app-button>
           </form>
-        </app-surface-card>
+          </div>
+        </details>
+        }
 
-        <div class="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+        <div class="grid gap-4">
+          @if (isDriverView()) {
+          <details class="group order-2 min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
+            <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
+              <span class="min-w-0">
+                <strong class="block text-sm text-slate-950">Mis trayectos habituales</strong>
+                <span class="block truncate text-xs text-slate-500">{{ routes().length }} rutas para mejorar coincidencias</span>
+              </span>
+              <span class="shrink-0 text-xs font-semibold text-red-500 group-open:hidden">Gestionar</span>
+              <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
+            </summary>
+            <div class="grid gap-4 border-t border-slate-100 p-4 sm:p-5">
             <app-internal-page-section-header
               eyebrow="Tus trayectos"
-              title="Rutas para mejorar el matching"
+              title="Rutas para mejorar coincidencias"
               subtitle="Define trayectos habituales para recibir mejores coincidencias cuando haya favores compatibles."
             />
 
@@ -307,7 +340,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
               <app-unified-empty-state
                 eyebrow="Trayectos"
                 title="Aún no tienes rutas guardadas"
-                message="Guarda al menos un trayecto para mejorar el matching cuando aparezcan favores compatibles."
+                message="Guarda al menos un trayecto para recibir mejores coincidencias con favores cercanos."
               />
             } @else {
               <div class="grid gap-3">
@@ -328,52 +361,43 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                 }
               </div>
             }
-          </app-surface-card>
+            </div>
+          </details>
+          }
 
-          <app-surface-card variant="page" extraClass="grid gap-4 p-5">
-            <app-internal-page-section-header
-              eyebrow="Solicitudes"
-              title="Favores disponibles y propios"
-              subtitle="Revisa tus solicitudes, encuentra favores abiertos y entra al detalle para aplicar o seguir el estado."
-              [meta]="filteredRequests().length + ' visibles'"
-            />
-
-            <app-action-chip-row>
+          <app-surface-card class="order-1" variant="page" extraClass="grid gap-4 p-4 sm:p-5">
+            <div class="grid w-full min-w-0 grid-cols-3 gap-2 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Filtrar favores">
+              @if (isDriverView()) {
               <button
                 type="button"
-                class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
-                [class]="scopeChipClass('all')"
-                (click)="selectedScope.set('all')"
-              >
-                Todos
-              </button>
-              <button
-                type="button"
-                class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
-                [class]="scopeChipClass('mine')"
-                (click)="selectedScope.set('mine')"
-              >
-                Mis solicitudes
-              </button>
-              <button
-                type="button"
-                class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
+                class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs"
                 [class]="scopeChipClass('available')"
                 (click)="selectedScope.set('available')"
               >
-                Para colaborar
+                Disponibles
               </button>
-              @for (status of availableStatuses(); track status) {
-                <button
-                  type="button"
-                  class="min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition"
-                  [class]="statusChipClass(status)"
-                  (click)="toggleStatusFilter(status)"
-                >
-                  {{ requestStatusLabel(status) }}
-                </button>
+              <button
+                type="button"
+                class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs"
+                [class]="scopeChipClass('taken')"
+                (click)="selectedScope.set('taken')"
+              >
+                Tomados
+              </button>
+              <button
+                type="button"
+                class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs"
+                [class]="scopeChipClass('history')"
+                (click)="selectedScope.set('history')"
+              >
+                Historial
+              </button>
+              } @else {
+              <button type="button" class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs" [class]="scopeChipClass('active')" (click)="selectedScope.set('active')">Activos</button>
+              <button type="button" class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs" [class]="scopeChipClass('completed')" (click)="selectedScope.set('completed')">Completados</button>
+              <button type="button" class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs" [class]="scopeChipClass('cancelled')" (click)="selectedScope.set('cancelled')">Cancelados</button>
               }
-            </app-action-chip-row>
+            </div>
 
             <div class="flex items-center justify-between gap-3 rounded-[20px] bg-slate-100/90 px-4 py-3 text-sm text-slate-600">
               <p class="min-w-0">{{ requestsSummary() }}</p>
@@ -383,11 +407,9 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
             @if (!filteredRequests().length) {
               <app-unified-empty-state
                 eyebrow="Sin resultados"
-                title="No hay favores para este filtro"
-                message="Prueba con otro estado o vuelve a todos para ver nuevas solicitudes disponibles."
-              >
-                <app-button variant="secondary" type="button" (click)="clearRequestFilters()">Limpiar filtros</app-button>
-              </app-unified-empty-state>
+                [title]="emptyTitle()"
+                [message]="emptyMessage()"
+              />
             } @else {
               <div class="grid gap-3">
                 @for (request of filteredRequests(); track request.id) {
@@ -395,31 +417,33 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                     class="grid gap-3 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-200"
                     [routerLink]="['/community/requests', request.id]"
                   >
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                       <div class="min-w-0">
                         <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                           {{ requestTypeLabel(request.type) }}
                         </p>
-                        <h3 class="mt-1 text-base font-extrabold tracking-tight text-slate-950">{{ request.title }}</h3>
-                        <p class="mt-1 text-sm text-slate-500">{{ request.originLabel }} → {{ request.destinationLabel }}</p>
+                        <h3 class="mt-1 line-clamp-2 min-w-0 text-base font-extrabold tracking-tight text-slate-950">{{ request.title }}</h3>
+                        <p class="mt-1 min-w-0 truncate text-sm text-slate-500">{{ request.originLabel }} → {{ request.destinationLabel }}</p>
                       </div>
-                      <app-status-badge [status]="request.status" [label]="requestStatusLabel(request.status)" />
+                      <app-status-badge class="max-w-[104px]" [status]="request.status" [label]="displayStatusLabel(request)" />
                     </div>
 
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-500">
                       @if (request.isMine) {
                         <app-status-badge status="verified" label="Mi solicitud" />
                       }
                       @if (request.isAssignedToMe) {
                         <app-status-badge status="trusted" label="Asignada a mí" />
                       }
-                      <app-status-badge status="available" [label]="'Match ' + formatMatchScore(request.matchScore)" />
+                      @if (isDriverView() && selectedScope() === 'available') {
+                        <span>Coincidencia {{ formatMatchScore(request.matchScore) }}</span>
+                      }
                     </div>
 
                     <div class="grid gap-2 rounded-[20px] bg-slate-50 px-4 py-3 text-sm text-slate-600">
                       <div class="flex items-center justify-between gap-3">
                         <span>Recompensa</span>
-                        <strong class="text-slate-950">{{ request.compensationAmount | currency:'PEN':'symbol-narrow':'1.2-2' }}</strong>
+                        <strong class="text-slate-950">{{ request.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
                       </div>
                       @if (request.deadlineUtc) {
                         <div class="flex items-center justify-between gap-3">
@@ -429,9 +453,10 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                       }
                     </div>
 
-                    <div class="flex items-center justify-between gap-3">
-                      <p class="text-sm text-slate-500">{{ requestRoleHint(request) }}</p>
-                      <span class="text-sm font-semibold text-red-500">Ver detalle</span>
+                    <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-3">
+                      <span class="inline-flex min-h-9 items-center rounded-xl bg-red-50 px-3 text-sm font-semibold text-red-600">
+                        {{ requestActionLabel(request) }}
+                      </span>
                     </div>
                   </a>
                 }
@@ -444,6 +469,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
   `,
 })
 export class CommunityHubPageComponent {
+  private static readonly MAXIMUM_FAVOR_DURATION_MS = 24 * 60 * 60 * 1000;
   private readonly destroyRef = inject(DestroyRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly communityApi = inject(CommunityApiService);
@@ -461,9 +487,11 @@ export class CommunityHubPageComponent {
   readonly successMessage = signal('');
   readonly hubWarnings = signal<HubWarning[]>([]);
   readonly routeEditingId = signal<string | null>(null);
-  readonly selectedScope = signal<RequestScope>('all');
-  readonly selectedStatus = signal('');
-  readonly currentUserId = computed(() => this.authService.currentUser()?.userId ?? null);
+  readonly isDriverView = computed(() => this.authService.currentRole() === 'Driver');
+  readonly isCustomerView = computed(() => this.authService.currentRole() === 'Customer');
+  readonly selectedScope = signal<RequestScope>(this.authService.currentRole() === 'Driver' ? 'available' : 'active');
+  readonly deadlineMinimum = signal(this.toLocalInputValue(new Date(Date.now() + 5 * 60 * 1000)));
+  readonly deadlineMaximum = signal(this.toLocalInputValue(new Date(Date.now() + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS)));
 
   readonly availabilityForm = this.formBuilder.nonNullable.group({
     isAvailable: false,
@@ -498,41 +526,43 @@ export class CommunityHubPageComponent {
     destinationLatitude: [null as number | null],
     destinationLongitude: [null as number | null],
     compensationAmount: [0, [Validators.required, Validators.min(0)]],
-    deadlineUtc: '',
-  });
-
-  readonly availableStatuses = computed(() => {
-    const statuses = new Set(this.requests().map((request) => request.status));
-    return ['Published', 'Searching', 'Accepted', 'InProcess', 'Delivered', 'Confirmed', 'Cancelled']
-      .filter((status) => statuses.has(status))
-      .concat(Array.from(statuses).filter((status) => !['Published', 'Searching', 'Accepted', 'InProcess', 'Delivered', 'Confirmed', 'Cancelled'].includes(status)).sort((a, b) => a.localeCompare(b)));
+    deadlineUtc: [this.defaultFavorDeadline(), Validators.required],
   });
 
   readonly filteredRequests = computed(() => {
     const scope = this.selectedScope();
-    const status = this.selectedStatus();
-    const currentUserId = this.currentUserId();
+    const requests = this.requests();
 
-    return this.requests().filter((request) => {
-      if (scope === 'mine' && !request.isMine) {
-        return false;
+    if (this.isDriverView()) {
+      switch (scope) {
+        case 'taken':
+          return requests.filter(
+            (request) => request.isAssignedToMe && ['Accepted', 'InProcess', 'Delivered'].includes(request.status),
+          );
+        case 'history':
+          return requests.filter(
+            (request) => request.isAssignedToMe && ['Confirmed', 'Cancelled'].includes(request.status),
+          );
+        default:
+          return requests.filter((request) =>
+            !request.isMine &&
+            !request.isAssignedToMe &&
+            ['Published', 'Searching'].includes(request.status) &&
+            (!request.deadlineUtc || new Date(request.deadlineUtc).getTime() > Date.now()),
+          );
       }
+    }
 
-      if (scope === 'available' && (request.isMine || request.isAssignedToMe || request.createdByUserId === currentUserId)) {
-        return false;
-      }
-
-      if (status && request.status !== status) {
-        return false;
-      }
-
-      return true;
-    });
+    const mine = requests.filter((request) => request.isMine);
+    switch (scope) {
+      case 'completed':
+        return mine.filter((request) => request.status === 'Confirmed');
+      case 'cancelled':
+        return mine.filter((request) => request.status === 'Cancelled');
+      default:
+        return mine.filter((request) => ['Published', 'Searching', 'Accepted', 'InProcess', 'Delivered'].includes(request.status));
+    }
   });
-
-  readonly completedRequestsCount = computed(
-    () => this.requests().filter((request) => ['Delivered', 'Confirmed'].includes(request.status)).length,
-  );
 
   readonly trustSummary = computed(() => {
     const collaborator = this.collaborator();
@@ -550,21 +580,37 @@ export class CommunityHubPageComponent {
 
   readonly requestsSummary = computed(() => {
     const count = this.filteredRequests().length;
+    const scope = this.selectedScope();
 
-    if (!count) {
-      return 'No hay solicitudes para el filtro actual.';
+    if (this.isDriverView()) {
+      if (scope === 'taken') {
+        return count === 1 ? 'Tienes 1 favor en seguimiento.' : `Tienes ${count} favores en seguimiento.`;
+      }
+      if (scope === 'history') {
+        return count === 1 ? 'Tienes 1 favor en tu historial.' : `Tienes ${count} favores en tu historial.`;
+      }
+      return count === 1 ? 'Hay 1 favor disponible para tomar.' : `Hay ${count} favores disponibles para tomar.`;
     }
 
-    if (this.selectedScope() === 'mine') {
-      return count === 1 ? '1 solicitud tuya visible.' : `${count} solicitudes tuyas visibles.`;
+    if (scope === 'completed') {
+      return count === 1 ? 'Completaste 1 favor.' : `Completaste ${count} favores.`;
     }
-
-    if (this.selectedScope() === 'available') {
-      return count === 1 ? '1 favor disponible para colaborar.' : `${count} favores disponibles para colaborar.`;
+    if (scope === 'cancelled') {
+      return count === 1 ? 'Tienes 1 favor cancelado.' : `Tienes ${count} favores cancelados.`;
     }
-
-    return count === 1 ? '1 solicitud visible en Community.' : `${count} solicitudes visibles en Community.`;
+    return count === 1 ? 'Tienes 1 favor activo.' : `Tienes ${count} favores activos.`;
   });
+
+  readonly pageTitle = computed(() => this.isDriverView() ? 'Favores disponibles' : 'Mis favores');
+  readonly pageSubtitle = computed(() => this.isDriverView()
+    ? 'Encuentra encargos que puedes tomar.'
+    : 'Revisa el estado de tus solicitudes.');
+  readonly emptyTitle = computed(() => this.isDriverView() && this.selectedScope() === 'available'
+    ? 'No hay favores disponibles por ahora'
+    : 'No hay favores en esta sección');
+  readonly emptyMessage = computed(() => this.isDriverView() && this.selectedScope() === 'available'
+    ? 'Vuelve a revisar en unos minutos.'
+    : 'Cuando haya actividad, aparecerá aquí.');
 
   constructor() {
     this.loadHub();
@@ -581,22 +627,29 @@ export class CommunityHubPageComponent {
     this.errorMessage.set('');
     this.hubWarnings.set([]);
 
-    const collaboratorLoad$ = this.wrapLoad(
-      this.communityApi.getMyCollaborator(),
-      null,
-      'No pudimos cargar tu perfil colaborador',
-    ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    const collaboratorLoad$ = (this.isDriverView()
+      ? this.wrapLoad(
+          this.communityApi.getMyCollaborator(),
+          null,
+          'No pudimos cargar tu perfil colaborador',
+        )
+      : of({ data: null, warning: null } satisfies HubLoadResult<CommunityCollaboratorResponse | null>))
+      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
     forkJoin({
       collaborator: collaboratorLoad$,
       routes: collaboratorLoad$.pipe(
         switchMap((collaborator) =>
-          collaborator.data
+          this.isDriverView() && collaborator.data
             ? this.wrapLoad(this.communityApi.getMyRoutes(), [], 'No pudimos cargar rutas disponibles')
             : of({ data: [], warning: null } satisfies HubLoadResult<CommunityRouteResponse[]>),
         ),
       ),
-      requests: this.wrapLoad(this.communityApi.getRequests(), [], 'No pudimos cargar tus solicitudes'),
+      requests: this.wrapLoad(
+        this.communityApi.getRequests(this.isDriverView() ? {} : { mine: true }),
+        [],
+        'No pudimos cargar tus solicitudes',
+      ),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -622,7 +675,7 @@ export class CommunityHubPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el módulo Community.'));
+          this.errorMessage.set(getErrorMessage(error, 'No pudimos cargar Favores. Intenta nuevamente.'));
           this.isLoading.set(false);
         },
       });
@@ -710,6 +763,22 @@ export class CommunityHubPageComponent {
   }
 
   createRequest(): void {
+    const deadlineValue = this.requestForm.controls.deadlineUtc.value;
+    const deadline = deadlineValue ? new Date(deadlineValue) : null;
+    const now = Date.now();
+    if (
+      !deadline ||
+      Number.isNaN(deadline.getTime()) ||
+      deadline.getTime() <= now ||
+      deadline.getTime() > now + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS
+    ) {
+      this.requestForm.controls.deadlineUtc.markAsTouched();
+      const message = 'Elige una fecha límite futura dentro de las próximas 24 horas.';
+      this.errorMessage.set(message);
+      this.notificationService.warning(message);
+      return;
+    }
+
     if (this.requestForm.invalid) {
       this.requestForm.markAllAsTouched();
       const message = 'Completa los campos obligatorios del favor antes de publicarlo.';
@@ -740,10 +809,9 @@ export class CommunityHubPageComponent {
             destinationLatitude: null,
             destinationLongitude: null,
             compensationAmount: 0,
-            deadlineUtc: '',
+            deadlineUtc: this.defaultFavorDeadline(),
           });
-          this.selectedScope.set('mine');
-          this.selectedStatus.set('');
+          this.selectedScope.set('active');
           this.successMessage.set('Tu favor fue publicado correctamente y ya aparece en tu listado.');
           this.notificationService.success('Favor publicado correctamente.');
           this.isCreatingRequest.set(false);
@@ -757,25 +825,30 @@ export class CommunityHubPageComponent {
       });
   }
 
-  toggleStatusFilter(status: string): void {
-    this.selectedStatus.set(this.selectedStatus() === status ? '' : status);
-  }
-
-  clearRequestFilters(): void {
-    this.selectedScope.set('all');
-    this.selectedStatus.set('');
-  }
-
   scopeChipClass(scope: RequestScope): string {
     return this.selectedScope() === scope
-      ? 'border-red-200 bg-red-50 text-red-600'
-      : 'border-slate-200 bg-white text-slate-600';
+      ? 'bg-white text-red-600 shadow-sm ring-1 ring-slate-200'
+      : 'text-slate-600';
   }
 
-  statusChipClass(status: string): string {
-    return this.selectedStatus() === status
-      ? 'border-slate-900 bg-slate-900 text-white'
-      : 'border-slate-200 bg-white text-slate-600';
+  displayStatusLabel(request: CommunityRequestListItemResponse): string {
+    if (this.isDriverView() && ['Published', 'Searching'].includes(request.status)) {
+      return 'Disponible';
+    }
+
+    if (request.status === 'Accepted') {
+      return 'Tomado';
+    }
+
+    return this.requestStatusLabel(request.status);
+  }
+
+  requestActionLabel(request: CommunityRequestListItemResponse): string {
+    if (this.isDriverView() && ['Published', 'Searching'].includes(request.status)) {
+      return 'Tomar favor';
+    }
+
+    return ['Confirmed', 'Cancelled'].includes(request.status) ? 'Ver historial' : 'Ver seguimiento';
   }
 
   requestStatusLabel(status: string): string {
@@ -808,18 +881,6 @@ export class CommunityHubPageComponent {
     return labels[type] ?? type;
   }
 
-  requestRoleHint(request: CommunityRequestListItemResponse): string {
-    if (request.isMine) {
-      return 'Eres quien publicó este favor.';
-    }
-
-    if (request.isAssignedToMe) {
-      return 'Ya estás asignado a esta solicitud.';
-    }
-
-    return 'Entra al detalle para aplicar o revisar el estado.';
-  }
-
   availabilityStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       Disconnected: 'Desconectado',
@@ -844,6 +905,15 @@ export class CommunityHubPageComponent {
     }
 
     return new Date(value).toISOString().slice(0, 16);
+  }
+
+  private defaultFavorDeadline(): string {
+    return this.toLocalInputValue(new Date(Date.now() + 4 * 60 * 60 * 1000));
+  }
+
+  private toLocalInputValue(value: Date): string {
+    const localTime = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
+    return localTime.toISOString().slice(0, 16);
   }
 
   private wrapLoad<T>(source$: import('rxjs').Observable<T>, fallback: T, title: string) {

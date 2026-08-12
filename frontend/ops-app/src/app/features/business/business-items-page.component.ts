@@ -21,64 +21,84 @@ import { MyCatalogApiService } from '../../core/services/my-catalog-api.service'
 import { validateImageFile } from '../../core/utils/file-upload.utils';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
-import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 
 @Component({
   selector: 'app-business-items-page',
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   standalone: true,
   imports: [
-    PageHeaderComponent,
     CurrencyPipe,
     ReactiveFormsModule,
     LucideAngularModule,
     AppNoticeComponent,
     StatusBadgeComponent,
     AppButtonComponent,
-    AppMetricCardComponent,
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-4 sm:gap-5">
-      <app-surface-card variant="page">
-        <app-page-header
-          eyebrow="Catálogo"
-          title="Productos"
-          subtitle="Crea, edita y controla disponibilidad de productos desde una sola vista."
-        />
-
-        @if (errorMessage()) {
-          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {{ errorMessage() }}
-          </div>
-        }
-
-        @if (successMessage()) {
-          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {{ successMessage() }}
-          </div>
-        }
-
-        @if (!categories().length && !isLoading()) {
-          <app-notice
-            tone="warning"
-            title="Primero crea una categoría"
-            message="No puedes publicar productos si no existe al menos una categoría activa para organizarlos."
-          />
-        }
-
-        <div class="stats-grid">
-          <app-metric-card label="Productos" [value]="items().length" helper="Resultados visibles en la lista" />
-          <app-metric-card label="Categorías" [value]="categories().length" helper="Opciones para clasificar el menú" />
-          <app-metric-card label="Modo" [value]="editingItem() ? 'Edición' : 'Creación'" helper="Estado actual del formulario" />
+    <section class="grid w-full min-w-0 max-w-full gap-3.5 sm:gap-4">
+      <header class="grid gap-3 px-0.5">
+        <div class="grid gap-1.5">
+          <span class="text-[11px] font-bold uppercase tracking-[0.06em] text-primary-700">Catálogo</span>
+          <h1 class="text-2xl font-extrabold leading-tight tracking-[-0.03em] text-slate-950">Productos</h1>
+          <p class="max-w-2xl text-sm leading-5 text-slate-500">Revisa tu catálogo y controla la disponibilidad.</p>
         </div>
-      </app-surface-card>
 
-      <div class="grid gap-4 sm:gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-        <app-surface-card variant="page">
+        <div class="flex flex-wrap gap-2">
+          <app-button [routerLink]="['new']" size="md">
+            <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
+            Nuevo producto
+          </app-button>
+        </div>
+      </header>
+
+      @if (errorMessage()) {
+        <div class="rounded-[14px] border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] font-semibold text-red-700">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      @if (successMessage()) {
+        <div class="rounded-[14px] border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[13px] font-semibold text-emerald-700">
+          {{ successMessage() }}
+        </div>
+      }
+
+      @if (!categories().length && !isLoading()) {
+        <app-notice
+          tone="warning"
+          title="Primero crea una categoría"
+          message="No puedes publicar productos si no existe al menos una categoría activa para organizarlos."
+        />
+      }
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="rounded-[16px] border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
+          <span class="text-[11px] font-semibold text-slate-500">Productos</span>
+          <strong class="mt-1 block text-xl font-extrabold leading-none text-slate-950">{{ items().length }}</strong>
+        </div>
+        <div class="rounded-[16px] border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
+          <span class="text-[11px] font-semibold text-slate-500">Categorías</span>
+          <strong class="mt-1 block text-xl font-extrabold leading-none text-slate-950">{{ categories().length }}</strong>
+        </div>
+      </div>
+
+      <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[16px] border border-slate-200 bg-slate-100/70 px-3.5 py-3">
+        <div class="min-w-0">
+          <h2 class="text-[15px] font-bold text-slate-950">Gestión del catálogo</h2>
+          <p class="mt-0.5 text-xs leading-5 text-slate-500">Administra productos, precios y categorías.</p>
+        </div>
+        <app-button variant="ghost" size="sm" [routerLink]="['../categories']">Administrar</app-button>
+      </div>
+
+      <div class="grid gap-4 sm:gap-5">
+        @if (editingItem()) {
+        <app-surface-card id="item-editor" variant="default" extraClass="p-4 sm:p-5">
           <form class="grid gap-4" [formGroup]="form" (ngSubmit)="submit()">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
               <lucide-angular class="h-4 w-4" [img]="packageIcon" aria-hidden="true"></lucide-angular>
@@ -146,7 +166,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             }
 
             <div class="grid gap-3 sm:flex sm:flex-wrap">
-              <app-button size="lg" type="submit" [disabled]="isSubmitting() || !categories().length">
+              <app-button size="md" type="submit" [disabled]="isSubmitting() || !categories().length">
                 {{
                   isSubmitting()
                     ? (editingItem() ? 'Guardando...' : 'Creando...')
@@ -154,11 +174,11 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                 }}
               </app-button>
               @if (editingItem()) {
-                <app-button variant="secondary" size="lg" type="button" (click)="cancelEdit()" [disabled]="isSubmitting()">
+                <app-button variant="secondary" size="md" type="button" (click)="cancelEdit()" [disabled]="isSubmitting()">
                   Cancelar
                 </app-button>
               }
-              <app-button variant="ghost" size="lg" type="button" (click)="reloadData()" [disabled]="isLoading() || isSubmitting()">
+              <app-button variant="ghost" size="md" type="button" (click)="reloadData()" [disabled]="isLoading() || isSubmitting()">
                 <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
                 Recargar
               </app-button>
@@ -167,15 +187,16 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             <input type="hidden" formControlName="imageUrl" />
           </form>
         </app-surface-card>
+        }
 
-        <app-surface-card variant="page">
-          <app-page-header
-            eyebrow="Lista"
-            title="Productos actuales"
-            subtitle="Selecciona un producto para editarlo o ajusta su disponibilidad."
-          />
+        <section class="grid gap-3" aria-labelledby="current-products-title">
+          <div class="grid gap-1 px-0.5">
+            <span class="text-[11px] font-bold uppercase tracking-[0.06em] text-primary-700">Lista</span>
+            <h2 id="current-products-title" class="text-[17px] font-bold text-slate-950">Productos actuales</h2>
+            <p class="text-[13px] leading-5 text-slate-500">Edita un producto o cambia su disponibilidad.</p>
+          </div>
 
-          <form class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,0.8fr))_auto]" [formGroup]="filtersForm" (ngSubmit)="loadItems()">
+          <form class="grid w-full min-w-0 max-w-full gap-3 overflow-hidden rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm xl:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,0.8fr))_auto]" [formGroup]="filtersForm" (ngSubmit)="loadItems()">
             <label class="grid gap-2 xl:col-span-2">
               <span class="text-sm font-semibold text-loreto-carbon">Buscar producto</span>
               <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
@@ -219,12 +240,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               </select>
             </label>
 
-            <div class="flex flex-wrap items-end gap-3 xl:justify-end">
-              <app-button type="submit" [disabled]="isLoading()">
+            <div class="flex flex-wrap items-end gap-2 xl:justify-end">
+              <app-button size="sm" type="submit" [disabled]="isLoading()">
                 <lucide-angular class="h-4 w-4" [img]="searchIcon" aria-hidden="true"></lucide-angular>
                 Aplicar
               </app-button>
-              <app-button variant="ghost" type="button" (click)="clearFilters()" [disabled]="isLoading()">
+              <app-button variant="ghost" size="sm" type="button" (click)="clearFilters()" [disabled]="isLoading()">
                 <lucide-angular class="h-4 w-4" [img]="filterXIcon" aria-hidden="true"></lucide-angular>
                 Limpiar
               </app-button>
@@ -240,30 +261,38 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               No hay productos para los filtros seleccionados.
             </div>
           } @else {
-            <div class="grid gap-4">
+            <div class="grid gap-3">
               @for (item of items(); track item.id) {
-                <app-surface-card variant="page">
-                  <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-                    <div class="grid gap-3">
-                      <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ item.name }}</strong>
-                      <span class="text-sm text-text-muted">Categoría: {{ item.categoryName }}</span>
-                      <span class="text-sm text-text-muted">{{ item.description }}</span>
-                      <span class="text-sm font-semibold text-loreto-carbon">Precio: {{ item.price | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+                <app-surface-card variant="default" extraClass="w-full min-w-0 max-w-full p-3.5 sm:p-4">
+                  <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+                    <div class="flex min-w-0 items-start gap-3">
+                      <div class="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[14px] bg-slate-100 text-slate-500">
+                        @if (item.imageUrl) {
+                          <img class="h-full w-full object-cover" [src]="item.imageUrl" [alt]="item.name" />
+                        } @else {
+                          <lucide-angular class="h-5 w-5" [img]="packageIcon" aria-hidden="true"></lucide-angular>
+                        }
+                      </div>
+                      <div class="grid min-w-0 flex-1 gap-1.5">
+                      <strong class="truncate text-base font-bold tracking-[-0.02em] text-loreto-carbon" [title]="item.name">{{ item.name }}</strong>
+                      <span class="text-[13px] text-text-muted">{{ item.categoryName }} · {{ item.description }}</span>
+                      <span class="text-[13px] font-semibold text-loreto-carbon">{{ item.price | currency: 'PEN' : 'S/ ' : '1.2-2' }}</span>
+                      </div>
                     </div>
 
-                    <div class="grid gap-3 xl:justify-items-end">
+                    <div class="grid gap-2 xl:justify-items-end">
                       <div class="flex flex-wrap items-center gap-2">
                         <app-status-badge [status]="item.isAvailable" [label]="item.isAvailable ? 'Disponible' : 'No disponible'" />
                         <app-status-badge [status]="item.isActive" [label]="item.isActive ? 'Activo' : 'Inactivo'" />
                       </div>
 
-                      <div class="flex flex-wrap gap-3 xl:justify-end">
-                        <app-button variant="secondary" size="lg" type="button" (click)="startEdit(item)" [disabled]="isSubmitting()">
+                      <div class="grid grid-cols-[auto_minmax(0,1fr)] gap-2 xl:flex xl:justify-end">
+                        <app-button variant="secondary" size="sm" type="button" (click)="startEdit(item)" [disabled]="isSubmitting()">
                           Editar
                         </app-button>
                         <app-button
                           variant="ghost"
-                          size="lg"
+                          size="sm"
                           type="button"
                           (click)="toggleAvailability(item)"
                           [disabled]="availabilityItemId() === item.id"
@@ -279,17 +308,15 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   </div>
 
                   @if (!item.isAvailable || !item.isActive) {
-                    <app-notice
-                      tone="warning"
-                      title="Producto oculto o limitado"
-                      message="Este producto no se muestra al público si está inactivo o marcado como no disponible."
-                    />
+                    <p class="mt-3 rounded-[14px] bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                      Este producto no se muestra al público mientras esté inactivo o no disponible.
+                    </p>
                   }
                 </app-surface-card>
               }
             </div>
           }
-        </app-surface-card>
+        </section>
       </div>
     </section>
   `,
@@ -423,6 +450,7 @@ export class BusinessItemsPageComponent {
       isActive: item.isActive,
     });
     this.imagePreviewUrl.set(item.imageUrl ?? null);
+    queueMicrotask(() => document.getElementById('item-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   cancelEdit(): void {
@@ -614,5 +642,6 @@ export class BusinessItemsPageComponent {
 
     return null;
   }
+
 }
 

@@ -1,0 +1,118 @@
+<section class="mx-auto grid w-full min-w-0 max-w-4xl gap-3.5 sm:gap-4">
+  <header class="min-w-0 px-0.5">
+    <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-primary-700">Negocio</p>
+    <h1 class="mt-1 text-[1.45rem] font-black leading-tight tracking-tight text-slate-950 sm:text-2xl">Mi negocio</h1>
+    <p class="mt-1 text-sm leading-5 text-slate-500">Revisa lo importante y continúa con tu operación.</p>
+  </header>
+
+  @if (errorMessage()) {
+    <section class="grid gap-3 rounded-2xl border border-red-200 bg-red-50 p-3.5">
+      <p class="text-[13px] font-semibold leading-5 text-red-700">{{ errorMessage() }}</p>
+      <div>
+        <app-button size="sm" variant="ghost" type="button" (click)="loadDashboard()">Intentar nuevamente</app-button>
+      </div>
+    </section>
+  } @else if (isLoading()) {
+    <section class="grid gap-2.5" aria-label="Cargando resumen" aria-busy="true">
+      <div class="flex h-[84px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm">
+        <div class="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
+        <div class="min-w-0 flex-1">
+          <div class="h-3 w-2/5 animate-pulse rounded-full bg-slate-200"></div>
+          <div class="mt-2.5 h-2.5 w-3/4 animate-pulse rounded-full bg-slate-100"></div>
+        </div>
+      </div>
+    </section>
+  } @else if (restaurant()) {
+    <section class="flex min-w-0 items-center gap-3 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
+      <div class="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-primary-700 text-white">
+        <lucide-angular class="h-5 w-5" [img]="storeIcon" aria-hidden="true"></lucide-angular>
+      </div>
+      <div class="min-w-0 flex-1">
+        <h2 class="truncate text-base font-extrabold text-slate-950" [title]="restaurant()!.name">{{ restaurant()!.name }}</h2>
+        <p class="mt-1 truncate text-xs text-slate-500" [title]="restaurant()!.zoneName">{{ restaurant()!.zoneName }}</p>
+      </div>
+      <span
+        class="max-w-[44%] shrink-0 truncate rounded-full px-2.5 py-1 text-[11px] font-bold"
+        [class]="restaurant()!.approvalStatus === 'Approved' && restaurant()!.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'"
+        [title]="approvalStatusLabel(restaurant()!.approvalStatus)"
+      >
+        {{ approvalStatusLabel(restaurant()!.approvalStatus) }}
+      </span>
+    </section>
+
+    @if (restaurant()!.approvalStatus !== 'Approved' || !restaurant()!.isActive) {
+      <section class="flex min-w-0 items-start gap-2.5 rounded-[15px] border border-amber-100 bg-amber-50/70 px-3.5 py-3">
+        <lucide-angular class="mt-0.5 h-4 w-4 shrink-0 text-amber-700" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
+        <p class="min-w-0 text-xs leading-5 text-amber-900">
+          @if (restaurant()!.approvalStatus === 'Pending') {
+            Tu negocio está en revisión. Puedes preparar el perfil y catálogo mientras esperas la aprobación.
+          } @else {
+            Tu negocio no está disponible para recibir pedidos. Revisa el perfil y su estado.
+          }
+        </p>
+      </section>
+    }
+
+    <section class="grid min-w-0 gap-2.5 rounded-[18px] border border-primary-100 bg-gradient-to-br from-primary-50 to-white p-4" aria-labelledby="today-title">
+      <div class="flex min-w-0 items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.08em] text-primary-700">Hoy</p>
+          <h2 id="today-title" class="mt-1 text-lg font-black text-slate-950">
+            {{ activeOrdersCount() ? activeOrdersCount() + ' pedidos requieren atención' : 'Todo está al día' }}
+          </h2>
+          <p class="mt-1 text-xs leading-5 text-slate-600">
+            {{ activeOrdersCount() ? 'Revisa su estado para mantener informados a tus clientes.' : 'No tienes pedidos activos por atender.' }}
+          </p>
+        </div>
+        <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-primary-700 shadow-sm">
+          <lucide-angular class="h-5 w-5" [img]="clipboardListIcon" aria-hidden="true"></lucide-angular>
+        </div>
+      </div>
+      <div>
+        <app-button size="sm" [routerLink]="'/business/orders'">
+          {{ activeOrdersCount() ? 'Revisar pedidos' : 'Ver historial' }}
+        </app-button>
+      </div>
+    </section>
+
+    <section class="grid min-w-0 grid-cols-2 gap-2" aria-label="Resumen de pedidos">
+      <article class="min-w-0 rounded-2xl border border-sky-100 bg-sky-50/70 px-3 py-3">
+        <p class="truncate text-[0.62rem] font-extrabold uppercase tracking-[0.05em] text-sky-700">Activos</p>
+        <p class="mt-1 text-xl font-black leading-none text-sky-800">{{ activeOrdersCount() }}</p>
+      </article>
+      <article class="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+        <p class="truncate text-[0.62rem] font-extrabold uppercase tracking-[0.05em] text-slate-600">Pedidos totales</p>
+        <p class="mt-1 text-xl font-black leading-none text-slate-800">{{ ordersCount() }}</p>
+      </article>
+    </section>
+
+    <section class="grid min-w-0 gap-3 rounded-[18px] border border-slate-200 bg-white p-3.5" aria-labelledby="quick-actions-title">
+      <div class="min-w-0">
+        <h2 id="quick-actions-title" class="text-base font-extrabold text-slate-950">Acciones rápidas</h2>
+        <p class="mt-1 text-xs text-slate-500">Gestiona lo más usado de tu negocio.</p>
+      </div>
+      <div class="grid min-w-0 grid-cols-2 gap-2">
+        <app-button size="sm" variant="secondary" [routerLink]="'/business/menu/items'" block>
+          <lucide-angular class="h-4 w-4" [img]="menuSquareIcon" aria-hidden="true"></lucide-angular>
+          Productos
+        </app-button>
+        <app-button size="sm" variant="secondary" [routerLink]="'/business/menu/categories'" block>
+          <lucide-angular class="h-4 w-4" [img]="layoutGridIcon" aria-hidden="true"></lucide-angular>
+          Categorías
+        </app-button>
+        <app-button size="sm" variant="ghost" [routerLink]="'/business/profile'" block>
+          <lucide-angular class="h-4 w-4" [img]="storeIcon" aria-hidden="true"></lucide-angular>
+          Editar perfil
+        </app-button>
+        <app-button size="sm" variant="ghost" [routerLink]="'/business/orders'" block>
+          <lucide-angular class="h-4 w-4" [img]="clipboardListIcon" aria-hidden="true"></lucide-angular>
+          Historial
+        </app-button>
+      </div>
+    </section>
+
+    <p class="px-1 text-xs leading-5 text-slate-500">
+      Mantén actualizados el perfil, horario y catálogo para reducir errores en los pedidos.
+    </p>
+  }
+</section>

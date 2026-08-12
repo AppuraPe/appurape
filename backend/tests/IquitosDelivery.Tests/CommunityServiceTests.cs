@@ -1,4 +1,5 @@
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Community;
 using IquitosDelivery.Application.DTOs.Notifications;
 using IquitosDelivery.Application.Exceptions;
@@ -43,6 +44,30 @@ public class CommunityServiceTests
         Assert.Equal(created.Id, listed[0].Id);
         Assert.Equal("Published", listed[0].Status);
         Assert.True(listed[0].IsMine);
+    }
+
+    [Fact]
+    public async Task Driver_ListUsesPersonalMatchScore_InsteadOfStoredGlobalScore()
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedCommunityFixtureAsync(dbContext);
+        var requesterService = CreateCommunityService(dbContext, fixture.RequesterUserId, UserRole.Customer);
+        var collaboratorService = CreateCommunityService(dbContext, fixture.CollaboratorUserId, UserRole.Driver);
+        var created = await requesterService.CreateRequestAsync(CreateValidRequest());
+
+        var listed = await collaboratorService.GetRequestsAsync(new CommunityRequestQueryRequest());
+
+        var request = await dbContext.CommunityRequests.SingleAsync(x => x.Id == created.Id);
+        var collaborator = await dbContext.CommunityCollaborators
+            .Include(x => x.User)
+            .Include(x => x.Routes)
+            .SingleAsync(x => x.Id == fixture.CollaboratorId);
+        var expectedScore = CommunityMatchingCalculator.BuildMatch(collaborator, request, matchedRoute: null).MatchScore;
+        var listedRequest = Assert.Single(listed);
+
+        Assert.Equal(0m, request.MatchScore);
+        Assert.Equal(expectedScore, listedRequest.MatchScore);
+        Assert.True(listedRequest.MatchScore > request.MatchScore);
     }
 
     [Fact]

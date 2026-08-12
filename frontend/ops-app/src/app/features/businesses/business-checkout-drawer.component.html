@@ -6,20 +6,20 @@
   <div
     #checkoutDrawerPanel
     id="drawer-checkout"
-    class="fixed inset-x-0 bottom-0 z-[100] h-[86dvh] w-full overflow-y-auto overscroll-contain rounded-t-[28px] border border-slate-200 bg-slate-50 px-4 pb-5 pt-3 shadow-[0_-18px_48px_rgba(15,23,42,0.16)] transition-transform sm:right-0 sm:top-0 sm:h-[100dvh] sm:max-w-[460px] sm:rounded-none sm:rounded-l-[28px] sm:border-l sm:px-5 sm:pt-4"
+    class="fixed inset-x-0 bottom-0 z-[100] flex h-[86dvh] min-h-0 w-full flex-col overflow-hidden rounded-t-[24px] border border-slate-200 bg-slate-50 px-4 pt-3 shadow-[0_-18px_48px_rgba(15,23,42,0.16)] transition-transform sm:right-0 sm:top-0 sm:h-[100dvh] sm:max-w-[460px] sm:rounded-none sm:rounded-l-[24px] sm:border-l sm:px-5 sm:pt-4"
     [class.translate-y-full]="!isCheckoutDrawerOpen()"
     [class.translate-y-0]="isCheckoutDrawerOpen()"
     tabindex="-1"
     aria-labelledby="drawer-checkout-label"
   >
-    <div class="mx-auto w-full max-w-[520px] sm:max-w-none">
+    <div class="mx-auto min-h-0 w-full max-w-[520px] flex-1 overflow-y-auto overscroll-contain pb-4 sm:max-w-none">
       <div class="mb-3 flex justify-center sm:hidden">
         <span class="h-1.5 w-14 rounded-full bg-slate-300"></span>
       </div>
 
       <div class="mb-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <h5 id="drawer-checkout-label" class="text-[1.7rem] font-extrabold tracking-[-0.05em] text-slate-950">Resumen</h5>
+          <h5 id="drawer-checkout-label" class="text-2xl font-extrabold tracking-[-0.04em] text-slate-950">Resumen</h5>
           <p class="mt-1 text-sm text-slate-500">Revisa el pedido antes de enviarlo.</p>
         </div>
         <button
@@ -39,7 +39,7 @@
         </app-surface-card>
         <app-surface-card variant="soft" extraClass="p-4 text-center">
           <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500">Subtotal</span>
-          <strong class="mt-2 block text-xl font-black tracking-[-0.04em] text-primary-700">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+          <strong class="mt-2 block text-xl font-black tracking-[-0.04em] text-primary-700">{{ subtotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
         </app-surface-card>
       </div>
 
@@ -57,9 +57,9 @@
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
                     <h4 class="line-clamp-2 font-extrabold text-slate-950">{{ item.name }}</h4>
-                    <p class="text-xs text-slate-500">{{ item.price | currency: 'PEN' : 'symbol' : '1.2-2' }} c/u</p>
+                    <p class="text-xs text-slate-500">{{ item.price | currency: 'PEN' : 'S/ ' : '1.2-2' }} c/u</p>
                   </div>
-                  <strong class="shrink-0 text-sm font-black text-primary-700">{{ item.price * item.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                  <strong class="shrink-0 text-sm font-black text-primary-700">{{ item.price * item.quantity | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                 </div>
                 <div class="mt-3 flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2">
@@ -77,7 +77,7 @@
         }
       </div>
 
-      <form class="mt-6 space-y-4 pb-24 sm:pb-6" [formGroup]="checkoutForm" (ngSubmit)="submitOrder()">
+      <form class="mt-6 space-y-4 pb-2" [formGroup]="checkoutForm" (ngSubmit)="submitOrder()">
         <div>
           <h3 class="text-[1.35rem] font-extrabold tracking-[-0.04em] text-slate-950">Entrega</h3>
           @if (activeBusiness(); as business) {
@@ -87,7 +87,7 @@
           }
         </div>
 
-        @if (isAuthenticated()) {
+        @if (canUseCustomerCheckout()) {
           <app-surface-card variant="soft" extraClass="p-4">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -155,6 +155,54 @@
         </div>
 
         <div class="grid gap-2">
+          <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500">Como quieres recibir tu pedido?</label>
+          <input type="hidden" formControlName="deliveryMode" />
+
+          <div class="grid gap-2">
+            @for (mode of deliveryModes; track mode) {
+              <button
+                type="button"
+                class="flex min-h-11 w-full items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition"
+                [class.border-primary-500]="selectedDeliveryMode() === mode"
+                [class.bg-primary-50]="selectedDeliveryMode() === mode"
+                [class.border-slate-200]="selectedDeliveryMode() !== mode"
+                [class.bg-white]="selectedDeliveryMode() !== mode"
+                [class.opacity-60]="mode === 'BusinessDelivery' && !activeBusiness()?.hasOwnDelivery"
+                (click)="selectDeliveryMode(mode)"
+                [attr.aria-pressed]="selectedDeliveryMode() === mode"
+              >
+                <span class="min-w-0">
+                  <span class="block text-sm font-black text-slate-950">{{ deliveryModeLabel(mode) }}</span>
+                  <span class="mt-1 block text-xs leading-5 text-slate-500">{{ deliveryModeHelpText(mode) }}</span>
+                </span>
+                <span
+                  class="mt-0.5 inline-flex h-5 w-5 shrink-0 rounded-full border"
+                  [class.border-primary-600]="selectedDeliveryMode() === mode"
+                  [class.bg-primary-600]="selectedDeliveryMode() === mode"
+                  [class.border-slate-300]="selectedDeliveryMode() !== mode"
+                  [class.bg-white]="selectedDeliveryMode() !== mode"
+                ></span>
+              </button>
+            }
+          </div>
+
+          @if (selectedDeliveryMode() === 'VerifiedDriverDelivery') {
+            <div class="grid gap-2 rounded-2xl border border-primary-100 bg-primary-50 p-3">
+              <label class="text-xs font-bold text-slate-700" for="offeredDeliveryAmount">Oferta para el driver</label>
+              <input
+                id="offeredDeliveryAmount"
+                type="number"
+                min="0"
+                step="0.5"
+                formControlName="offeredDeliveryAmount"
+                class="min-h-11 rounded-2xl border border-primary-100 bg-white px-4 text-sm font-bold text-slate-950 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
+              />
+              <p class="text-xs leading-5 text-slate-600">Mínimo actual: {{ verifiedDriverMinimum() | currency: 'PEN' : 'S/ ' : '1.2-2' }}. Puedes ofrecer más para que acepten más rápido.</p>
+            </div>
+          }
+        </div>
+
+        <div class="grid gap-2">
           <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500" for="paymentMethod">Pago</label>
           <input id="paymentMethod" type="hidden" formControlName="paymentMethod" />
 
@@ -205,6 +253,28 @@
           <app-notice tone="warning" message="La captura no confirma automáticamente el pago. El negocio debe validar la recepción antes de aprobar tu pedido." />
         }
 
+        <app-surface-card variant="soft" extraClass="p-4">
+          <h4 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Resumen estimado</h4>
+          <div class="mt-3 space-y-2 text-sm">
+            <div class="flex justify-between gap-3 text-slate-600">
+              <span>Productos</span>
+              <strong class="text-slate-950">{{ subtotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
+            </div>
+            <div class="flex justify-between gap-3 text-slate-600">
+              <span>Entrega</span>
+              <strong class="text-slate-950">{{ estimatedDeliveryAmount() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
+            </div>
+            <div class="flex justify-between gap-3 text-slate-600">
+              <span>Servicio AppuraPe</span>
+              <strong class="text-slate-950">{{ estimatedServiceFee() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
+            </div>
+            <div class="flex justify-between gap-3 border-t border-slate-200 pt-2 text-base">
+              <span class="font-black text-slate-950">Total</span>
+              <strong class="text-primary-700">{{ estimatedTotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
+            </div>
+          </div>
+        </app-surface-card>
+
         <div class="grid gap-2">
           <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500" for="notes">Notas</label>
           <textarea id="notes" rows="3" formControlName="notes" placeholder="Notas para el pedido" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"></textarea>
@@ -212,27 +282,35 @@
 
         @if (!isAuthenticated()) {
           <app-notice tone="warning" message="Inicia sesión para pedir." />
+        } @else if (!canUseCustomerCheckout()) {
+          <app-notice tone="warning" message="Esta cuenta no puede crear pedidos. Para comprar, ingresa con una cuenta de cliente." />
         }
 
         @if (checkoutErrorMessage()) {
           <app-notice tone="danger" [message]="checkoutErrorMessage()" />
         }
 
-        <app-bottom-safe-action-bar mode="fixed" extraClass="px-3 pb-[calc(10px+env(safe-area-inset-bottom,0px))] sm:static sm:px-0 sm:pb-0">
-          <div class="flex items-end justify-between gap-2 sm:hidden">
-            <div class="min-w-0">
-              <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500">Subtotal</span>
-              <strong class="mt-0.5 block text-[15px] font-black leading-tight text-slate-950">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
-            </div>
-            <span class="pb-0.5 text-xs font-semibold text-slate-500">{{ totalQuantity() }} prod.</span>
-          </div>
-
-          <app-button class="mt-2 sm:mt-0" type="submit" [disabled]="submitDisabled()" block>
-            {{ submitButtonLabel() }}
-          </app-button>
-        </app-bottom-safe-action-bar>
       </form>
     </div>
+
+    <app-bottom-safe-action-bar
+      mode="static"
+      extraClass="shrink-0 !px-0 !pb-[calc(10px+env(safe-area-inset-bottom,0px))] pt-2 sm:!pb-4"
+    >
+      <div class="flex items-end justify-between gap-3">
+        <div class="min-w-0">
+          <span class="text-[0.68rem] font-black uppercase tracking-[0.12em] text-slate-500">Total</span>
+          <strong class="mt-0.5 block text-base font-black leading-tight text-slate-950">{{ estimatedTotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
+        </div>
+        <span class="pb-0.5 text-xs font-semibold text-slate-500">
+          {{ totalQuantity() }} {{ totalQuantity() === 1 ? 'producto' : 'productos' }}
+        </span>
+      </div>
+
+      <app-button class="mt-2" type="button" size="md" [disabled]="submitDisabled()" block (click)="submitOrder()">
+        {{ submitButtonLabel() }}
+      </app-button>
+    </app-bottom-safe-action-bar>
   </div>
 </ng-template>
 

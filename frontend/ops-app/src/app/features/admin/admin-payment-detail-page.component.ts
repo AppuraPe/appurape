@@ -22,6 +22,7 @@ type PaymentAction = 'confirm' | 'reject';
 
 @Component({
   selector: 'app-admin-payment-detail-page',
+  host: { class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden' },
   standalone: true,
   imports: [
     CurrencyPipe,
@@ -39,7 +40,7 @@ type PaymentAction = 'confirm' | 'reject';
     BottomSafeActionBarComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(108px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(108px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-full gap-4 overflow-x-hidden lg:gap-6'">
       <div class="flex flex-wrap gap-3">
         <app-back-button fallbackUrl="/admin/payments" label="Volver a pagos" />
       </div>
@@ -148,9 +149,9 @@ type PaymentAction = 'confirm' | 'reject';
                   <div class="grid gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                     <div class="min-w-0">
                       <p class="text-sm font-bold text-slate-950">{{ item.productName }}</p>
-                      <p class="mt-1 text-xs text-slate-500">{{ item.quantity }} x {{ item.unitPrice | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+                      <p class="mt-1 text-xs text-slate-500">{{ item.quantity }} x {{ item.unitPrice | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
                     </div>
-                    <strong class="text-sm text-slate-950">{{ item.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                    <strong class="shrink-0 whitespace-nowrap text-sm text-slate-950">{{ item.total | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                   </div>
                 }
               </div>
@@ -158,15 +159,15 @@ type PaymentAction = 'confirm' | 'reject';
               <div class="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-slate-500">Subtotal</span>
-                  <strong class="text-slate-950">{{ payment.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                  <strong class="whitespace-nowrap text-slate-950">{{ payment.subtotal | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-slate-500">Delivery</span>
-                  <strong class="text-slate-950">{{ payment.deliveryFee | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                  <strong class="whitespace-nowrap text-slate-950">{{ payment.deliveryFee | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-2">
                   <span class="font-bold text-slate-950">Total</span>
-                  <strong class="text-base font-black text-slate-950">{{ payment.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                  <strong class="whitespace-nowrap text-base font-black text-slate-950">{{ payment.total | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                 </div>
               </div>
             </app-surface-card>

@@ -21,6 +21,10 @@ const businessOpsChildren: Routes = [
     loadComponent: () => import('./features/business/business-items-page.component').then((m) => m.BusinessItemsPageComponent),
   },
   {
+    path: 'menu/items/new',
+    loadComponent: () => import('./features/business/business-item-new-page.component').then((m) => m.BusinessItemNewPageComponent),
+  },
+  {
     path: 'orders',
     loadComponent: () => import('./features/business/business-orders-page.component').then((m) => m.BusinessOrdersPageComponent),
   },
@@ -70,42 +74,55 @@ export const routes: Routes = [
       },
       {
         path: 'community',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer', 'Driver'] },
         loadComponent: () => import('./features/community/community-hub-page.component').then((m) => m.CommunityHubPageComponent),
       },
       {
         path: 'favors',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer', 'Driver'] },
         loadComponent: () => import('./features/community/community-hub-page.component').then((m) => m.CommunityHubPageComponent),
       },
       {
         path: 'community/requests/:id',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer', 'Driver'] },
         loadComponent: () => import('./features/community/community-request-detail-page.component').then((m) => m.CommunityRequestDetailPageComponent),
       },
       {
         path: 'favors/:id',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer', 'Driver'] },
         loadComponent: () => import('./features/community/community-request-detail-page.component').then((m) => m.CommunityRequestDetailPageComponent),
       },
       {
         path: 'orders',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer'] },
         loadComponent: () => import('./features/orders/my-orders-page.component').then((m) => m.MyOrdersPageComponent),
       },
       {
         path: 'orders/:id',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer'] },
         loadComponent: () => import('./features/orders/my-order-detail-page.component').then((m) => m.MyOrderDetailPageComponent),
       },
       {
         path: 'account',
         pathMatch: 'full',
-        redirectTo: 'account/addresses',
+        redirectTo: 'account/profile',
+      },
+      {
+        path: 'account/profile',
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer'] },
+        loadComponent: () => import('./features/account/customer-profile-page.component').then((m) => m.CustomerProfilePageComponent),
       },
       {
         path: 'account/addresses',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer'] },
         loadComponent: () => import('./features/account/customer-addresses-page.component').then((m) => m.CustomerAddressesPageComponent),
       },
     ],
@@ -228,6 +245,18 @@ export const routes: Routes = [
           {
             path: 'payments/:orderId',
             loadComponent: () => import('./features/admin/admin-payment-detail-page.component').then((m) => m.AdminPaymentDetailPageComponent),
+          },
+          {
+            path: 'commissions',
+            loadComponent: () => import('./features/admin/admin-commissions-page.component').then((m) => m.AdminCommissionsPageComponent),
+          },
+          {
+            path: 'settlements',
+            loadComponent: () => import('./features/admin/admin-settlements-page.component').then((m) => m.AdminSettlementsPageComponent),
+          },
+          {
+            path: 'collaborator-verifications',
+            loadComponent: () => import('./features/admin/admin-collaborator-verifications-page.component').then((m) => m.AdminCollaboratorVerificationsPageComponent),
           },
           {
             path: 'businesses/pending',

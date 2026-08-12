@@ -104,7 +104,7 @@
               </p>
             </div>
             <strong class="text-[1.8rem] font-black tracking-[-0.04em] text-primary-700">
-              {{ currentProduct.price | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              {{ currentProduct.price | currency: 'PEN' : 'S/ ' : '1.2-2' }}
             </strong>
           </div>
 
@@ -182,15 +182,17 @@
       </section>
     </div>
 
-    <div class="fixed inset-x-0 bottom-[calc(49px+env(safe-area-inset-bottom))] z-40 border-t border-slate-200 bg-white/98 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-10px_24px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
-      <div class="mx-auto flex w-full max-w-[640px] items-center gap-3">
+    <div class="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[70] border-t border-slate-200 bg-white/98 px-4 py-3 shadow-[0_-10px_24px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
+      <div class="mx-auto flex w-full min-w-0 max-w-[640px] items-center gap-2 min-[390px]:gap-3">
         @if (totalQuantityInCart()) {
           <button
             type="button"
-            class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl border border-primary-100 bg-primary-50 px-3 text-[11px] font-black text-primary-700 shadow-sm"
+            class="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary-100 bg-primary-50 p-0 text-xs font-black text-primary-700 shadow-sm"
             (click)="openCheckoutDrawer()"
+            [attr.aria-label]="'Ver carrito con ' + totalQuantityInCart() + ' productos'"
           >
-            Ver carrito ({{ totalQuantityInCart() }})
+            <lucide-angular class="h-4.5 w-4.5" [img]="shoppingCartIcon" aria-hidden="true"></lucide-angular>
+            <span class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary-700 px-1 text-[10px] text-white">{{ totalQuantityInCart() }}</span>
           </button>
         }
 
@@ -217,12 +219,12 @@
 
         <button
           type="button"
-          class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(249,115,22,0.18)] transition hover:bg-primary-600 disabled:opacity-50"
+          class="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary-700 px-3 text-sm font-black text-white shadow-[0_10px_20px_rgba(249,115,22,0.18)] transition hover:bg-primary-600 disabled:opacity-50 min-[390px]:gap-2 min-[390px]:px-4"
           [disabled]="!canPurchase()"
           (click)="addToCart()"
         >
           <lucide-angular class="h-4 w-4" [img]="shoppingCartIcon" aria-hidden="true"></lucide-angular>
-          Agregar al carrito
+          <span>Agregar<span class="hidden min-[390px]:inline"> al carrito</span></span>
         </button>
       </div>
     </div>

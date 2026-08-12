@@ -1,4 +1,4 @@
-<app-mobile-page-shell extraClass="mx-auto max-w-3xl px-4 py-5 sm:px-5">
+<app-mobile-page-shell extraClass="mx-auto w-full min-w-0 max-w-3xl box-border overflow-x-hidden px-4 pb-[calc(96px+env(safe-area-inset-bottom,0px))] pt-5 sm:px-5">
   <app-back-button label="Volver a negocios" fallbackUrl="/businesses" />
 
   <div class="mt-4 space-y-5">
@@ -8,6 +8,10 @@
       [subtitle]="pageSubtitle()"
       [meta]="addresses().length ? addresses().length + ' guardadas' : 'Sin direcciones'"
     />
+
+    @if (!isLoadingAddresses() && addresses().length && !isFormOpen()) {
+      <app-button type="button" size="md" (click)="openCreateForm()">Nueva dirección</app-button>
+    }
 
     @if (successMessage()) {
       <app-notice tone="success" [message]="successMessage()" />
@@ -23,7 +27,7 @@
 
     @if (isLoadingAddresses()) {
       <app-unified-loading-state label="Cargando direcciones" />
-    } @else if (!addresses().length) {
+    } @else if (!addresses().length && !isFormOpen() && !errorMessage()) {
       <app-unified-empty-state
         title="Todavía no tienes direcciones"
         message="Guarda una dirección para reutilizarla más rápido en checkout. Si prefieres, todavía podrás escribirla manualmente."
@@ -33,22 +37,23 @@
         @for (address of addresses(); track address.id) {
           <app-surface-card variant="soft" extraClass="p-4">
             <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
+              <div class="min-w-0 max-w-full flex-1 overflow-hidden">
                 <div class="flex flex-wrap items-center gap-2">
                   <h3 class="text-base font-extrabold text-slate-950">{{ address.label }}</h3>
                   @if (address.isDefault) {
                     <app-status-badge status="trusted" label="Predeterminada" />
                   }
                 </div>
-                <p class="mt-1 text-sm font-semibold text-slate-700">{{ address.recipientName }} · {{ address.recipientPhone }}</p>
-                <p class="mt-2 text-sm text-slate-900">{{ address.addressLine }}</p>
-                <p class="mt-1 text-sm text-slate-500">{{ address.reference }}</p>
-                <p class="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{{ address.zoneName }}</p>
+                <p class="mt-1 min-w-0 break-words text-sm font-semibold text-slate-700">{{ address.recipientName }} · {{ address.recipientPhone }}</p>
+                <p class="mt-2 min-w-0 break-words text-sm text-slate-900">{{ address.addressLine }}</p>
+                <p class="mt-1 min-w-0 break-words text-sm text-slate-500">{{ address.reference }}</p>
+                <p class="mt-2 min-w-0 truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{{ address.zoneName }}</p>
               </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap gap-2">
+            <div class="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               <app-button
+                class="col-span-2 sm:col-span-1"
                 type="button"
                 variant="secondary"
                 size="sm"
@@ -96,13 +101,14 @@
       </div>
     }
 
-    <app-surface-card variant="soft" extraClass="p-5">
+    @if (isFormOpen()) {
+    <app-surface-card id="address-editor" class="scroll-mt-24" variant="soft" extraClass="p-4 sm:p-5">
       <div class="space-y-5">
         <div>
           <p class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-red-500">
             {{ isEditing() ? 'Editar dirección' : 'Nueva dirección' }}
           </p>
-          <h3 class="mt-2 text-xl font-extrabold tracking-tight text-slate-950">
+          <h3 class="mt-2 break-words text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">
             {{ isEditing() ? 'Actualiza los datos de entrega' : 'Guarda una dirección para próximos pedidos' }}
           </h3>
         </div>
@@ -176,7 +182,7 @@
             ></textarea>
           </div>
 
-          <div class="flex flex-col gap-2 pb-[calc(132px+env(safe-area-inset-bottom,0px))] sm:flex-row sm:justify-end sm:pb-0">
+          <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
             @if (isEditing()) {
               <app-button type="button" variant="secondary" (click)="cancelEdit()">Cancelar</app-button>
             }
@@ -187,5 +193,6 @@
         </form>
       </div>
     </app-surface-card>
+    }
   </div>
 </app-mobile-page-shell>

@@ -27,6 +27,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
 @Component({
   selector: 'app-admin-drivers-page',
+  host: { class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden' },
   standalone: true,
   imports: [
     DatePipe,
@@ -42,7 +43,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-5 lg:gap-6">
+    <section class="grid w-full min-w-0 max-w-full gap-5 overflow-x-hidden lg:gap-6">
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="Admin"
@@ -143,7 +144,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               No hay drivers con los filtros seleccionados.
             </div>
             <div class="flex flex-wrap gap-3">
-              <app-button size="lg" type="button" (click)="clearFilters()">Limpiar filtros</app-button>
+              <app-button size="md" type="button" (click)="clearFilters()">Limpiar filtros</app-button>
               <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
@@ -220,7 +221,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       <lucide-angular class="h-4 w-4 text-primary-700" [img]="calendarClockIcon" aria-hidden="true"></lucide-angular>
                       {{ driver.createdAtUtc | date: 'medium' }}
                     </div>
-                    <app-button variant="secondary" size="lg" [routerLink]="['/admin/drivers', driver.driverId]">
+                    <app-button variant="secondary" size="md" [routerLink]="['/admin/drivers', driver.driverId]">
                       Ver detalle
                     </app-button>
                   </div>

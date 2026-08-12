@@ -2,7 +2,7 @@ import { NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Bell, Heart, House, LucideAngularModule, User, UserPlus } from 'lucide-angular';
+import { Bell, CircleUserRound, Heart, House, LucideAngularModule, PackageCheck, User, UserPlus } from 'lucide-angular';
 import { filter } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { AppNavigationService } from '../core/services/app-navigation.service';
@@ -26,6 +26,11 @@ export class PublicLayoutComponent {
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
   readonly branding = this.platformSettingsApi.settings;
   readonly currentRole = computed(() => this.authService.currentRole());
+  readonly isCustomerRole = computed(() => this.currentRole() === 'Customer');
+  readonly isOperationsRole = computed(() => {
+    const role = this.currentRole();
+    return role === 'Restaurant' || role === 'Driver' || role === 'Admin';
+  });
   readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
   readonly hasNotificationInbox = false;
   readonly displayName = computed(
@@ -36,6 +41,13 @@ export class PublicLayoutComponent {
   );
   readonly primaryDestinationRoute = computed(() =>
     this.currentRole() === 'Customer' ? '/orders' : this.defaultRoute(),
+  );
+  readonly profileRoute = computed(() =>
+    this.currentRole() === 'Restaurant'
+      ? '/business/profile'
+      : this.currentRole() === 'Customer'
+        ? '/account/profile'
+        : this.defaultRoute(),
   );
   readonly communityRoute = computed(() => '/community');
   readonly isNavbarOpen = signal(false);
@@ -84,6 +96,8 @@ export class PublicLayoutComponent {
   readonly heartIcon = Heart;
   readonly userIcon = User;
   readonly userPlusIcon = UserPlus;
+  readonly ordersIcon = PackageCheck;
+  readonly profileIcon = CircleUserRound;
 
   constructor() {
     void this.platformSettingsApi.ensureLoaded();

@@ -17,19 +17,20 @@ type ErrorLike = {
 
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   const candidate = error as ErrorLike;
+  const statusMessage = getStatusMessage(candidate?.status);
 
-  if (candidate && typeof candidate.status === 'number' && candidate.status === 0) {
-    return 'No se pudo conectar con el backend.';
+  if (statusMessage) {
+    return statusMessage;
   }
 
-  if (candidate && typeof candidate.error === 'string' && candidate.error.trim()) {
+  if (candidate && isSafeUserMessage(candidate.error)) {
     return candidate.error;
   }
 
   if (candidate && candidate.error && typeof candidate.error === 'object') {
     const payload = candidate.error as ApiErrorPayload;
 
-    if (typeof payload.message === 'string' && payload.message.trim()) {
+    if (isSafeUserMessage(payload.message)) {
       return payload.message;
     }
 
@@ -38,27 +39,27 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
         (validationError) => typeof validationError.error === 'string' && validationError.error.trim(),
       );
 
-      if (typeof firstValidationError?.error === 'string' && firstValidationError.error.trim()) {
+      if (isSafeUserMessage(firstValidationError?.error)) {
         return firstValidationError.error;
       }
-    } else if (typeof payload.errors === 'string' && payload.errors.trim()) {
+    } else if (isSafeUserMessage(payload.errors)) {
       return payload.errors;
     } else if (payload.errors && typeof payload.errors === 'object') {
       const objectErrors = Object.values(payload.errors)
         .flatMap((value) => (Array.isArray(value) ? value : [value]))
         .find((value) => typeof value === 'string' && value.trim());
 
-      if (typeof objectErrors === 'string' && objectErrors.trim()) {
+      if (isSafeUserMessage(objectErrors)) {
         return objectErrors;
       }
     }
 
-    if (typeof payload.error === 'string' && payload.error.trim()) {
+    if (isSafeUserMessage(payload.error)) {
       return payload.error;
     }
   }
 
-  if (candidate && typeof candidate.message === 'string' && candidate.message.trim()) {
+  if (candidate && isSafeUserMessage(candidate.message)) {
     return candidate.message;
   }
 
@@ -76,24 +77,30 @@ export function getErrorMessage(error: unknown, fallback: string): string {
         }
       | string;
     message?: string;
+    status?: number;
   };
+  const statusMessage = getStatusMessage(candidate?.status);
 
-  if (typeof candidate?.error === 'string' && candidate.error.trim()) {
+  if (statusMessage) {
+    return statusMessage;
+  }
+
+  if (isSafeUserMessage(candidate?.error)) {
     return candidate.error;
   }
 
   if (candidate?.error && typeof candidate.error === 'object') {
     const { message, title, error: rootError, errors } = candidate.error;
 
-    if (message) {
+    if (isSafeUserMessage(message)) {
       return message;
     }
 
-    if (typeof rootError === 'string' && rootError.trim()) {
+    if (isSafeUserMessage(rootError)) {
       return rootError;
     }
 
-    if (title) {
+    if (isSafeUserMessage(title)) {
       if (title.includes('validation errors occurred') && errors) {
         const validationMessage = readValidationMessage(errors);
         if (validationMessage) {
@@ -111,7 +118,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
     }
   }
 
-  if (candidate?.message) {
+  if (isSafeUserMessage(candidate?.message)) {
     return candidate.message;
   }
 
@@ -140,7 +147,7 @@ export function buildApiUrl(path: string, baseUrl: string): string {
 
 function readValidationMessage(errors: Record<string, string[] | string> | string[]): string | null {
   if (Array.isArray(errors)) {
-    const firstArrayMessage = errors.find((item) => typeof item === 'string' && item.trim());
+    const firstArrayMessage = errors.find((item) => isSafeUserMessage(item));
     return firstArrayMessage ?? null;
   }
 
@@ -148,7 +155,7 @@ function readValidationMessage(errors: Record<string, string[] | string> | strin
     const messages = Array.isArray(value) ? value : [value];
 
     for (const message of messages) {
-      if (typeof message !== 'string' || !message.trim()) {
+      if (!isSafeUserMessage(message)) {
         continue;
       }
 
@@ -161,4 +168,31 @@ function readValidationMessage(errors: Record<string, string[] | string> | strin
   }
 
   return null;
+}
+
+function getStatusMessage(status: number | undefined): string | null {
+  switch (status) {
+    case 0:
+      return 'No pudimos conectarnos. Revisa tu internet e intenta nuevamente.';
+    case 401:
+      return 'Tu sesión ha vencido. Inicia sesión nuevamente para continuar.';
+    case 403:
+      return 'No tienes permiso para realizar esta acción. Usa una cuenta adecuada o vuelve a iniciar sesión.';
+    case 404:
+      return 'No encontramos la información solicitada.';
+    default:
+      return typeof status === 'number' && status >= 500
+        ? 'Ocurrió un problema en el servidor. Intenta más tarde.'
+        : null;
+  }
+}
+
+function isSafeUserMessage(value: unknown): value is string {
+  if (typeof value !== 'string' || !value.trim()) {
+    return false;
+  }
+
+  return !/(http failure response|https?:\/\/|localhost|_capacitor_http_interceptor|\b403\s+(?:ok|forbidden)\b|stack trace)/i.test(
+    value,
+  );
 }

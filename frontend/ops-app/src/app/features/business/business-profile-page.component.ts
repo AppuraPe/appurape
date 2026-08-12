@@ -1,223 +1,31 @@
+import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  Clock3,
-  ImagePlus,
-  LucideAngularModule,
-  MapPin,
-  RefreshCw,
-  ShieldCheck,
-  Store,
-} from 'lucide-angular';
+import { RouterLink } from '@angular/router';
+import { ImagePlus, LucideAngularModule, RefreshCw, Store } from 'lucide-angular';
 import { MyBusinessResponse } from '../../core/models/business.model';
 import { MyBusinessApiService } from '../../core/services/my-business-api.service';
-import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { validateImageFile } from '../../core/utils/file-upload.utils';
+import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
-import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
-import { AppNoticeComponent } from '../../shared/components/app-notice.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 
 @Component({
   selector: 'app-business-profile-page',
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   standalone: true,
   imports: [
-    PageHeaderComponent,
+    CurrencyPipe,
     ReactiveFormsModule,
+    RouterLink,
     LucideAngularModule,
-    AppNoticeComponent,
     AppButtonComponent,
-    AppMetricCardComponent,
     AppSurfaceCardComponent,
   ],
-  template: `
-    <section class="grid gap-4 sm:gap-5">
-      <app-surface-card variant="page">
-        <app-page-header
-          eyebrow="Negocio"
-          title="Perfil del negocio"
-          subtitle="Actualiza la cara pública del negocio con una interfaz más clara y moderna."
-        />
-
-        @if (errorMessage()) {
-          <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {{ errorMessage() }}
-          </div>
-        }
-
-        @if (successMessage()) {
-          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {{ successMessage() }}
-          </div>
-        }
-
-        @if (isLoading()) {
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-            Cargando perfil...
-          </div>
-        } @else if (restaurant()) {
-          @if (restaurant()!.approvalStatus === 'Pending') {
-            <app-notice
-              tone="warning"
-              title="Pendiente de aprobación"
-              message="Tu negocio aún no aparece al público porque sigue pendiente de aprobación administrativa."
-            />
-          }
-
-          @if (restaurant()!.approvalStatus === 'Approved' && restaurant()!.isActive) {
-            <app-notice
-              tone="success"
-              title="Visible para operar"
-              message="Tu negocio está aprobado y activo. Mantener perfil, horario y catálogo actualizados ayuda a evitar pedidos incorrectos."
-            />
-          }
-
-          @if (!restaurant()!.isActive || restaurant()!.approvalStatus === 'Rejected') {
-            <app-notice
-              tone="danger"
-              title="No disponible al público"
-              message="Tu negocio no puede recibir pedidos mientras este inactivo, rechazado o suspendido."
-            />
-          }
-
-          <div class="stats-grid">
-            <app-metric-card label="Zona" [value]="restaurant()!.zoneName" helper="Cobertura operativa actual" />
-            <app-metric-card label="Estado" [value]="restaurant()!.isActive ? 'Activo' : 'Inactivo'" helper="Visibilidad operativa" />
-            <app-metric-card label="Aprobación" [value]="approvalStatusLabel(restaurant()!.approvalStatus)" helper="Control administrativo" />
-          </div>
-        }
-      </app-surface-card>
-
-      @if (restaurant()) {
-        <div class="grid gap-4 sm:gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-          <app-surface-card variant="page">
-            <div class="grid gap-4 sm:gap-5">
-              <div class="flex items-start gap-4">
-                <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary-700 text-white shadow-lg shadow-primary-700/20">
-                  <lucide-angular class="h-6 w-6" [img]="storeIcon" aria-hidden="true"></lucide-angular>
-                </div>
-                <div class="grid min-w-0 gap-1.5">
-                  <h2 class="mb-0 text-2xl font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant()!.name }}</h2>
-                  <p class="text-sm leading-6 text-text-muted">{{ restaurant()!.description }}</p>
-                </div>
-              </div>
-
-              @if (logoPreviewUrl()) {
-                <div class="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
-                  <img class="block h-44 w-full object-cover sm:h-64" [src]="logoPreviewUrl()" alt="Logo del negocio" />
-                </div>
-              } @else {
-                <div class="grid min-h-44 place-items-center rounded-[24px] border border-dashed border-[#d9c0b8] bg-surface-soft p-5 text-center text-sm font-semibold leading-6 text-text-muted sm:min-h-56 sm:p-6">
-                  El logo del negocio aparecerá aquí.
-                </div>
-              }
-
-              <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                  <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
-                  Identidad visual
-                </div>
-                <p class="mt-3 text-sm leading-6 text-text-muted">
-                  Un logo claro y una descripcion precisa hacen que el negocio inspire mas confianza cuando el cliente lo encuentra por primera vez.
-                </p>
-              </div>
-            </div>
-          </app-surface-card>
-
-          <app-surface-card variant="page">
-            <form class="grid gap-4" [formGroup]="form" (ngSubmit)="save()">
-              <div class="grid gap-4 md:grid-cols-2">
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-loreto-carbon">Nombre</span>
-                  <input id="name" type="text" formControlName="name" />
-                </label>
-
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-loreto-carbon">Logo</span>
-                  <input id="logoFile" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" #logoInput />
-                  <button
-                    class="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary-200 bg-primary-50 px-4 text-sm font-extrabold text-primary-700 transition active:scale-[0.99]"
-                    type="button"
-                    (click)="logoInput.click()"
-                  >
-                    <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
-                    {{ logoFileName() ? 'Cambiar logo' : 'Subir logo' }}
-                  </button>
-                  @if (logoFileName()) {
-                    <small class="text-sm text-text-muted">Archivo seleccionado: {{ logoFileName() }}</small>
-                  }
-                  <small class="text-sm text-text-muted">PNG, JPG o WEBP. Maximo 5 MB.</small>
-                </label>
-
-                <label class="grid gap-2 sm:col-span-2">
-                  <span class="text-sm font-semibold text-loreto-carbon">Direccion</span>
-                  <input id="address" type="text" formControlName="address" />
-                </label>
-
-                <label class="grid gap-2 sm:col-span-2">
-                  <span class="text-sm font-semibold text-loreto-carbon">Referencia</span>
-                  <input id="reference" type="text" formControlName="reference" />
-                </label>
-
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-loreto-carbon">Hora apertura</span>
-                  <input id="openTime" type="time" formControlName="openTime" />
-                </label>
-
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-loreto-carbon">Hora cierre</span>
-                  <input id="closeTime" type="time" formControlName="closeTime" />
-                </label>
-              </div>
-
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-loreto-carbon">Descripcion</span>
-                <textarea id="description" rows="4" formControlName="description"></textarea>
-              </label>
-
-              <input type="hidden" formControlName="logoUrl" />
-
-              <div class="grid gap-3 min-[390px]:grid-cols-2 lg:grid-cols-3">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                    <lucide-angular class="h-4 w-4" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
-                    Zona
-                  </div>
-                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.zoneName }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                    <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
-                    Aprobación
-                  </div>
-                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ approvalStatusLabel(restaurant()!.approvalStatus) }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                    <lucide-angular class="h-4 w-4" [img]="clockIcon" aria-hidden="true"></lucide-angular>
-                    Horario
-                  </div>
-                  <p class="mt-2 text-sm font-semibold text-loreto-carbon">{{ restaurant()!.openTime }} - {{ restaurant()!.closeTime }}</p>
-                </div>
-              </div>
-
-              <div class="grid gap-3 sm:flex sm:flex-wrap">
-                <app-button size="lg" type="submit" [disabled]="isSaving()">
-                  {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
-                </app-button>
-                <app-button variant="ghost" size="lg" type="button" [disabled]="isSaving()" (click)="loadProfile()">
-                  <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
-                  Recargar
-                </app-button>
-              </div>
-            </form>
-          </app-surface-card>
-        </div>
-      }
-    </section>
-  `,
+  templateUrl: './business-profile-page.component.html',
 })
 export class BusinessProfilePageComponent {
   private readonly formBuilder = inject(FormBuilder);
@@ -226,9 +34,6 @@ export class BusinessProfilePageComponent {
 
   readonly storeIcon = Store;
   readonly imagePlusIcon = ImagePlus;
-  readonly mapPinIcon = MapPin;
-  readonly shieldCheckIcon = ShieldCheck;
-  readonly clockIcon = Clock3;
   readonly refreshIcon = RefreshCw;
 
   readonly restaurant = signal<MyBusinessResponse | null>(null);
@@ -250,6 +55,9 @@ export class BusinessProfilePageComponent {
     openTime: ['', [Validators.required]],
     closeTime: ['', [Validators.required]],
     logoUrl: [''],
+    hasOwnDelivery: [false],
+    ownDeliveryFee: [0, [Validators.min(0)]],
+    ownDeliveryNote: [''],
   });
 
   constructor() {
@@ -286,6 +94,9 @@ export class BusinessProfilePageComponent {
             openTime: this.toTimeInputValue(restaurant.openTime),
             closeTime: this.toTimeInputValue(restaurant.closeTime),
             logoUrl: restaurant.logoUrl ?? '',
+            hasOwnDelivery: restaurant.hasOwnDelivery,
+            ownDeliveryFee: restaurant.ownDeliveryFee ?? 0,
+            ownDeliveryNote: restaurant.ownDeliveryNote ?? '',
           });
           this.logoPreviewUrl.set(restaurant.logoUrl ?? null);
           this.isLoading.set(false);
@@ -342,6 +153,9 @@ export class BusinessProfilePageComponent {
     formData.append('OpenTime', this.toApiTimeValue(raw.openTime));
     formData.append('CloseTime', this.toApiTimeValue(raw.closeTime));
     formData.append('LogoUrl', raw.logoUrl.trim());
+    formData.append('HasOwnDelivery', String(raw.hasOwnDelivery));
+    formData.append('OwnDeliveryFee', raw.hasOwnDelivery ? String(raw.ownDeliveryFee ?? 0) : '');
+    formData.append('OwnDeliveryNote', raw.hasOwnDelivery ? raw.ownDeliveryNote.trim() : '');
 
     if (this.logoFile) {
       formData.append('LogoFile', this.logoFile, this.logoFile.name);
@@ -370,6 +184,9 @@ export class BusinessProfilePageComponent {
             openTime: this.toTimeInputValue(updatedRestaurant.openTime),
             closeTime: this.toTimeInputValue(updatedRestaurant.closeTime),
             logoUrl: updatedRestaurant.logoUrl ?? '',
+            hasOwnDelivery: updatedRestaurant.hasOwnDelivery,
+            ownDeliveryFee: updatedRestaurant.ownDeliveryFee ?? 0,
+            ownDeliveryNote: updatedRestaurant.ownDeliveryNote ?? '',
           });
         },
         error: (error) => {
@@ -377,6 +194,21 @@ export class BusinessProfilePageComponent {
           this.isSaving.set(false);
         },
       });
+  }
+
+  approvalStatusLabel(status: string): string {
+    switch (status) {
+      case 'Pending':
+        return 'Pendiente de aprobación';
+      case 'Approved':
+        return 'Aprobado';
+      case 'Rejected':
+        return 'Rechazado';
+      case 'Suspended':
+        return 'Suspendido';
+      default:
+        return 'Estado por revisar';
+    }
   }
 
   private replaceLogoPreview(file: File): void {
@@ -410,18 +242,4 @@ export class BusinessProfilePageComponent {
   private toApiTimeValue(value: string): string {
     return value.length === 5 ? `${value}:00` : value;
   }
-
-  approvalStatusLabel(status: string): string {
-    switch (status) {
-      case 'Pending':
-        return 'Pendiente';
-      case 'Approved':
-        return 'Aprobado';
-      case 'Rejected':
-        return 'Rechazado';
-      default:
-        return status || 'Sin estado';
-    }
-  }
 }
-

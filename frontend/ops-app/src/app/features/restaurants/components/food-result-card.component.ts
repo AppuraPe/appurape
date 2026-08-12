@@ -31,7 +31,7 @@ import { hasText } from '../../../core/utils/api-utils';
           </p>
           <div class="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px] leading-tight text-slate-500">
             <span class="font-semibold text-primary-700">
-              {{ food().price | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              {{ food().price | currency: 'PEN' : 'S/ ' : '1.2-2' }}
             </span>
             @if (hasTextValue(food().categoryName)) {
               <span>{{ food().categoryName }}</span>
@@ -74,7 +74,7 @@ import { hasText } from '../../../core/utils/api-utils';
               class="inline-flex min-h-10 w-full items-center justify-center rounded-full bg-accent-500 px-4 text-sm font-bold text-surface-soft transition hover:bg-accent-600"
               [routerLink]="['/businesses', food().restaurantId, 'products', food().menuItemId]"
             >
-              {{ food().price | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              {{ food().price | currency: 'PEN' : 'S/ ' : '1.2-2' }}
             </a>
           </div>
         </div>

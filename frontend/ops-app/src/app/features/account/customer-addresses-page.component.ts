@@ -52,6 +52,7 @@ export class CustomerAddressesPageComponent {
   readonly pendingDeleteAddressId = signal<string | null>(null);
   readonly deletingAddressId = signal<string | null>(null);
   readonly successMessage = signal('');
+  readonly isFormOpen = signal(false);
 
   readonly isEditing = computed(() => !!this.editingAddressId());
   readonly isDeleting = computed(() => !!this.deletingAddressId());
@@ -105,6 +106,7 @@ export class CustomerAddressesPageComponent {
         this.isSaving.set(false);
         this.upsertAddress(address);
         this.resetForm();
+        this.isFormOpen.set(false);
         this.successMessage.set(editingAddressId ? 'Dirección actualizada correctamente.' : 'Dirección creada correctamente.');
         this.notificationService.success(this.successMessage());
       },
@@ -118,6 +120,7 @@ export class CustomerAddressesPageComponent {
   }
 
   editAddress(address: CustomerAddressResponse): void {
+    this.isFormOpen.set(true);
     this.editingAddressId.set(address.id);
     this.pendingDeleteAddressId.set(null);
     this.successMessage.set('');
@@ -130,10 +133,18 @@ export class CustomerAddressesPageComponent {
       reference: address.reference,
       zoneId: address.zoneId,
     });
+    queueMicrotask(() => document.getElementById('address-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   cancelEdit(): void {
     this.resetForm();
+    this.isFormOpen.set(false);
+  }
+
+  openCreateForm(): void {
+    this.resetForm();
+    this.isFormOpen.set(true);
+    queueMicrotask(() => document.getElementById('address-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   setDefault(address: CustomerAddressResponse): void {
@@ -203,15 +214,29 @@ export class CustomerAddressesPageComponent {
     this.customerAddressesApi.getMyAddresses().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (addresses) => {
         this.addresses.set(addresses.sort(this.sortAddresses));
+        this.isFormOpen.set(addresses.length === 0);
         this.isLoadingAddresses.set(false);
       },
       error: (error) => {
         this.isLoadingAddresses.set(false);
-        const message = getApiErrorMessage(error, 'No pudimos cargar tus direcciones.');
+        const message = this.getAddressLoadErrorMessage(error);
         this.errorMessage.set(message);
         this.notificationService.error(message);
       },
     });
+  }
+
+  private getAddressLoadErrorMessage(error: unknown): string {
+    const status = (error as { status?: number } | null)?.status;
+    if (status === 401) {
+      return 'Tu sesión ha vencido. Inicia sesión nuevamente para ver tus direcciones.';
+    }
+
+    if (status === 403) {
+      return 'No tienes permiso para ver estas direcciones. Ingresa con una cuenta de cliente.';
+    }
+
+    return getApiErrorMessage(error, 'No pudimos cargar tus direcciones. Intenta nuevamente.');
   }
 
   private loadZones(): void {

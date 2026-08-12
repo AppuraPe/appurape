@@ -7,12 +7,15 @@ type NoticeTone = 'info' | 'success' | 'warning' | 'danger';
   selector: 'app-notice',
   standalone: true,
   imports: [NgClass],
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border',
+  },
   template: `
-    <div class="grid gap-1 rounded-[22px] border px-4 py-3 shadow-sm" [ngClass]="toneClass()">
+    <div class="box-border grid w-full min-w-0 max-w-full gap-1 overflow-hidden rounded-[18px] border px-3.5 py-3 shadow-sm sm:rounded-[22px] sm:px-4" [ngClass]="toneClass()">
       @if (title()) {
-        <strong class="text-sm font-extrabold text-slate-950">{{ title() }}</strong>
+        <strong class="min-w-0 break-words text-sm font-extrabold text-slate-950">{{ title() }}</strong>
       }
-      <p class="text-sm leading-6 text-slate-600">{{ message() }}</p>
+      <p class="min-w-0 break-words text-sm leading-6 text-slate-600">{{ message() }}</p>
     </div>
   `,
 })

@@ -25,6 +25,9 @@ export interface MyRestaurantResponse {
   openTime: string;
   closeTime: string;
   logoUrl?: string | null;
+  hasOwnDelivery: boolean;
+  ownDeliveryFee?: number | null;
+  ownDeliveryNote?: string | null;
   isActive: boolean;
   approvalStatus: string;
   ownerUserId: string;
@@ -39,6 +42,9 @@ export interface UpdateMyRestaurantRequest {
   openTime: string;
   closeTime: string;
   logoUrl?: string | null;
+  hasOwnDelivery: boolean;
+  ownDeliveryFee?: number | null;
+  ownDeliveryNote?: string | null;
 }
 
 export interface StartRestaurantRegistrationRequest {

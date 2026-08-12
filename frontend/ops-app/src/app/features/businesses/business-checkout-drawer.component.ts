@@ -7,7 +7,7 @@ import { LucideAngularModule, Trash2 } from 'lucide-angular';
 import { distinctUntilChanged, map, merge } from 'rxjs';
 import { BusinessDetailResponse } from '../../core/models/businesses.models';
 import { CustomerAddressResponse } from '../../core/models/customer-addresses.models';
-import { CreateOrderRequest, PaymentMethod, ValidateOrderResponse } from '../../core/models/orders.models';
+import { CreateOrderRequest, DeliveryMode, PaymentMethod, ValidateOrderResponse } from '../../core/models/orders.models';
 import { AuthService } from '../../core/services/auth.service';
 import { BusinessesApiService } from '../../core/services/businesses-api.service';
 import { CheckoutDrawerUiService } from '../../core/services/checkout-drawer-ui.service';
@@ -36,6 +36,11 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     Plin: 2,
     Card: 3,
   };
+  private static readonly DELIVERY_MODE_TO_ENUM: Record<DeliveryMode, number> = {
+    PickupOrDirect: 0,
+    BusinessDelivery: 1,
+    VerifiedDriverDelivery: 2,
+  };
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly checkoutDrawerUi = inject(CheckoutDrawerUiService);
@@ -53,6 +58,7 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
 
   readonly manualAddressValue = 'manual';
   readonly paymentMethods: PaymentMethod[] = ['Cash', 'Yape', 'Plin', 'Card'];
+  readonly deliveryModes: DeliveryMode[] = ['PickupOrDirect', 'BusinessDelivery', 'VerifiedDriverDelivery'];
   readonly cartItems = this.businessCart.cartItems;
   readonly totalQuantity = this.businessCart.totalQuantity;
   readonly subtotal = this.businessCart.subtotal;
@@ -69,8 +75,26 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
   readonly addressMode = signal<AddressMode>('manual');
   readonly selectedCustomerAddressId = signal<string | null>(null);
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
+  readonly currentRole = computed(() => this.authService.currentRole());
+  readonly canUseCustomerCheckout = computed(() => this.isAuthenticated() && this.currentRole() === 'Customer');
   readonly submitDisabled = computed(() => this.isSubmittingOrder() || !this.cartItems().length || !this.activeBusiness());
   readonly selectedPaymentMethod = computed(() => this.checkoutForm.controls.paymentMethod.value);
+  readonly selectedDeliveryMode = computed(() => this.checkoutForm.controls.deliveryMode.value);
+  readonly verifiedDriverMinimum = computed(() => this.subtotal() < 20 ? 4 : 5);
+  readonly estimatedDeliveryAmount = computed(() => {
+    const mode = this.selectedDeliveryMode();
+    if (mode === 'PickupOrDirect') {
+      return 0;
+    }
+
+    if (mode === 'BusinessDelivery') {
+      return this.activeBusiness()?.ownDeliveryFee ?? 0;
+    }
+
+    return Math.max(this.verifiedDriverMinimum(), Number(this.checkoutForm.controls.offeredDeliveryAmount.value || 0));
+  });
+  readonly estimatedServiceFee = computed(() => this.cartItems().length ? 1 : 0);
+  readonly estimatedTotal = computed(() => this.subtotal() + this.estimatedDeliveryAmount() + this.estimatedServiceFee());
   readonly selectedCustomerAddress = computed(() => {
     const selectedAddressId = this.selectedCustomerAddressId();
     if (!selectedAddressId) {
@@ -86,7 +110,11 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
       return 'Enviando pedido...';
     }
 
-    return this.isAuthenticated() ? 'Crear pedido' : 'Iniciar sesión para pedir';
+    if (!this.isAuthenticated()) {
+      return 'Iniciar sesión para pedir';
+    }
+
+    return this.canUseCustomerCheckout() ? 'Crear pedido' : 'Usar cuenta de cliente';
   });
   readonly trashIcon = Trash2;
 
@@ -96,6 +124,8 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     deliveryReference: ['', [Validators.required, Validators.maxLength(300)]],
     notes: ['', [Validators.maxLength(1000)]],
     paymentMethod: ['Cash' as PaymentMethod, [Validators.required]],
+    deliveryMode: ['VerifiedDriverDelivery' as DeliveryMode, [Validators.required]],
+    offeredDeliveryAmount: [4, [Validators.min(0)]],
   });
 
   @ViewChild('checkoutDrawerTemplate', { static: true })
@@ -133,10 +163,10 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
         });
       });
 
-    toObservable(this.isAuthenticated)
+    toObservable(this.canUseCustomerCheckout)
       .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe((isAuthenticated) => {
-        if (!isAuthenticated) {
+      .subscribe((canUseCustomerCheckout) => {
+        if (!canUseCustomerCheckout) {
           this.customerAddresses.set([]);
           this.customerAddressesErrorMessage.set('');
           this.resetCheckoutForm();
@@ -162,6 +192,7 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
+        this.checkoutErrorMessage.set('');
         if (this.isHydratingAddress || this.addressMode() !== 'saved') {
           return;
         }
@@ -181,6 +212,15 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
 
         this.activateManualAddressMode();
       });
+
+    merge(
+      this.checkoutForm.controls.notes.valueChanges,
+      this.checkoutForm.controls.paymentMethod.valueChanges,
+      this.checkoutForm.controls.deliveryMode.valueChanges,
+      this.checkoutForm.controls.offeredDeliveryAmount.valueChanges,
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.checkoutErrorMessage.set(''));
   }
 
   ngAfterViewInit(): void {
@@ -233,6 +273,23 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
 
     this.checkoutForm.controls.paymentMethod.setValue(method);
     this.resetClientRequestAttempt();
+    this.checkoutErrorMessage.set('');
+  }
+
+  selectDeliveryMode(mode: DeliveryMode): void {
+    const business = this.activeBusiness();
+    if (mode === 'BusinessDelivery' && !business?.hasOwnDelivery) {
+      this.notificationService.info('Este negocio todavía no tiene delivery propio configurado.');
+      return;
+    }
+
+    this.checkoutForm.controls.deliveryMode.setValue(mode);
+    if (mode === 'VerifiedDriverDelivery') {
+      this.checkoutForm.controls.offeredDeliveryAmount.setValue(this.verifiedDriverMinimum());
+    }
+
+    this.resetClientRequestAttempt();
+    this.checkoutErrorMessage.set('');
   }
 
   selectCustomerAddress(addressId: string): void {
@@ -256,12 +313,43 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     }
   }
 
+  deliveryModeLabel(mode: DeliveryMode): string {
+    switch (mode) {
+      case 'PickupOrDirect':
+        return 'Retiro / coordinar';
+      case 'BusinessDelivery':
+        return 'Delivery del negocio';
+      case 'VerifiedDriverDelivery':
+        return 'Driver verificado';
+    }
+  }
+
+  deliveryModeHelpText(mode: DeliveryMode): string {
+    switch (mode) {
+      case 'PickupOrDirect':
+        return 'Coordina directamente con el negocio. No se suma pago a driver.';
+      case 'BusinessDelivery':
+        return this.activeBusiness()?.hasOwnDelivery
+          ? `El negocio entrega por ${this.formatMoney(this.activeBusiness()?.ownDeliveryFee ?? 0)}.`
+          : 'No disponible por ahora para este negocio.';
+      case 'VerifiedDriverDelivery':
+        return `Pago mínimo al driver: ${this.formatMoney(this.verifiedDriverMinimum())}. Puedes ofrecer más.`;
+    }
+  }
+
   submitOrder(): void {
     if (!this.isAuthenticated()) {
       this.notificationService.info('Inicia sesión para continuar con tu pedido.');
       void this.router.navigate(['/login'], {
         queryParams: { returnUrl: this.router.url },
       });
+      return;
+    }
+
+    if (!this.canUseCustomerCheckout()) {
+      const message = 'Esta cuenta no puede crear pedidos. Ingresa con una cuenta de cliente para comprar.';
+      this.checkoutErrorMessage.set(message);
+      this.notificationService.warning(message);
       return;
     }
 
@@ -291,8 +379,12 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
 
     const formValue = this.checkoutForm.getRawValue();
     const paymentMethod = BusinessCheckoutDrawerComponent.PAYMENT_METHOD_TO_ENUM[formValue.paymentMethod];
+    const deliveryMode = BusinessCheckoutDrawerComponent.DELIVERY_MODE_TO_ENUM[formValue.deliveryMode];
     const selectedAddress = this.resolveSelectedCustomerAddressForPayload();
     const resolvedZoneId = selectedAddress?.zoneId ?? business.zoneId;
+    const offeredDeliveryAmount = formValue.deliveryMode === 'VerifiedDriverDelivery'
+      ? Number(formValue.offeredDeliveryAmount || this.verifiedDriverMinimum())
+      : undefined;
 
     if (formValue.paymentMethod === 'Card') {
       const message = 'Pago con tarjeta: Próximamente.';
@@ -309,6 +401,8 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
         formValue.deliveryReference.trim(),
         formValue.notes.trim(),
         paymentMethod,
+        deliveryMode,
+        offeredDeliveryAmount ?? 0,
       ),
       restaurantId: business.id,
       customerAddressId: selectedAddress?.id,
@@ -317,6 +411,8 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
       deliveryReference: formValue.deliveryReference.trim(),
       notes: formValue.notes.trim() || undefined,
       paymentMethod,
+      deliveryMode,
+      offeredDeliveryAmount,
       items: this.cartItems().map((item) => ({
         menuItemId: item.menuItemId,
         quantity: item.quantity,
@@ -343,7 +439,12 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
       },
       error: (error) => {
         this.isSubmittingOrder.set(false);
-        const message = getApiErrorMessage(error, 'No pudimos validar tu carrito. Intenta nuevamente.');
+        const status = (error as { status?: number } | null)?.status;
+        const message = status === 401
+          ? 'Tu sesión ha vencido. Inicia sesión nuevamente para continuar con tu pedido.'
+          : status === 403
+            ? 'No puedes crear este pedido con la cuenta actual. Ingresa con una cuenta de cliente.'
+            : getApiErrorMessage(error, 'No pudimos validar tu carrito. Intenta nuevamente.');
         this.checkoutErrorMessage.set(message);
         this.notificationService.error(message);
       },
@@ -471,6 +572,8 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     deliveryReference: string,
     notes: string,
     paymentMethod: number,
+    deliveryMode: number,
+    offeredDeliveryAmount: number,
   ): string {
     const fingerprint = JSON.stringify({
       businessId,
@@ -479,6 +582,8 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
       deliveryReference,
       notes,
       paymentMethod,
+      deliveryMode,
+      offeredDeliveryAmount,
       items: this.cartItems().map((item) => ({
         menuItemId: item.menuItemId,
         quantity: item.quantity,
@@ -573,7 +678,7 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     this.customerAddressesErrorMessage.set('');
     this.resetCheckoutForm();
 
-    if (this.isAuthenticated()) {
+    if (this.canUseCustomerCheckout()) {
       this.loadCustomerAddresses();
     }
   }
@@ -600,9 +705,15 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
       deliveryReference: defaultAddress?.reference ?? '',
       notes: '',
       paymentMethod: 'Cash',
+      deliveryMode: 'VerifiedDriverDelivery',
+      offeredDeliveryAmount: this.verifiedDriverMinimum(),
     }, { emitEvent: false });
     this.selectedCustomerAddressId.set(defaultAddress?.id ?? null);
     this.addressMode.set(defaultAddress ? 'saved' : 'manual');
     this.isHydratingAddress = false;
+  }
+
+  private formatMoney(amount: number): string {
+    return `S/ ${amount.toFixed(2)}`;
   }
 }

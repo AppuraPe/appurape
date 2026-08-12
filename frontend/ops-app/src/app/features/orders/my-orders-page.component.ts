@@ -1,37 +1,25 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
 import { CustomerOrderListItemResponse } from '../../core/models/orders.models';
 import { NotificationService } from '../../core/services/notification.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
-import { getApiErrorMessage, hasText } from '../../core/utils/api-utils';
-import { ActionChipRowComponent } from '../../shared/components/action-chip-row.component';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
-import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
-import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
-import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 import { OrderSummaryCardComponent } from './components/order-summary-card.component';
+
+type OrderScope = 'active' | 'history' | 'cancelled';
 
 @Component({
   selector: 'app-my-orders-page',
   standalone: true,
   imports: [
-    RouterLink,
-    ReactiveFormsModule,
     AppBackButtonComponent,
     OrderSummaryCardComponent,
     MobilePageShellComponent,
-    InternalPageSectionHeaderComponent,
-    AppSurfaceCardComponent,
     AppButtonComponent,
     UnifiedEmptyStateComponent,
-    UnifiedLoadingStateComponent,
-    ActionChipRowComponent,
   ],
   templateUrl: './my-orders-page.component.html',
 })
@@ -43,69 +31,55 @@ export class MyOrdersPageComponent {
   readonly orders = signal<CustomerOrderListItemResponse[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
-  readonly searchTerm = signal('');
-  readonly selectedStatus = signal('');
-  readonly searchControl = new FormControl('', { nonNullable: true });
+  readonly selectedScope = signal<OrderScope>('active');
 
-  readonly availableStatuses = computed(() => {
-    const statuses = new Set(this.orders().map((order) => order.status));
-    const knownStatuses = this.statusOrder().filter((status) => statuses.has(status));
-    const extraStatuses = Array.from(statuses)
-      .filter((status) => !knownStatuses.includes(status))
-      .sort((left, right) => left.localeCompare(right));
-
-    return [...knownStatuses, ...extraStatuses];
-  });
   readonly filteredOrders = computed(() => {
-    const searchTerm = this.normalizeSearchTerm(this.searchTerm());
-    const selectedStatus = this.selectedStatus();
-
+    const scope = this.selectedScope();
     return this.orders().filter((order) => {
-      const matchesStatus = !selectedStatus || order.status === selectedStatus;
-
-      if (!matchesStatus) {
-        return false;
+      if (scope === 'history') {
+        return order.status === 'Delivered';
       }
 
-      if (!searchTerm) {
-        return true;
+      if (scope === 'cancelled') {
+        return order.status === 'Cancelled';
       }
 
-      return (
-        this.normalizeSearchTerm(order.restaurantName).includes(searchTerm) ||
-        this.normalizeSearchTerm(order.status).includes(searchTerm) ||
-        this.normalizeSearchTerm(this.readableStatus(order.status)).includes(searchTerm)
-      );
+      return !['Delivered', 'Cancelled'].includes(order.status);
     });
   });
-  readonly hasActiveFilters = computed(() => hasText(this.searchTerm()) || hasText(this.selectedStatus()));
-  readonly resultsSummary = computed(() => {
-    const count = this.filteredOrders().length;
-    const label = count === 1 ? '1 pedido coincide con tu filtro.' : `${count} pedidos coinciden con tu filtro.`;
-
-    if (!this.hasActiveFilters()) {
-      return `${this.orders().length} pedido(s) asociados a tu cuenta.`;
-    }
-
-    return label;
-  });
-  readonly totalOrders = computed(() => this.orders().length);
   readonly activeOrders = computed(() =>
     this.orders().filter((order) => !['Delivered', 'Cancelled'].includes(order.status)).length,
   );
   readonly deliveredOrders = computed(() => this.orders().filter((order) => order.status === 'Delivered').length);
+  readonly cancelledOrders = computed(() => this.orders().filter((order) => order.status === 'Cancelled').length);
+  readonly scopeTitle = computed(() => {
+    switch (this.selectedScope()) {
+      case 'history':
+        return 'Pedidos entregados';
+      case 'cancelled':
+        return 'Pedidos cancelados';
+      default:
+        return 'Pedidos activos';
+    }
+  });
+  readonly scopeEmptyMessage = computed(() => {
+    switch (this.selectedScope()) {
+      case 'history':
+        return 'Los pedidos entregados aparecerán aquí.';
+      case 'cancelled':
+        return 'No tienes pedidos cancelados.';
+      default:
+        return 'Cuando hagas un pedido, podrás seguir su estado aquí.';
+    }
+  });
 
   constructor() {
-    this.searchControl.valueChanges
-      .pipe(
-        startWith(this.searchControl.getRawValue()),
-        debounceTime(250),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((value) => {
-        this.searchTerm.set(value.trim());
-      });
+    this.loadOrders();
+  }
+
+  loadOrders(): void {
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     this.ordersApi
       .getMyOrders()
@@ -116,7 +90,7 @@ export class MyOrdersPageComponent {
           this.isLoading.set(false);
         },
         error: (error) => {
-          const message = getApiErrorMessage(error, 'Revisa tu sesión o intenta nuevamente.');
+          const message = this.ordersErrorMessage(error);
           this.errorMessage.set(message);
           this.notificationService.error(message);
           this.isLoading.set(false);
@@ -124,35 +98,21 @@ export class MyOrdersPageComponent {
       });
   }
 
-  clearFilters(): void {
-    this.searchControl.setValue('');
-    this.selectedStatus.set('');
+  selectScope(scope: OrderScope): void {
+    this.selectedScope.set(scope);
   }
 
-  selectStatus(status: string): void {
-    this.selectedStatus.set(status);
-  }
-
-  readableStatus(status: string): string {
-    const labels: Record<string, string> = {
-      Pending: 'Pendiente',
-      Accepted: 'Aceptado',
-      Preparing: 'En preparación',
-      ReadyForPickup: 'Listo para recoger',
-      Assigned: 'Repartidor asignado',
-      PickedUp: 'En camino',
-      Delivered: 'Entregado',
-      Cancelled: 'Cancelado',
-    };
-
-    return labels[status] ?? status;
-  }
-
-  private statusOrder(): string[] {
-    return ['Pending', 'Accepted', 'Preparing', 'ReadyForPickup', 'Assigned', 'PickedUp', 'Delivered', 'Cancelled'];
-  }
-
-  private normalizeSearchTerm(value: string): string {
-    return value.trim().toLocaleLowerCase();
+  private ordersErrorMessage(error: unknown): string {
+    const status = (error as { status?: number } | null)?.status;
+    switch (status) {
+      case 0:
+        return 'No pudimos conectarnos. Revisa tu internet e intenta nuevamente.';
+      case 401:
+        return 'Tu sesión ha vencido. Inicia sesión nuevamente para ver tus pedidos.';
+      case 403:
+        return 'No tienes permiso para ver estos pedidos. Usa una cuenta de cliente.';
+      default:
+        return 'No pudimos cargar tus pedidos. Intenta nuevamente.';
+    }
   }
 }

@@ -92,7 +92,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             <div class="list-card">
               <strong>{{ request.title }}</strong>
               <span class="muted">{{ request.type }} · {{ request.originLabel }} -> {{ request.destinationLabel }}</span>
-              <span class="muted">{{ request.compensationAmount | currency:'PEN':'symbol-narrow':'1.2-2' }} · Match {{ request.matchScore | number:'1.0-0' }}%</span>
+              <span class="muted">{{ request.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }} · Match {{ request.matchScore | number:'1.0-0' }}%</span>
               <app-status-badge [status]="request.status" />
             </div>
           }

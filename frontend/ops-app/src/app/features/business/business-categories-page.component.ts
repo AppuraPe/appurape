@@ -26,6 +26,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
 @Component({
   selector: 'app-business-categories-page',
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   standalone: true,
   imports: [
     PageHeaderComponent,
@@ -38,8 +41,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-4 sm:gap-5">
-      <app-surface-card variant="page">
+    <section class="grid w-full min-w-0 max-w-full gap-4 sm:gap-5">
+      <header class="grid gap-3 px-0.5">
         <app-page-header
           eyebrow="Catálogo"
           title="Categorías"
@@ -58,15 +61,14 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           </div>
         }
 
-        <div class="stats-grid">
+        <div class="grid grid-cols-2 gap-2.5">
           <app-metric-card label="Categorías" [value]="categories().length" helper="Resultados visibles en la lista" />
           <app-metric-card label="Activas" [value]="activeCategoriesCount()" helper="Disponibles para mostrar productos" />
-          <app-metric-card label="Modo" [value]="editingCategory() ? 'Edición' : 'Creación'" helper="Estado actual del formulario" />
         </div>
-      </app-surface-card>
+      </header>
 
       <div class="grid gap-4 sm:gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <app-surface-card variant="page">
+        <app-surface-card variant="page" extraClass="w-full min-w-0 max-w-full p-4 sm:p-5">
           <form class="grid gap-4" [formGroup]="form" (ngSubmit)="submit()">
             <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary-700">
               <lucide-angular class="h-4 w-4" [img]="folderIcon" aria-hidden="true"></lucide-angular>
@@ -93,7 +95,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             }
 
             <div class="grid gap-3 sm:flex sm:flex-wrap">
-              <app-button size="lg" type="submit" [disabled]="isSubmitting()">
+              <app-button size="md" type="submit" [disabled]="isSubmitting()">
                 {{
                   isSubmitting()
                     ? (editingCategory() ? 'Guardando...' : 'Creando...')
@@ -101,11 +103,11 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                 }}
               </app-button>
               @if (editingCategory()) {
-                <app-button variant="secondary" size="lg" type="button" (click)="cancelEdit()" [disabled]="isSubmitting()">
+                <app-button variant="secondary" size="sm" type="button" (click)="cancelEdit()" [disabled]="isSubmitting()">
                   Cancelar
                 </app-button>
               }
-              <app-button variant="ghost" size="lg" type="button" (click)="loadCategories()" [disabled]="isLoading() || isSubmitting()">
+              <app-button variant="ghost" size="sm" type="button" (click)="loadCategories()" [disabled]="isLoading() || isSubmitting()">
                 <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
                 Recargar
               </app-button>
@@ -120,7 +122,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
             subtitle="Selecciona una categoría para editarla o revisa su estado."
           />
 
-          <form class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_auto]" [formGroup]="filtersForm" (ngSubmit)="loadCategories()">
+          <form class="grid w-full min-w-0 max-w-full gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_auto]" [formGroup]="filtersForm" (ngSubmit)="loadCategories()">
             <label class="grid gap-2">
               <span class="text-sm font-semibold text-loreto-carbon">Buscar categoría</span>
               <div class="flex min-h-11 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
@@ -168,7 +170,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
           } @else {
             <div class="grid gap-4">
               @for (category of categories(); track category.id) {
-                <app-surface-card variant="page">
+                <article class="grid w-full min-w-0 max-w-full gap-3 rounded-[16px] border border-slate-200 bg-slate-50 p-3.5">
                   <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
                     <div class="grid gap-2">
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ category.name }}</strong>
@@ -177,7 +179,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
                     <div class="flex flex-wrap items-center gap-3 xl:justify-end">
                       <app-status-badge [status]="category.isActive" [label]="category.isActive ? 'Activa' : 'Inactiva'" />
-                      <app-button variant="secondary" size="lg" type="button" (click)="startEdit(category)" [disabled]="isSubmitting()">
+                      <app-button variant="secondary" size="sm" type="button" (click)="startEdit(category)" [disabled]="isSubmitting()">
                         Editar
                       </app-button>
                     </div>
@@ -190,7 +192,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       message="Los productos dentro de una categoría inactiva pueden quedar fuera de la experiencia pública."
                     />
                   }
-                </app-surface-card>
+                </article>
               }
             </div>
           }

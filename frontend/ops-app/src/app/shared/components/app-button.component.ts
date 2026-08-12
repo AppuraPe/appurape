@@ -10,7 +10,7 @@ type ButtonSize = 'sm' | 'md' | 'lg';
   standalone: true,
   imports: [NgClass, NgTemplateOutlet, RouterLink],
   host: {
-    class: 'inline-flex min-w-0',
+    class: 'inline-flex min-w-0 max-w-full box-border',
     '[class.w-full]': 'block()',
   },
   template: `
@@ -67,7 +67,7 @@ export class AppButtonComponent {
     const disabledClass = this.isDisabled() ? 'pointer-events-none opacity-55' : '';
 
     return [
-      'inline-flex items-center justify-center gap-2 rounded-full font-extrabold no-underline transition-all duration-300 ease-out will-change-transform',
+      'inline-flex min-w-0 max-w-full box-border items-center justify-center gap-2 rounded-[13px] text-center font-semibold leading-tight whitespace-normal no-underline transition-colors duration-200',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25',
       'active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55 disabled:transform-none',
       variantClass,
@@ -84,26 +84,26 @@ export class AppButtonComponent {
   private resolveVariant(variant: ButtonVariant): string {
     switch (variant) {
       case 'secondary':
-        return 'border border-slate-200 bg-primary-100 text-slate-950 shadow-none hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-[0_14px_26px_rgba(15,23,42,0.08)]';
+        return 'border border-primary-200 bg-primary-50 text-primary-800 shadow-none hover:bg-primary-100';
       case 'ghost':
-        return 'border border-slate-200 bg-transparent text-primary-700 shadow-none hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_12px_22px_rgba(15,23,42,0.06)]';
+        return 'border border-slate-200 bg-transparent text-primary-700 shadow-none hover:bg-slate-50';
       case 'danger':
-        return 'bg-danger text-white shadow-lg shadow-red-900/10 hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-[0_18px_28px_rgba(239,68,68,0.22)]';
+        return 'bg-danger text-white shadow-sm hover:bg-red-600';
       case 'success':
-        return 'bg-emerald-500 text-white shadow-lg shadow-emerald-900/10 hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-[0_18px_28px_rgba(16,185,129,0.22)]';
+        return 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700';
       default:
-        return 'bg-primary-700 text-white shadow-lg shadow-primary-700/20 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-[0_20px_34px_rgba(249,115,22,0.26)]';
+        return 'bg-primary-700 text-white shadow-sm hover:bg-primary-600';
     }
   }
 
   private resolveSize(size: ButtonSize): string {
     switch (size) {
       case 'sm':
-        return 'min-h-10 px-4 text-xs';
+        return 'min-h-9 px-3.5 text-xs';
       case 'lg':
-        return 'min-h-13 px-6 text-base';
+        return 'min-h-12 px-[18px] text-sm';
       default:
-        return 'min-h-11 px-5 text-sm';
+        return 'min-h-11 px-4 text-sm';
     }
   }
 }

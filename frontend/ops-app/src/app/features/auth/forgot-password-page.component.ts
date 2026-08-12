@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, LucideAngularModule, Mail } from 'lucide-angular';
 import { AuthApiService } from '../../core/services/auth-api.service';
+import { getApiErrorMessage } from '../../core/utils/api-utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
@@ -195,7 +196,7 @@ export class ForgotPasswordPageComponent {
         },
         error: (error) => {
           this.isRequestSubmitting.set(false);
-          this.requestError.set(error?.error?.message || 'No se pudo enviar el código.');
+          this.requestError.set(getApiErrorMessage(error, 'No pudimos enviar el código. Intenta nuevamente.'));
         },
       });
   }
@@ -222,7 +223,7 @@ export class ForgotPasswordPageComponent {
         },
         error: (error) => {
           this.isRequestSubmitting.set(false);
-          this.requestError.set(error?.error?.message || 'No se pudo reenviar el código.');
+          this.requestError.set(getApiErrorMessage(error, 'No pudimos reenviar el código. Intenta nuevamente.'));
         },
       });
   }
@@ -250,7 +251,7 @@ export class ForgotPasswordPageComponent {
         },
         error: (error) => {
           this.isResetSubmitting.set(false);
-          this.resetError.set(error?.error?.message || 'No se pudo actualizar la contraseña.');
+          this.resetError.set(getApiErrorMessage(error, 'No pudimos actualizar la contraseña. Intenta nuevamente.'));
         },
       });
   }

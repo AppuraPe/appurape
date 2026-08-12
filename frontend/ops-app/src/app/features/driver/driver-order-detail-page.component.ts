@@ -25,6 +25,9 @@ interface DriverAction {
 
 @Component({
   selector: 'app-driver-order-detail-page',
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   standalone: true,
   imports: [
     CurrencyPipe,
@@ -42,7 +45,7 @@ interface DriverAction {
     BottomSafeActionBarComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(108px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4 lg:gap-6'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(108px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-full gap-4 overflow-x-hidden lg:gap-5'">
       <div class="flex flex-wrap gap-3">
         <app-back-button fallbackUrl="/driver/orders" label="Volver a pedidos" />
       </div>
@@ -57,7 +60,7 @@ interface DriverAction {
           <app-button type="button" variant="secondary" (click)="loadOrder()">Reintentar</app-button>
         </app-unified-empty-state>
       } @else if (order(); as order) {
-        <app-surface-card variant="page" extraClass="p-5">
+        <section class="grid w-full min-w-0 max-w-full gap-4 px-0.5">
           <app-internal-page-section-header
             eyebrow="Driver"
             title="Detalle de entrega"
@@ -69,7 +72,7 @@ interface DriverAction {
             <app-notice class="mt-4" tone="danger" [message]="errorMessage()" />
           }
 
-          <div class="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <app-surface-card variant="soft" extraClass="grid gap-4 p-4">
               <div class="flex items-start gap-4">
                 <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary-700 text-white shadow-lg shadow-primary-700/20">
@@ -84,6 +87,13 @@ interface DriverAction {
               <div class="flex flex-wrap items-center gap-2">
                 <app-status-badge [status]="order.status" [label]="readableOrderStatus(order.status)" />
                 <app-status-badge [status]="order.paymentStatus" [label]="paymentStatusLabel(order.paymentStatus)" prefix="Pago" />
+              </div>
+
+              <div class="rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p class="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700">Tu ganancia</p>
+                <p class="mt-1 whitespace-nowrap text-lg font-black text-emerald-800">
+                  {{ order.courierEarningAmount | currency: 'PEN' : 'S/ ' : '1.2-2' }}
+                </p>
               </div>
 
               <div class="grid gap-3 sm:grid-cols-2">
@@ -146,12 +156,12 @@ interface DriverAction {
 
               <div class="grid gap-3">
                 @for (item of order.items; track item.productName + '-' + item.unitPrice) {
-                  <div class="grid gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-3">
                     <div class="min-w-0">
-                      <p class="text-sm font-bold text-slate-950">{{ item.productName }}</p>
-                      <p class="mt-1 text-xs text-slate-500">{{ item.quantity }} x {{ item.unitPrice | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+                      <p class="line-clamp-2 break-words text-sm font-bold text-slate-950">{{ item.productName }}</p>
+                      <p class="mt-1 text-xs text-slate-500">{{ item.quantity }} x {{ item.unitPrice | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
                     </div>
-                    <strong class="text-sm text-slate-950">{{ item.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                    <strong class="whitespace-nowrap text-sm text-slate-950">{{ item.subtotal | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                   </div>
                 }
               </div>
@@ -159,26 +169,26 @@ interface DriverAction {
               <div class="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-slate-500">Subtotal</span>
-                  <strong class="text-slate-950">{{ order.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                  <strong class="text-slate-950">{{ order.subtotal | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-slate-500">Delivery</span>
-                  <strong class="text-slate-950">{{ order.deliveryFee | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                  <strong class="text-slate-950">{{ order.deliveryFee | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                 </div>
                 <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-2">
                   <span class="font-bold text-slate-950">Total</span>
-                  <strong class="text-base font-black text-slate-950">{{ order.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+                  <strong class="text-base font-black text-slate-950">{{ order.total | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
                 </div>
               </div>
             </app-surface-card>
           </div>
-        </app-surface-card>
+        </section>
 
         @if (availableActions().length) {
           <app-bottom-safe-action-bar mode="fixed">
-            <div class="flex flex-wrap gap-3">
+            <div class="grid gap-2 min-[390px]:grid-cols-2">
               @for (action of availableActions(); track action.type) {
-                <app-button type="button" size="md" [disabled]="isSubmitting()" (click)="runAction(action)">
+                <app-button type="button" size="md" [disabled]="isSubmitting()" (click)="runAction(action)" block>
                   {{ isSubmitting() ? 'Procesando...' : action.label }}
                 </app-button>
               }

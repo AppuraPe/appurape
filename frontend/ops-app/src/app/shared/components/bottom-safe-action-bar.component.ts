@@ -11,7 +11,7 @@ type ActionBarMode = 'sticky' | 'fixed' | 'static';
   template: `
     <div [class]="containerClass()">
       <div class="mx-auto w-full max-w-[1200px]">
-        <div class="rounded-[24px] border border-slate-200 bg-white/95 p-3 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur">
+        <div class="rounded-[18px] border border-slate-200 bg-white/95 p-3 shadow-[0_8px_22px_rgba(15,23,42,0.08)] backdrop-blur">
           <ng-content />
         </div>
       </div>
@@ -26,7 +26,7 @@ export class BottomSafeActionBarComponent {
     const modeClass = (() => {
       switch (this.mode()) {
         case 'fixed':
-          return 'fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(18px+env(safe-area-inset-bottom,0px))]';
+          return 'fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom,0px))] z-[70] px-4 pb-2 xl:bottom-0 xl:pb-[calc(18px+env(safe-area-inset-bottom,0px))]';
         case 'static':
           return 'px-4 pb-[calc(18px+env(safe-area-inset-bottom,0px))]';
         default:

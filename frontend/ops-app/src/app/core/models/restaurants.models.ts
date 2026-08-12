@@ -69,6 +69,9 @@ export interface RestaurantDetailResponse {
   openTime: string;
   closeTime: string;
   logoUrl?: string | null;
+  hasOwnDelivery: boolean;
+  ownDeliveryFee?: number | null;
+  ownDeliveryNote?: string | null;
   isActive: boolean;
   approvalStatus: string;
 }

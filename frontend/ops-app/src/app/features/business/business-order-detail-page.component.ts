@@ -6,13 +6,10 @@ import {
   BadgeCheck,
   CircleSlash,
   CookingPot,
-  CreditCard,
   LucideAngularModule,
   Package,
   Phone,
-  ReceiptText,
   ShieldCheck,
-  Wallet,
 } from 'lucide-angular';
 import { BusinessOrderDetailResponse, BusinessOrderStatus } from '../../core/models/business.model';
 import { BusinessOrdersApiService } from '../../core/services/business-orders-api.service';
@@ -28,7 +25,6 @@ import { InternalPageSectionHeaderComponent } from '../../shared/components/inte
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
-import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
 interface BusinessOrderAction {
   label: string;
@@ -38,6 +34,9 @@ interface BusinessOrderAction {
 
 @Component({
   selector: 'app-business-order-detail-page',
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   standalone: true,
   imports: [
     CurrencyPipe,
@@ -51,26 +50,34 @@ interface BusinessOrderAction {
     MobilePageShellComponent,
     InternalPageSectionHeaderComponent,
     UnifiedEmptyStateComponent,
-    UnifiedLoadingStateComponent,
     BottomSafeActionBarComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(108px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid gap-4'">
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(108px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-full gap-4 overflow-x-hidden'">
       <div class="flex flex-wrap items-center gap-3">
         <app-back-button fallbackUrl="/business/orders" label="Volver a pedidos" />
       </div>
 
       @if (isLoading()) {
-        <div class="grid gap-3">
-          <app-unified-loading-state label="Cargando detalle" />
-          <app-unified-loading-state label="Preparando operación" />
+        <div class="grid gap-2" aria-label="Cargando detalle del pedido" aria-busy="true">
+          @for (skeleton of [1, 2, 3]; track skeleton) {
+            <div class="h-[84px] animate-pulse rounded-2xl border border-slate-200 bg-white p-3.5">
+              <div class="flex h-full items-center gap-3">
+                <div class="h-10 w-10 shrink-0 rounded-xl bg-slate-200"></div>
+                <div class="min-w-0 flex-1 space-y-2">
+                  <div class="h-3 w-2/3 rounded-full bg-slate-200"></div>
+                  <div class="h-2.5 w-1/2 rounded-full bg-slate-100"></div>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       } @else if (errorMessage() && !order()) {
         <app-unified-empty-state title="Pedido no disponible" message="No se pudo cargar el detalle del pedido.">
           <app-button type="button" variant="secondary" (click)="loadOrder()">Reintentar</app-button>
         </app-unified-empty-state>
       } @else if (order(); as order) {
-        <app-surface-card variant="page" extraClass="p-5">
+        <section class="grid w-full min-w-0 max-w-full gap-4 px-0.5">
           <app-internal-page-section-header
             eyebrow="Negocio"
             title="Detalle del pedido"
@@ -82,143 +89,123 @@ interface BusinessOrderAction {
             <app-notice class="mt-4" tone="danger" [message]="errorMessage()" />
           }
 
-          <div class="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-            <app-surface-card variant="soft" extraClass="grid gap-4 p-4">
-              <div class="flex items-start gap-3">
-                <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary-700 text-white shadow-lg shadow-primary-700/20">
-                  <lucide-angular class="h-5 w-5" [img]="receiptIcon" aria-hidden="true"></lucide-angular>
-                </div>
+          <div class="grid gap-3 lg:grid-cols-2">
+            <app-surface-card variant="default" extraClass="grid min-w-0 gap-3.5 p-4">
+              <div class="flex min-w-0 flex-wrap items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <h2 class="text-xl font-extrabold tracking-[-0.03em] text-slate-950">Pedido {{ shortId(order.id) }}</h2>
-                  <p class="text-sm text-slate-500">{{ order.createdAtUtc | date: 'medium' }}</p>
+                  <h2 class="truncate text-base font-extrabold tracking-[-0.02em] text-slate-950">Pedido {{ shortId(order.id) }}</h2>
+                  <p class="mt-1 text-xs text-slate-500">{{ order.createdAtUtc | date: 'medium' }}</p>
                 </div>
-              </div>
-
-              <div class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">Cliente</p>
-                  <p class="mt-2 text-base font-bold text-slate-950">{{ order.customerName }}</p>
-                  @if (order.customerPhone) {
-                    <div class="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-slate-500">
-                      <lucide-angular class="h-4 w-4" [img]="phoneIcon" aria-hidden="true"></lucide-angular>
-                      {{ order.customerPhone }}
-                    </div>
-                  }
-                </div>
-
-                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">Entrega</p>
-                  <div class="mt-2 grid gap-1 text-sm text-slate-900">
-                    <p class="font-semibold">{{ order.deliveryAddress }}</p>
-                    <p class="text-slate-500">{{ order.deliveryReference }}</p>
-                  </div>
-                </div>
-              </div>
-
-              @if (order.notes) {
-                <app-notice tone="info" title="Notas del cliente" [message]="order.notes" />
-              }
-            </app-surface-card>
-
-            <app-surface-card variant="soft" extraClass="grid gap-4 p-4">
-              <div class="flex flex-wrap items-center gap-2">
                 <app-status-badge [status]="order.status" />
-                <app-status-badge [status]="order.paymentStatus" [label]="paymentStatusLabel(order.paymentStatus)" prefix="Pago" />
               </div>
 
-              <div class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                    <lucide-angular class="h-4 w-4" [img]="walletIcon" aria-hidden="true"></lucide-angular>
-                    Total
-                  </div>
-                  <p class="mt-2 text-xl font-black tracking-[-0.03em] text-slate-950">{{ order.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+              <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                <div class="min-w-0">
+                  <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-400">Total</p>
+                  <p class="mt-1 whitespace-nowrap text-xl font-black tracking-[-0.03em] text-slate-950">{{ order.total | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
                 </div>
-
-                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                    <lucide-angular class="h-4 w-4" [img]="creditCardIcon" aria-hidden="true"></lucide-angular>
-                    Método de pago
-                  </div>
-                  <p class="mt-2 text-base font-bold text-slate-950">{{ paymentMethodLabel(order.paymentMethod) }}</p>
-                  @if (isManualPayment(order.paymentMethod)) {
-                    <p class="mt-1 text-xs text-slate-500">Pago manual del negocio.</p>
-                  } @else {
-                    <p class="mt-1 text-xs text-slate-500">Pago contra entrega.</p>
-                  }
+                <div class="min-w-0 text-right">
+                  <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-400">Pago</p>
+                  <p class="mt-1 truncate text-sm font-bold text-slate-950">{{ paymentMethodLabel(order.paymentMethod) }}</p>
+                  <p class="mt-0.5 truncate text-xs text-slate-500">{{ paymentStatusLabel(order.paymentStatus) }}</p>
                 </div>
               </div>
 
               @if (showManualPaymentNotice(order)) {
-                <app-notice
-                  tone="warning"
-                  title="Pago pendiente de confirmación"
-                  message="El pago aún está pendiente de confirmación."
-                />
+                <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                  Pago pendiente de confirmación.
+                </div>
               } @else if (order.status === 'ReadyForPickup') {
-                <app-notice
-                  tone="info"
-                  title="Pedido listo"
-                  message="Pedido listo para recojo o asignación de delivery."
-                />
+                <div class="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-800">
+                  Pedido listo para recojo o asignación de delivery.
+                </div>
+              }
+            </app-surface-card>
+
+            <app-surface-card variant="default" extraClass="grid min-w-0 gap-3 p-4">
+              <div class="min-w-0">
+                <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary-700">Cliente</p>
+                <p class="mt-1 truncate text-sm font-bold text-slate-950" [title]="order.customerName">{{ order.customerName }}</p>
+                @if (order.customerPhone) {
+                  <p class="mt-1 flex min-w-0 items-center gap-2 text-xs text-slate-500">
+                    <lucide-angular class="h-3.5 w-3.5 shrink-0" [img]="phoneIcon" aria-hidden="true"></lucide-angular>
+                    <span class="truncate">{{ order.customerPhone }}</span>
+                  </p>
+                }
+              </div>
+
+              <div class="min-w-0 border-t border-slate-100 pt-3">
+                <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary-700">Entrega</p>
+                <p class="mt-1 break-words text-sm font-semibold text-slate-900">{{ order.deliveryAddress }}</p>
+                @if (order.deliveryReference) {
+                  <p class="mt-1 break-words text-xs text-slate-500">{{ order.deliveryReference }}</p>
+                }
+              </div>
+
+              @if (order.notes) {
+                <div class="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
+                  <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-500">Nota del cliente</p>
+                  <p class="mt-1 break-words text-xs leading-5 text-slate-700">{{ order.notes }}</p>
+                </div>
               }
             </app-surface-card>
           </div>
-        </app-surface-card>
+        </section>
 
-        <app-surface-card variant="page" extraClass="grid gap-4 p-4">
+        <app-surface-card variant="default" extraClass="grid w-full min-w-0 max-w-full gap-3 p-3.5 sm:p-4">
           <div class="flex items-center gap-2">
-            <lucide-angular class="h-5 w-5 text-primary-700" [img]="packageIcon" aria-hidden="true"></lucide-angular>
-            <h3 class="text-lg font-extrabold tracking-[-0.03em] text-slate-950">Productos del pedido</h3>
+            <lucide-angular class="h-4 w-4 text-primary-700" [img]="packageIcon" aria-hidden="true"></lucide-angular>
+            <h3 class="text-base font-extrabold tracking-[-0.02em] text-slate-950">Productos del pedido</h3>
           </div>
 
           <div class="grid gap-3">
             @for (item of order.items; track item.productName + '-' + item.unitPrice) {
-              <div class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center">
-                <div class="overflow-hidden rounded-2xl bg-slate-100">
+              <div class="grid min-w-0 grid-cols-[52px_minmax(0,1fr)] items-center gap-3 rounded-xl bg-slate-50 p-2.5 min-[390px]:grid-cols-[52px_minmax(0,1fr)_auto]">
+                <div class="overflow-hidden rounded-[14px] bg-slate-100">
                   @if (item.imageUrl) {
-                    <img class="h-[72px] w-full object-cover object-center" [src]="item.imageUrl" [alt]="item.productName" />
+                    <img class="h-[52px] w-full object-cover object-center" [src]="item.imageUrl" [alt]="item.productName" />
                   } @else {
-                    <div class="grid h-[72px] w-full place-items-center bg-slate-100 text-slate-500">
+                    <div class="grid h-[52px] w-full place-items-center bg-slate-100 text-slate-500">
                       <lucide-angular class="h-5 w-5" [img]="packageIcon" aria-hidden="true"></lucide-angular>
                     </div>
                   }
                 </div>
 
                 <div class="min-w-0">
-                  <p class="text-sm font-bold text-slate-950">{{ item.productName }}</p>
-                  <p class="mt-1 text-xs text-slate-500">{{ item.quantity }} × {{ item.unitPrice | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+                  <p class="line-clamp-2 break-words text-sm font-bold text-slate-950">{{ item.productName }}</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ item.quantity }} × {{ item.unitPrice | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
                 </div>
 
-                <p class="text-sm font-black text-slate-950">{{ item.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+                <p class="col-start-2 whitespace-nowrap text-sm font-black text-slate-950 min-[390px]:col-start-auto">{{ item.subtotal | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
               </div>
             }
           </div>
 
-          <div class="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
+          <div class="grid gap-2 border-t border-slate-100 pt-3 text-sm">
             <div class="flex items-center justify-between gap-3">
               <span class="text-slate-500">Subtotal</span>
-              <strong class="text-slate-950">{{ order.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+              <strong class="text-slate-950">{{ order.subtotal | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
             </div>
             <div class="flex items-center justify-between gap-3">
               <span class="text-slate-500">Delivery</span>
-              <strong class="text-slate-950">{{ order.deliveryFee | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+              <strong class="text-slate-950">{{ order.deliveryFee | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
             </div>
             <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-2">
               <span class="font-bold text-slate-950">Total</span>
-              <strong class="text-base font-black text-slate-950">{{ order.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+              <strong class="text-base font-black text-slate-950">{{ order.total | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
             </div>
           </div>
         </app-surface-card>
 
         @if (availableActions().length) {
           <app-bottom-safe-action-bar mode="fixed">
-            <div class="flex flex-wrap gap-3">
+            <div class="grid gap-2" [class.grid-cols-2]="availableActions().length > 1" [class.grid-cols-1]="availableActions().length === 1">
               @for (action of availableActions(); track action.label) {
                 <app-button
                   [variant]="action.variant === 'danger' ? 'danger' : 'primary'"
                   size="md"
                   type="button"
+                  [block]="true"
                   [disabled]="isSubmitting()"
                   (click)="handleAction(action)"
                 >
@@ -275,10 +262,7 @@ export class BusinessOrderDetailPageComponent {
   private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly receiptIcon = ReceiptText;
   readonly phoneIcon = Phone;
-  readonly walletIcon = Wallet;
-  readonly creditCardIcon = CreditCard;
   readonly packageIcon = Package;
   readonly cookingIcon = CookingPot;
   readonly acceptIcon = ShieldCheck;
@@ -338,7 +322,7 @@ export class BusinessOrderDetailPageComponent {
       case 'card':
         return 'Tarjeta';
       default:
-        return method;
+        return 'Método registrado';
     }
   }
 
@@ -357,7 +341,7 @@ export class BusinessOrderDetailPageComponent {
       case 'Refunded':
         return 'Reembolsado';
       default:
-        return status || 'Sin estado';
+        return 'Estado por revisar';
     }
   }
 

@@ -27,6 +27,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
 @Component({
   selector: 'app-admin-businesses-page',
+  host: { class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden' },
   standalone: true,
   imports: [
     DatePipe,
@@ -41,7 +42,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-5 lg:gap-6">
+    <section class="grid w-full min-w-0 max-w-full gap-5 overflow-x-hidden lg:gap-6">
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="Admin"
@@ -142,7 +143,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               No hay negocios con los filtros seleccionados.
             </div>
             <div class="flex flex-wrap gap-3">
-              <app-button size="lg" type="button" (click)="clearFilters()">Limpiar filtros</app-button>
+              <app-button size="md" type="button" (click)="clearFilters()">Limpiar filtros</app-button>
               <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
@@ -160,7 +161,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                     <div class="grid gap-1">
                       <strong class="text-lg font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant.name }}</strong>
                       <span class="text-sm text-text-muted">Categoría: {{ restaurant.businessTypeName || 'Sin categoría' }}</span>
-                      <span class="text-sm text-text-muted">Owner: {{ restaurant.ownerFullName }}</span>
+                      <span class="text-sm text-text-muted">Responsable: {{ restaurant.ownerFullName }}</span>
                       <span class="text-sm text-text-muted">{{ restaurant.ownerEmail }}</span>
                     </div>
                   </div>
@@ -197,12 +198,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                         <lucide-angular class="h-4 w-4" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
                         Estado
                       </div>
-                      <p class="mt-2 text-xl font-black tracking-[-0.03em] text-loreto-carbon">{{ restaurant.approvalStatus }}</p>
+                      <p class="mt-2 text-xl font-black tracking-[-0.03em] text-loreto-carbon">{{ approvalStatusLabel(restaurant.approvalStatus) }}</p>
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                       <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
                         <lucide-angular class="h-4 w-4" [img]="usersIcon" aria-hidden="true"></lucide-angular>
-                        Owner
+                        Responsable
                       </div>
                       <p class="mt-2 text-sm font-bold text-loreto-carbon">{{ restaurant.ownerFullName }}</p>
                     </div>
@@ -220,7 +221,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                       <lucide-angular class="h-4 w-4 text-primary-700" [img]="calendarClockIcon" aria-hidden="true"></lucide-angular>
                       {{ restaurant.createdAtUtc | date: 'medium' }}
                     </div>
-                    <app-button variant="secondary" size="lg" [routerLink]="['/admin/businesses', restaurant.restaurantId]">
+                    <app-button variant="secondary" size="md" [routerLink]="['/admin/businesses', restaurant.restaurantId]">
                       Ver detalle
                     </app-button>
                   </div>
@@ -307,6 +308,21 @@ export class AdminBusinessesPageComponent {
     this.loadRestaurants();
   }
 
+  approvalStatusLabel(status: string): string {
+    switch (status) {
+      case 'Approved':
+        return 'Aprobado';
+      case 'Pending':
+        return 'Pendiente';
+      case 'Rejected':
+        return 'Rechazado';
+      case 'Suspended':
+        return 'Suspendido';
+      default:
+        return 'Sin estado';
+    }
+  }
+
   private toOptionalBoolean(value: string): boolean | null {
     if (value === 'true') {
       return true;
@@ -319,4 +335,3 @@ export class AdminBusinessesPageComponent {
     return null;
   }
 }
-

@@ -21,7 +21,18 @@ type RegisterDeviceTokenPayload = {
 export class PushNotificationService {
   private static readonly AUTH_TOKEN_STORAGE_KEY = 'iquitosDelivery.app.token';
   private static readonly DEVICE_TOKEN_STORAGE_KEY = 'appurape.push.device-token';
-  private static readonly DEVICE_TOKEN_SYNC_SIGNATURE_KEY = 'appurape.push.device-token.sync-signature';
+  private static readonly DEVICE_TOKEN_SYNC_SIGNATURE_KEY =
+    'appurape.push.device-token.sync-signature';
+  private static readonly ANDROID_NOTIFICATION_CHANNEL = {
+    id: 'appurape_default',
+    name: 'Pedidos y operaciones',
+    description: 'Alertas sobre pedidos, pagos y entregas de AppuraPe.',
+    importance: 4 as const,
+    visibility: 0 as const,
+    lights: true,
+    lightColor: '#FF6B35',
+    vibration: true,
+  };
 
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
@@ -30,7 +41,9 @@ export class PushNotificationService {
   private listenersAttached = false;
   private currentAuthContext: AuthPushContext | null = null;
   private currentDeviceToken = this.readStorage(PushNotificationService.DEVICE_TOKEN_STORAGE_KEY);
-  private lastSyncSignature = this.readStorage(PushNotificationService.DEVICE_TOKEN_SYNC_SIGNATURE_KEY);
+  private lastSyncSignature = this.readStorage(
+    PushNotificationService.DEVICE_TOKEN_SYNC_SIGNATURE_KEY,
+  );
 
   async initializeForAuthenticatedUser(context: AuthPushContext): Promise<void> {
     this.currentAuthContext = context;
@@ -42,6 +55,7 @@ export class PushNotificationService {
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications');
       await this.attachListenersAsync(PushNotifications);
+      await this.ensureAndroidNotificationChannelAsync(PushNotifications);
 
       const currentPermission = await PushNotifications.checkPermissions();
       const permission =
@@ -73,7 +87,9 @@ export class PushNotificationService {
     this.currentAuthContext = null;
   }
 
-  private async attachListenersAsync(pushNotifications: typeof import('@capacitor/push-notifications').PushNotifications): Promise<void> {
+  private async attachListenersAsync(
+    pushNotifications: typeof import('@capacitor/push-notifications').PushNotifications,
+  ): Promise<void> {
     if (this.listenersAttached) {
       return;
     }
@@ -104,6 +120,21 @@ export class PushNotificationService {
     });
 
     this.listenersAttached = true;
+  }
+
+  private async ensureAndroidNotificationChannelAsync(
+    pushNotifications: typeof import('@capacitor/push-notifications').PushNotifications,
+  ): Promise<void> {
+    if ((await this.resolvePlatformAsync()) !== 'android') {
+      return;
+    }
+
+    try {
+      await pushNotifications.createChannel(PushNotificationService.ANDROID_NOTIFICATION_CHANNEL);
+    } catch (error) {
+      // Notification channels do not exist before Android 8; token registration must still continue.
+      console.warn('Android notification channel initialization failed or is unavailable.', error);
+    }
   }
 
   private async registerTokenWithBackendAsync(token: string): Promise<void> {
@@ -241,7 +272,8 @@ export class PushNotificationService {
       return null;
     }
 
-    const maybeRoute = 'targetRoute' in data ? (data as Record<string, unknown>)['targetRoute'] : null;
+    const maybeRoute =
+      'targetRoute' in data ? (data as Record<string, unknown>)['targetRoute'] : null;
 
     if (typeof maybeRoute !== 'string') {
       return null;

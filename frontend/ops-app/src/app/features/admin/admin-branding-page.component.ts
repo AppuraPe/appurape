@@ -13,10 +13,11 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 
 @Component({
   selector: 'app-admin-branding-page',
+  host: { class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden' },
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink, AppNoticeComponent, AppButtonComponent, AppSurfaceCardComponent, PageHeaderComponent],
   template: `
-    <section class="grid gap-6">
+    <section class="grid w-full min-w-0 max-w-full gap-5 overflow-x-hidden">
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="Admin"
@@ -42,7 +43,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
           </div>
         }
 
-        <form class="grid gap-5" [formGroup]="form" (ngSubmit)="save()">
+        <form class="grid w-full min-w-0 gap-5" [formGroup]="form" (ngSubmit)="save()">
           <div class="grid gap-4 md:grid-cols-2">
             <label class="grid gap-2">
               <span class="text-sm font-bold text-loreto-carbon">Nombre de la app</span>
@@ -80,7 +81,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
                   <span class="text-sm font-semibold text-text-muted">Sin logo</span>
                 }
               </div>
-              <input class="mt-3 block w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onFileSelected($event, 'logo')" />
+              <input class="mt-3 block w-full min-w-0 max-w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onFileSelected($event, 'logo')" />
             </div>
 
             <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -92,7 +93,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
                   <span class="text-sm font-semibold text-text-muted">Sin icono</span>
                 }
               </div>
-              <input class="mt-3 block w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon" (change)="onFileSelected($event, 'appIcon')" />
+              <input class="mt-3 block w-full min-w-0 max-w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon" (change)="onFileSelected($event, 'appIcon')" />
             </div>
 
             <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -104,7 +105,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
                   <span class="text-sm font-semibold text-text-muted">Sin splash</span>
                 }
               </div>
-              <input class="mt-3 block w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp" (change)="onFileSelected($event, 'splash')" />
+              <input class="mt-3 block w-full min-w-0 max-w-full text-sm" type="file" accept="image/png,image/jpeg,image/webp" (change)="onFileSelected($event, 'splash')" />
             </div>
           </div>
 

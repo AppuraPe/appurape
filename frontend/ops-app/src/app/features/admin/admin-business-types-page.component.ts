@@ -28,6 +28,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
 @Component({
   selector: 'app-admin-business-types-page',
+  host: { class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden' },
   standalone: true,
   imports: [
     ReactiveFormsModule,
@@ -41,7 +42,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
+    <section class="grid w-full min-w-0 max-w-full gap-5 overflow-x-hidden lg:gap-6">
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="Admin"
@@ -112,11 +113,11 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               </label>
 
               <div class="flex flex-wrap gap-3">
-                <app-button type="submit" size="lg" [disabled]="isSaving() || isLoading()">
+                <app-button type="submit" size="md" [disabled]="isSaving() || isLoading()">
                   <lucide-angular class="h-4 w-4" [img]="plusIcon" aria-hidden="true"></lucide-angular>
                   {{ isSaving() ? 'Guardando...' : editingBusinessTypeId() ? 'Guardar cambios' : 'Crear categoría' }}
                 </app-button>
-                <app-button type="button" variant="ghost" size="lg" [disabled]="isSaving()" (click)="startCreate()">
+                <app-button type="button" variant="ghost" size="md" [disabled]="isSaving()" (click)="startCreate()">
                   Limpiar
                 </app-button>
               </div>
@@ -162,7 +163,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
                   No hay categorías que coincidan con la búsqueda actual.
                 </div>
                 <div class="flex flex-wrap gap-3">
-                  <app-button size="lg" type="button" (click)="clearSearch()">Limpiar búsqueda</app-button>
+                  <app-button size="md" type="button" (click)="clearSearch()">Limpiar búsqueda</app-button>
                   <app-button variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
                 </div>
               </div>

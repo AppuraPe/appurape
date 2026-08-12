@@ -172,7 +172,7 @@
                   [subtitle]="item.categoryName || ''"
                   [description]="''"
                   [imageUrl]="item.imageUrl"
-                  [priceLabel]="'' + (item.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                  [priceLabel]="'' + (item.price | currency: 'PEN' : 'S/ ' : '1.2-2')"
                   [metaBadge]="item.isAvailable ? 'Disponible' : 'No disponible'"
                   [metaBadgeTone]="item.isAvailable ? 'success' : 'warning'"
                   [actionLabel]="'Agregar al pedido'"
@@ -209,7 +209,7 @@
                         [subtitle]="item.categoryName || ''"
                         [description]="''"
                         [imageUrl]="item.imageUrl"
-                        [priceLabel]="'' + (item.price | currency: 'PEN' : 'symbol' : '1.2-2')"
+                        [priceLabel]="'' + (item.price | currency: 'PEN' : 'S/ ' : '1.2-2')"
                         [metaBadge]="item.isAvailable ? 'Disponible' : 'No disponible'"
                         [metaBadgeTone]="item.isAvailable ? 'success' : 'warning'"
                         [actionLabel]="'Agregar al pedido'"
@@ -236,7 +236,7 @@
               <p class="text-xs font-black uppercase tracking-[0.16em] text-primary-700">Tu pedido</p>
               <h3 class="mt-2 text-xl font-black tracking-[-0.04em] text-loreto-carbon">{{ totalQuantity() }} producto(s)</h3>
             </div>
-            <strong class="text-xl font-black tracking-[-0.04em] text-primary-700">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+            <strong class="text-xl font-black tracking-[-0.04em] text-primary-700">{{ subtotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
           </div>
           <button data-checkout-target type="button" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600" (click)="openCheckoutDrawer()">Revisar</button>
         </div>
@@ -244,13 +244,13 @@
     </section>
 
     @if (cartItems().length) {
-      <div class="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 rounded-[18px] border border-[#ead8d2] bg-white/96 p-3 shadow-[0_14px_30px_rgba(6,25,43,0.14)] backdrop-blur-md lg:hidden" aria-label="Resumen móvil del pedido">
+      <div class="fixed inset-x-3 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[70] rounded-[18px] border border-[#ead8d2] bg-white/96 p-3 shadow-[0_14px_30px_rgba(6,25,43,0.14)] backdrop-blur-md lg:hidden" aria-label="Resumen móvil del pedido">
         <div class="mb-2.5 flex items-center justify-between gap-3">
           <div class="min-w-0">
             <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-primary-700">Tu pedido</span>
             <strong class="mt-1 block text-sm text-loreto-carbon">{{ totalQuantity() }} producto(s)</strong>
           </div>
-          <strong class="text-sm font-black text-primary-700">{{ subtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong>
+          <strong class="text-sm font-black text-primary-700">{{ subtotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
         </div>
         <button data-checkout-target type="button" class="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600" (click)="openCheckoutDrawer()">Revisar pedido</button>
       </div>

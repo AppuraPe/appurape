@@ -25,6 +25,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
 @Component({
   selector: 'app-admin-pending-drivers-page',
+  host: { class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden' },
   standalone: true,
   imports: [
     DecimalPipe,
@@ -38,7 +39,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     AppSurfaceCardComponent,
   ],
   template: `
-    <section class="grid gap-6">
+    <section class="grid w-full min-w-0 max-w-full gap-5 overflow-x-hidden lg:gap-6">
       <app-surface-card variant="page">
         <app-page-header
           eyebrow="Admin"
@@ -102,8 +103,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
               </p>
             </div>
             <div class="flex flex-wrap justify-center gap-3">
-              <app-button size="lg" [routerLink]="'/admin/drivers'">Ver todos los drivers</app-button>
-              <app-button size="lg" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
+              <app-button size="md" [routerLink]="'/admin/drivers'">Ver todos los drivers</app-button>
+              <app-button size="md" variant="ghost" [routerLink]="'/admin/dashboard'">Volver al inicio</app-button>
             </div>
           </div>
         </app-surface-card>

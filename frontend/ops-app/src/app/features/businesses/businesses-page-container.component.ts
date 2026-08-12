@@ -5,6 +5,9 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
   selector: 'app-businesses-page-container',
   standalone: true,
   imports: [MobilePageShellComponent],
+  host: {
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+  },
   template: `
     <app-mobile-page-shell>
       <ng-content />

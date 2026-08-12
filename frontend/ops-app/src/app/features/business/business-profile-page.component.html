@@ -1,0 +1,191 @@
+<section class="mx-auto grid w-full min-w-0 max-w-4xl gap-3.5 pb-2 sm:gap-4">
+  <header class="min-w-0 px-0.5">
+    <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-primary-700">Negocio</span>
+    <h1 class="mt-1 text-[1.45rem] font-black leading-tight tracking-tight text-slate-950 sm:text-2xl">Perfil del negocio</h1>
+    <p class="mt-1 max-w-xl text-sm leading-5 text-slate-500">Administra cómo se muestra tu negocio en AppuraPe.</p>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="rounded-[14px] border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] font-semibold text-red-700">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="rounded-[14px] border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[13px] font-semibold text-emerald-700">
+      {{ successMessage() }}
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="flex h-[84px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm" aria-label="Cargando perfil">
+      <div class="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-200"></div>
+      <div class="min-w-0 flex-1">
+        <div class="h-3 w-2/5 animate-pulse rounded-full bg-slate-200"></div>
+        <div class="mt-2.5 h-2.5 w-3/4 animate-pulse rounded-full bg-slate-100"></div>
+      </div>
+    </div>
+  } @else if (restaurant()) {
+    <section class="grid min-w-0 gap-2.5 rounded-[18px] border border-slate-200 bg-white p-4 shadow-sm" aria-labelledby="business-status-title">
+      <div class="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <h2 id="business-status-title" class="text-base font-extrabold text-slate-950">Estado del negocio</h2>
+        <div class="flex min-w-0 flex-wrap justify-end gap-1.5">
+          <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800">
+            {{ approvalStatusLabel(restaurant()!.approvalStatus) }}
+          </span>
+          <span
+            class="rounded-full px-2.5 py-1 text-[11px] font-bold"
+            [class]="restaurant()!.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'"
+          >
+            {{ restaurant()!.isActive ? 'Visible al público' : 'No disponible al público' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="rounded-[14px] bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-600">
+        @if (restaurant()!.approvalStatus === 'Pending') {
+          <p>Tu negocio está siendo revisado. Podrás recibir pedidos cuando esté aprobado y activo.</p>
+        } @else if (restaurant()!.approvalStatus === 'Rejected') {
+          <p>El negocio requiere una revisión antes de poder mostrarse al público.</p>
+        } @else if (restaurant()!.isActive) {
+          <p>Tu negocio está aprobado y puede recibir pedidos.</p>
+        } @else {
+          <p>Podrás recibir pedidos cuando el negocio esté aprobado y activo.</p>
+        }
+      </div>
+    </section>
+
+    <form class="grid w-full min-w-0 gap-3.5" [formGroup]="form" (ngSubmit)="save()">
+      <app-surface-card variant="default" extraClass="min-w-0 p-4 sm:p-4">
+        <div class="flex min-w-0 items-start gap-3">
+          @if (logoPreviewUrl()) {
+            <img class="h-14 w-14 shrink-0 rounded-[14px] border border-slate-200 object-cover" [src]="logoPreviewUrl()" alt="Logo del negocio" />
+          } @else {
+            <div class="grid h-14 w-14 shrink-0 place-items-center rounded-[14px] bg-primary-700 text-white">
+              <lucide-angular class="h-5 w-5" [img]="storeIcon" aria-hidden="true"></lucide-angular>
+            </div>
+          }
+
+          <div class="min-w-0 flex-1">
+            <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.08em] text-slate-500">Vista pública</p>
+            <h2 class="mt-1 truncate text-lg font-extrabold text-slate-950" [title]="restaurant()!.name">{{ restaurant()!.name }}</h2>
+            <p class="mt-1 truncate text-xs text-slate-500">
+              {{ restaurant()!.businessTypeName || 'Negocio local' }} · {{ restaurant()!.isActive ? 'Disponible' : 'No disponible' }}
+            </p>
+          </div>
+        </div>
+
+        <p class="mt-3 line-clamp-2 break-words text-[13px] leading-5 text-slate-600">{{ restaurant()!.description }}</p>
+        <div class="mt-3 flex justify-end border-t border-slate-100 pt-3">
+          <app-button size="sm" variant="secondary" [routerLink]="['/business/menu/items']">Ver catálogo</app-button>
+        </div>
+      </app-surface-card>
+
+      <section class="grid min-w-0 gap-3.5 rounded-[16px] border border-slate-200 bg-white p-3.5" aria-labelledby="public-info-title">
+        <div>
+          <h2 id="public-info-title" class="text-base font-extrabold text-slate-950">Información pública</h2>
+          <p class="mt-1 text-xs leading-5 text-slate-500">Datos que verán tus clientes.</p>
+        </div>
+
+        <label class="min-w-0">
+          <span class="text-[13px] font-semibold text-slate-700">Nombre comercial</span>
+          <input id="name" class="min-w-0" type="text" formControlName="name" />
+        </label>
+
+        <label class="min-w-0">
+          <span class="text-[13px] font-semibold text-slate-700">Descripción</span>
+          <textarea id="description" class="min-w-0" rows="3" formControlName="description"></textarea>
+        </label>
+
+        <div class="grid min-w-0 gap-2.5 min-[390px]:grid-cols-[minmax(0,1fr)_auto] min-[390px]:items-center">
+          <div class="min-w-0">
+            <p class="text-[13px] font-semibold text-slate-700">Logo del negocio</p>
+            <p class="mt-0.5 truncate text-xs text-slate-500" [title]="logoFileName() || 'PNG, JPG o WEBP. Máximo 5 MB.'">
+              {{ logoFileName() || 'PNG, JPG o WEBP. Máximo 5 MB.' }}
+            </p>
+          </div>
+          <div>
+            <input id="logoFile" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp" (change)="onLogoSelected($event)" #logoInput />
+            <app-button size="sm" variant="ghost" type="button" (click)="logoInput.click()">
+              <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
+              {{ logoPreviewUrl() ? 'Cambiar logo' : 'Subir logo' }}
+            </app-button>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid min-w-0 gap-3.5 rounded-[16px] border border-slate-200 bg-slate-50/70 p-3.5" aria-labelledby="coverage-title">
+        <div class="flex min-w-0 items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h2 id="coverage-title" class="text-base font-extrabold text-slate-950">Zona de cobertura</h2>
+            <p class="mt-1 truncate text-sm font-bold text-primary-700" [title]="restaurant()!.zoneName">{{ restaurant()!.zoneName }}</p>
+            <p class="mt-0.5 text-xs text-slate-500">Cobertura operativa actual</p>
+          </div>
+          <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">Asignada</span>
+        </div>
+
+        <div class="grid min-w-0 gap-3 md:grid-cols-2">
+          <label class="min-w-0 md:col-span-2">
+            <span class="text-[13px] font-semibold text-slate-700">Dirección</span>
+            <input id="address" class="min-w-0" type="text" formControlName="address" />
+          </label>
+          <label class="min-w-0 md:col-span-2">
+            <span class="text-[13px] font-semibold text-slate-700">Referencia</span>
+            <input id="reference" class="min-w-0" type="text" formControlName="reference" />
+          </label>
+          <label class="min-w-0">
+            <span class="text-[13px] font-semibold text-slate-700">Apertura</span>
+            <input id="openTime" class="min-w-0" type="time" formControlName="openTime" />
+          </label>
+          <label class="min-w-0">
+            <span class="text-[13px] font-semibold text-slate-700">Cierre</span>
+            <input id="closeTime" class="min-w-0" type="time" formControlName="closeTime" />
+          </label>
+        </div>
+      </section>
+
+      <section class="grid min-w-0 gap-3.5 rounded-[16px] border border-slate-200 bg-white p-3.5" aria-labelledby="own-delivery-title">
+        <div class="flex min-w-0 items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h2 id="own-delivery-title" class="text-base font-extrabold text-slate-950">Delivery propio</h2>
+            <p class="mt-1 text-xs leading-5 text-slate-500">Configura las entregas realizadas por tu negocio.</p>
+          </div>
+          <label class="flex shrink-0 cursor-pointer items-center gap-2" aria-label="Activar delivery propio">
+            <input class="peer sr-only" type="checkbox" formControlName="hasOwnDelivery" />
+            <span class="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-primary-600 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"></span>
+            <span class="hidden text-xs font-bold text-slate-700 min-[390px]:inline">{{ form.controls.hasOwnDelivery.value ? 'Activo' : 'Inactivo' }}</span>
+          </label>
+        </div>
+
+        <div class="grid min-w-0 gap-3 md:grid-cols-2">
+          <label class="min-w-0">
+            <span class="text-[13px] font-semibold text-slate-700">Costo de delivery (S/)</span>
+            <input id="ownDeliveryFee" class="min-w-0" type="number" min="0" step="0.10" formControlName="ownDeliveryFee" />
+          </label>
+          <label class="min-w-0">
+            <span class="text-[13px] font-semibold text-slate-700">Nota para el cliente</span>
+            <input id="ownDeliveryNote" class="min-w-0" type="text" formControlName="ownDeliveryNote" placeholder="Ej. Solo Belén y zonas cercanas" />
+          </label>
+        </div>
+        <p class="text-xs leading-5 text-slate-500">
+          {{ form.controls.hasOwnDelivery.value ? 'Tarifa que verá el cliente:' : 'Activa el switch para ofrecer delivery propio.' }}
+          @if (form.controls.hasOwnDelivery.value) {
+            <strong class="text-slate-700">{{ form.controls.ownDeliveryFee.value | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
+          }
+        </p>
+      </section>
+
+      <input type="hidden" formControlName="logoUrl" />
+
+      <section class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[16px] border border-slate-200 bg-white p-3 shadow-sm">
+        <app-button size="md" type="submit" [disabled]="isSaving()" block>
+          {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
+        </app-button>
+        <app-button variant="ghost" size="sm" type="button" [disabled]="isSaving()" (click)="loadProfile()">
+          <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
+          <span class="hidden min-[390px]:inline">Recargar</span>
+        </app-button>
+      </section>
+    </form>
+  }
+</section>

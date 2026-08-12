@@ -153,30 +153,25 @@ public class CommunityService : ICommunityService
                 x.DestinationLabel.ToLower().Contains(search));
         }
 
-        return await query
+        var requests = await query
+            .Include(x => x.CreatedByUser)
+            .Include(x => x.AssignedCollaborator)
+                .ThenInclude(x => x!.User)
             .OrderByDescending(x => x.CreatedAtUtc)
-            .Select(x => new CommunityRequestListItemResponse
-            {
-                Id = x.Id,
-                CreatedByUserId = x.CreatedByUserId,
-                CreatedByFullName = x.CreatedByUser.FirstName + " " + x.CreatedByUser.LastName,
-                Type = x.Type.ToString(),
-                Title = x.Title,
-                OriginLabel = x.OriginLabel,
-                DestinationLabel = x.DestinationLabel,
-                CompensationAmount = x.CompensationAmount,
-                EstimatedPurchaseAmount = x.EstimatedPurchaseAmount,
-                FavorPlatformCommissionAmount = x.FavorPlatformCommissionAmount,
-                CollaboratorEarningAmount = x.CollaboratorEarningAmount,
-                TotalClientAmount = x.TotalClientAmount,
-                DeadlineUtc = x.DeadlineUtc,
-                Status = x.Status.ToString(),
-                IsMine = x.CreatedByUserId == userId,
-                IsAssignedToMe = x.AssignedCollaborator != null && x.AssignedCollaborator.UserId == userId,
-                MatchScore = x.MatchScore,
-                CreatedAtUtc = x.CreatedAtUtc
-            })
             .ToListAsync(cancellationToken);
+
+        CommunityCollaborator? currentCollaborator = null;
+        if (string.Equals(_currentUserService.Role, nameof(UserRole.Driver), StringComparison.OrdinalIgnoreCase))
+        {
+            currentCollaborator = await _dbContext.CommunityCollaborators
+                .Include(x => x.User)
+                .Include(x => x.Routes)
+                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+        }
+
+        return requests
+            .Select(x => MapRequestListItem(x, userId, currentCollaborator))
+            .ToList();
     }
 
     public async Task<CommunityRequestDetailResponse> GetRequestByIdAsync(Guid requestId, CancellationToken cancellationToken = default)
@@ -764,6 +759,51 @@ public class CommunityService : ICommunityService
             IsActive = route.IsActive,
             StartsAtUtc = route.StartsAtUtc,
             EndsAtUtc = route.EndsAtUtc
+        };
+    }
+
+    private static CommunityRequestListItemResponse MapRequestListItem(
+        CommunityRequest request,
+        Guid currentUserId,
+        CommunityCollaborator? currentCollaborator)
+    {
+        var matchScore = request.MatchScore;
+        var isOpenForeignRequest =
+            request.CreatedByUserId != currentUserId &&
+            request.AssignedCollaboratorId is null &&
+            request.Status is CommunityRequestStatus.Published or CommunityRequestStatus.Searching;
+
+        if (currentCollaborator is not null && isOpenForeignRequest)
+        {
+            var matchedRoute = currentCollaborator.Routes
+                .Where(x => x.IsActive)
+                .FirstOrDefault(x => CommunityMatchingCalculator.IsRouteCompatible(x, request));
+
+            matchScore = CommunityMatchingCalculator
+                .BuildMatch(currentCollaborator, request, matchedRoute)
+                .MatchScore;
+        }
+
+        return new CommunityRequestListItemResponse
+        {
+            Id = request.Id,
+            CreatedByUserId = request.CreatedByUserId,
+            CreatedByFullName = $"{request.CreatedByUser.FirstName} {request.CreatedByUser.LastName}".Trim(),
+            Type = request.Type.ToString(),
+            Title = request.Title,
+            OriginLabel = request.OriginLabel,
+            DestinationLabel = request.DestinationLabel,
+            CompensationAmount = request.CompensationAmount,
+            EstimatedPurchaseAmount = request.EstimatedPurchaseAmount,
+            FavorPlatformCommissionAmount = request.FavorPlatformCommissionAmount,
+            CollaboratorEarningAmount = request.CollaboratorEarningAmount,
+            TotalClientAmount = request.TotalClientAmount,
+            DeadlineUtc = request.DeadlineUtc,
+            Status = request.Status.ToString(),
+            IsMine = request.CreatedByUserId == currentUserId,
+            IsAssignedToMe = request.AssignedCollaborator?.UserId == currentUserId,
+            MatchScore = matchScore,
+            CreatedAtUtc = request.CreatedAtUtc
         };
     }
 

@@ -7,15 +7,19 @@ type BadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'muted'
   selector: 'app-status-badge',
   standalone: true,
   imports: [NgClass],
+  host: {
+    class: 'inline-flex min-w-0 max-w-full box-border',
+  },
   template: `
     <span
-      class="inline-flex min-h-8 items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em]"
+      class="inline-flex min-h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em]"
       [ngClass]="toneClass()"
+      [attr.title]="displayLabel()"
     >
       @if (prefix()) {
-        <span class="opacity-70">{{ prefix() }}</span>
+        <span class="shrink-0 opacity-70">{{ prefix() }}</span>
       }
-      {{ displayLabel() }}
+      <span class="min-w-0 truncate">{{ displayLabel() }}</span>
     </span>
   `,
 })
@@ -54,7 +58,7 @@ export class StatusBadgeComponent {
 
     const normalized = String(status ?? '').toLowerCase().replace(/\s+/g, '');
 
-    if (['approved', 'active', 'available', 'delivered', 'trusted', 'topcollaborator'].includes(normalized)) {
+    if (['approved', 'active', 'available', 'delivered', 'paid', 'completed', 'confirmed', 'connected', 'trusted', 'topcollaborator'].includes(normalized)) {
       return 'success';
     }
 
@@ -134,10 +138,22 @@ export class StatusBadgeComponent {
         return 'En proceso';
       case 'Confirmed':
         return 'Confirmado';
+      case 'Completed':
+        return 'Completado';
+      case 'Connected':
+        return 'Conectado';
+      case 'Disconnected':
+        return 'Desconectado';
+      case 'Open':
+        return 'Abierto';
+      case 'Closed':
+        return 'Cerrado';
       case 'Applied':
         return 'Postulación enviada';
       case 'Selected':
         return 'Seleccionado';
+      case 'TopCollaborator':
+        return 'Colaborador destacado';
       case 'MarketPurchase':
         return 'Compra';
       case 'Errand':
