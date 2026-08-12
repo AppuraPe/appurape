@@ -3,7 +3,7 @@ services:
     runtime: docker
     name: appurape-api
     rootDir: backend
-    dockerContext: backend
+    dockerContext: .
     dockerfilePath: Dockerfile
     healthCheckPath: /health
     envVars:
