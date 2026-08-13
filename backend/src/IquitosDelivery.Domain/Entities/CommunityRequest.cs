@@ -5,6 +5,12 @@ namespace IquitosDelivery.Domain.Entities;
 
 public class CommunityRequest : BaseEntity
 {
+    public Guid? OrderId { get; set; }
+
+    public Order? Order { get; set; }
+
+    public CommunityRequestSourceType SourceType { get; set; } = CommunityRequestSourceType.Manual;
+
     public Guid CreatedByUserId { get; set; }
 
     public User CreatedByUser { get; set; } = null!;
@@ -58,6 +64,12 @@ public class CommunityRequest : BaseEntity
     public string? ConfirmationCode { get; set; }
 
     public DateTime? ConfirmationCodeExpiresAtUtc { get; set; }
+
+    public string? PickupCode { get; set; }
+
+    public DateTime? PickupCodeExpiresAtUtc { get; set; }
+
+    public DateTime? PickupConfirmedAtUtc { get; set; }
 
     public string? ProofImageUrl { get; set; }
 

@@ -56,7 +56,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
     >
       <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
 
-      <section class="grid min-w-0 gap-3 rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+      <section class="grid min-w-0 gap-3 rounded-[20px] border border-slate-200/80 bg-white p-3.5 shadow-sm sm:p-4">
         <app-internal-page-section-header
           eyebrow="Favores"
           [title]="pageTitle()"
@@ -441,9 +441,9 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
               }
             </div>
 
-            <div class="flex items-center justify-between gap-3 rounded-[20px] bg-slate-100/90 px-4 py-3 text-sm text-slate-600">
-              <p class="min-w-0">{{ requestsSummary() }}</p>
-              <app-button variant="ghost" type="button" [disabled]="isLoading()" (click)="loadHub()">Recargar</app-button>
+            <div class="flex min-w-0 items-center justify-between gap-2 px-1 text-sm text-slate-500">
+              <p class="min-w-0 truncate">{{ requestsSummary() }}</p>
+              <button class="min-h-9 shrink-0 rounded-xl px-3 text-xs font-bold text-red-600" type="button" [disabled]="isLoading()" (click)="loadHub()">Actualizar</button>
             </div>
 
             @if (!filteredRequests().length) {
@@ -456,13 +456,13 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
               <div class="grid gap-3">
                 @for (request of filteredRequests(); track request.id) {
                   <a
-                    class="grid gap-3 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-200"
+                    class="grid gap-2.5 rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-red-200"
                     [routerLink]="['/community/requests', request.id]"
                   >
                     <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                       <div class="min-w-0">
                         <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-                          {{ requestTypeLabel(request.type) }}
+                          {{ request.sourceType === 'AppuraPeOrder' ? 'Compra AppuraPe' : requestTypeLabel(request.type) }}
                         </p>
                         <h3 class="mt-1 line-clamp-2 min-w-0 text-base font-extrabold tracking-tight text-slate-950">{{ request.title }}</h3>
                         <p class="mt-1 min-w-0 truncate text-sm text-slate-500">{{ request.originLabel }} → {{ request.destinationLabel }}</p>
@@ -482,21 +482,21 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                       }
                     </div>
 
-                    <div class="grid gap-2 rounded-[20px] bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                      <div class="flex items-center justify-between gap-3">
-                        <span>Recompensa</span>
-                        <strong class="text-slate-950">{{ request.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
+                    <div class="grid grid-cols-2 gap-2 rounded-2xl bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
+                      <div class="min-w-0">
+                        <span class="block">Recompensa</span>
+                        <strong class="mt-0.5 block text-sm text-slate-950">{{ request.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
                       </div>
                       @if (request.deadlineUtc) {
-                        <div class="flex items-center justify-between gap-3">
-                          <span>Límite</span>
-                          <span class="text-right text-slate-500">{{ request.deadlineUtc | date:'short' }}</span>
+                        <div class="min-w-0 border-l border-slate-200 pl-3">
+                          <span class="block">Hasta</span>
+                          <strong class="mt-0.5 block truncate text-sm font-semibold text-slate-700">{{ request.deadlineUtc | date:'short' }}</strong>
                         </div>
                       }
                     </div>
 
-                    <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-3">
-                      <span class="inline-flex min-h-9 items-center rounded-xl bg-red-50 px-3 text-sm font-semibold text-red-600">
+                    <div class="flex items-center justify-end gap-2">
+                      <span class="text-xs font-bold text-red-600">
                         {{ requestActionLabel(request) }}
                       </span>
                     </div>

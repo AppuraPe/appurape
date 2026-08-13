@@ -3,19 +3,6 @@
     <div class="relative rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm lg:h-[58px] lg:rounded-[20px] lg:border-slate-200 lg:bg-white/98 lg:px-[28px] lg:py-0 lg:shadow-[0_8px_18px_rgba(15,23,42,0.06)] lg:backdrop-blur-md">
       <div class="flex items-center justify-between gap-3 lg:gap-4">
         <div class="flex min-w-0 flex-1 items-center gap-2">
-          @if (shouldShowMobileBack()) {
-            <button
-              type="button"
-              class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-loreto-carbon shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary-500/20 lg:hidden"
-              aria-label="Volver a la pantalla anterior"
-              (click)="goBack()"
-            >
-              <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11.5 3.5 6 9l5.5 5.5" />
-              </svg>
-            </button>
-          }
-
           <a class="inline-flex min-w-0 flex-1 items-center text-primary-900 no-underline" routerLink="/businesses" [attr.aria-label]="'Ir a negocios ' + (branding()?.appName || 'AppuraPe')" (click)="closeNavbar()">
             @if (branding()?.logoUrl && !brandingLogoFailed()) {
               <img class="block h-10 w-auto max-w-[170px] shrink object-contain lg:h-[58px] lg:max-w-[320px] lg:scale-[1.15] lg:origin-left" [src]="branding()!.logoUrl!" alt="" aria-hidden="true" (error)="markBrandingLogoFailed()" />

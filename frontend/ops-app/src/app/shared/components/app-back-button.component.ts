@@ -1,30 +1,13 @@
-import { Component, inject, input } from '@angular/core';
-import { ArrowLeft, LucideAngularModule } from 'lucide-angular';
-import { AppNavigationService } from '../../core/services/app-navigation.service';
+import { Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-back-button',
   standalone: true,
-  imports: [LucideAngularModule],
-  template: `
-    <button
-      type="button"
-      class="inline-flex min-h-11 items-center gap-2 rounded-[13px] border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/15"
-      (click)="goBack()"
-    >
-      <lucide-angular class="h-4 w-4 shrink-0" [img]="arrowLeftIcon" aria-hidden="true"></lucide-angular>
-      <span class="truncate">{{ label() }}</span>
-    </button>
-  `,
+  template: '',
 })
 export class AppBackButtonComponent {
-  private readonly navigation = inject(AppNavigationService);
-
+  // Inputs remain temporarily compatible with existing screens while the
+  // visual control is retired in favor of Android system back navigation.
   readonly fallbackUrl = input('/businesses');
   readonly label = input('Volver');
-  readonly arrowLeftIcon = ArrowLeft;
-
-  goBack(): void {
-    this.navigation.goBack(this.fallbackUrl());
-  }
 }

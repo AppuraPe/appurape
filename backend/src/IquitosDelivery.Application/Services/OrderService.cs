@@ -8,6 +8,7 @@ using IquitosDelivery.Domain.Entities;
 using IquitosDelivery.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Security.Cryptography;
 
 namespace IquitosDelivery.Application.Services;
 
@@ -905,6 +906,17 @@ public class OrderService : IOrderService
         if (request.Status == OrderStatus.ReadyForPickup)
         {
             order.ReadyAtUtc = DateTime.UtcNow;
+            if (order.DeliveryMode == DeliveryMode.CommunityCollaboratorDelivery && order.AssignedCourierUserId.HasValue)
+            {
+                order.Status = OrderStatus.Assigned;
+                var linkedPickup = await _dbContext.CommunityRequests
+                    .FirstOrDefaultAsync(x => x.OrderId == order.Id && x.Status == CommunityRequestStatus.Accepted, cancellationToken);
+                if (linkedPickup is not null)
+                {
+                    linkedPickup.PickupCode = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                    linkedPickup.PickupCodeExpiresAtUtc = DateTime.UtcNow.AddHours(12);
+                }
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -969,6 +981,18 @@ public class OrderService : IOrderService
             RestoreTrackedStock(order);
             UpdatePaymentForCancelledOrder(order.Payment, request.Reason);
             await CancelPendingFinancialMovementsAsync(order.Id, cancellationToken);
+            var linkedPickup = await _dbContext.CommunityRequests
+                .FirstOrDefaultAsync(x => x.OrderId == order.Id && x.Status != CommunityRequestStatus.Cancelled && x.Status != CommunityRequestStatus.Confirmed, cancellationToken);
+            if (linkedPickup is not null && !linkedPickup.PickupConfirmedAtUtc.HasValue)
+            {
+                linkedPickup.Status = CommunityRequestStatus.Cancelled;
+                linkedPickup.CancelledAtUtc = DateTime.UtcNow;
+                linkedPickup.CancellationReason = "El pedido relacionado fue cancelado.";
+                var pickupMovements = await _dbContext.FinancialMovements
+                    .Where(x => x.CommunityRequestId == linkedPickup.Id && x.Status == FinancialMovementStatus.Pending)
+                    .ToListAsync(cancellationToken);
+                foreach (var movement in pickupMovements) movement.Status = FinancialMovementStatus.Cancelled;
+            }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -1152,6 +1176,11 @@ public class OrderService : IOrderService
 
     private static void EnsureDeliveryModeCanBeRequested(Restaurant restaurant, CreateOrderRequest request)
     {
+        if (request.DeliveryMode == DeliveryMode.CommunityCollaboratorDelivery)
+        {
+            throw new AppException("Primero crea el pedido como recojo personal y luego solicita un colaborador desde su detalle.");
+        }
+
         if (request.DeliveryMode != DeliveryMode.BusinessDelivery)
         {
             return;
@@ -1396,7 +1425,8 @@ public class OrderService : IOrderService
             .Select(x => x.UserId)
             .FirstAsync(cancellationToken);
 
-        var driverUserIdsTask = _dbContext.Drivers
+        var driverUserIdsTask = order.DeliveryMode == DeliveryMode.VerifiedDriverDelivery
+            ? _dbContext.Drivers
             .Where(x =>
                 x.ZoneId == order.ZoneId &&
                 x.ApprovalStatus == ApprovalStatus.Approved &&
@@ -1404,7 +1434,8 @@ public class OrderService : IOrderService
                 x.IsAvailable)
             .Select(x => x.UserId)
             .Distinct()
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken)
+            : Task.FromResult(new List<Guid>());
 
         await Task.WhenAll(customerIdTask, driverUserIdsTask);
 
@@ -1427,6 +1458,26 @@ public class OrderService : IOrderService
                 Data = NotificationPayloadFactory.DriverOrder(order.Id, $"/driver/orders/{order.Id}", "driver_order_available")
             },
             cancellationToken);
+
+        if (order.DeliveryMode == DeliveryMode.CommunityCollaboratorDelivery && order.AssignedCourierUserId.HasValue)
+        {
+            var linkedRequestId = await _dbContext.CommunityRequests
+                .Where(x => x.OrderId == order.Id && x.Status != CommunityRequestStatus.Cancelled)
+                .Select(x => x.Id)
+                .FirstAsync(cancellationToken);
+            await _notificationService.SendToUserAsync(
+                order.AssignedCourierUserId.Value,
+                new EventPushNotificationRequest
+                {
+                    Title = "Pedido listo para recoger",
+                    Body = $"La compra de {restaurant.Name} ya está lista. Usa tu código de recojo en el negocio.",
+                    Data = NotificationPayloadFactory.CommunityRequest(
+                        linkedRequestId,
+                        $"/community/requests/{linkedRequestId}",
+                        "order_pickup_ready")
+                },
+                cancellationToken);
+        }
     }
 
     private static ValidateOrderItemResponse BuildInvalidItemResponse(

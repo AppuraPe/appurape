@@ -6,6 +6,7 @@ import type {
   MenuItemResponse,
   MyRestaurantResponse,
   OrderStatus,
+  OrderCollaboratorPickupResponse,
   PaymentStatus,
   RejectRestaurantOrderPaymentRequest,
   RestaurantOrderFilters,
@@ -41,3 +42,4 @@ export type UpdateBusinessOrderStatusRequest = UpdateRestaurantOrderStatusReques
 export type BusinessOrderFilters = RestaurantOrderFilters;
 export type ConfirmBusinessOrderPaymentRequest = ConfirmRestaurantOrderPaymentRequest;
 export type RejectBusinessOrderPaymentRequest = RejectRestaurantOrderPaymentRequest;
+export type { OrderCollaboratorPickupResponse };

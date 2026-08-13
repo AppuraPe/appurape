@@ -152,6 +152,19 @@ interface BusinessOrderAction {
           </div>
         </section>
 
+        @if (order.deliveryMode === 'CommunityCollaboratorDelivery' && order.assignedCourierType === 'Collaborator' && (order.status === 'Assigned' || order.status === 'ReadyForPickup')) {
+          <app-surface-card variant="default" extraClass="grid gap-3 p-4">
+            <app-internal-page-section-header eyebrow="Recojo" title="Validar al colaborador" subtitle="Pide el código de seis dígitos antes de entregar el paquete." />
+            <label class="grid gap-2">
+              <span class="text-sm font-semibold text-slate-700">Código de recojo</span>
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-center text-lg font-black tracking-[0.2em]" inputmode="numeric" maxlength="6" [value]="pickupCode()" (input)="pickupCode.set($any($event.target).value)" />
+            </label>
+            <app-button type="button" [disabled]="isConfirmingPickup() || pickupCode().length !== 6" (click)="confirmCollaboratorPickup()" block>
+              {{ isConfirmingPickup() ? 'Validando...' : 'Confirmar recojo' }}
+            </app-button>
+          </app-surface-card>
+        }
+
         <app-surface-card variant="default" extraClass="grid w-full min-w-0 max-w-full gap-3 p-3.5 sm:p-4">
           <div class="flex items-center gap-2">
             <lucide-angular class="h-4 w-4 text-primary-700" [img]="packageIcon" aria-hidden="true"></lucide-angular>
@@ -274,6 +287,8 @@ export class BusinessOrderDetailPageComponent {
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal('');
   readonly rejectConfirmationOpen = signal(false);
+  readonly pickupCode = signal('');
+  readonly isConfirmingPickup = signal(false);
 
   readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
   readonly availableActions = computed(() => this.getActions(this.order()?.status ?? ''));
@@ -365,6 +380,25 @@ export class BusinessOrderDetailPageComponent {
 
   showManualPaymentNotice(order: BusinessOrderDetailResponse): boolean {
     return this.isManualPayment(order.paymentMethod) && order.paymentStatus === 'PendingConfirmation';
+  }
+
+  confirmCollaboratorPickup(): void {
+    if (this.pickupCode().length !== 6) return;
+    this.isConfirmingPickup.set(true);
+    this.businessOrdersApi.confirmCollaboratorPickup(this.orderId, this.pickupCode())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isConfirmingPickup.set(false);
+          this.pickupCode.set('');
+          this.notificationService.success('Recojo confirmado. El pedido ya va en camino.');
+          this.loadOrder();
+        },
+        error: (error) => {
+          this.isConfirmingPickup.set(false);
+          this.notificationService.error(getErrorMessage(error, 'No pudimos validar el código de recojo.'));
+        },
+      });
   }
 
   handleAction(action: BusinessOrderAction): void {

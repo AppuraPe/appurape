@@ -80,4 +80,6 @@ public class Order : BaseEntity
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 
     public ICollection<OrderIncident> Incidents { get; set; } = new List<OrderIncident>();
+
+    public ICollection<CommunityRequest> CommunityRequests { get; set; } = new List<CommunityRequest>();
 }

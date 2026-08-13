@@ -40,6 +40,7 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     PickupOrDirect: 0,
     BusinessDelivery: 1,
     VerifiedDriverDelivery: 2,
+    CommunityCollaboratorDelivery: 3,
   };
 
   private readonly formBuilder = inject(FormBuilder);
@@ -321,6 +322,8 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
         return 'Delivery del negocio';
       case 'VerifiedDriverDelivery':
         return 'Driver verificado';
+      case 'CommunityCollaboratorDelivery':
+        return 'Colaborador verificado';
     }
   }
 
@@ -334,6 +337,8 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
           : 'No disponible por ahora para este negocio.';
       case 'VerifiedDriverDelivery':
         return `Pago mínimo al driver: ${this.formatMoney(this.verifiedDriverMinimum())}. Puedes ofrecer más.`;
+      case 'CommunityCollaboratorDelivery':
+        return 'Solicita el recojo desde el detalle del pedido después de comprar.';
     }
   }
 

@@ -9,6 +9,7 @@ import {
   BusinessOrderPaymentResponse,
   ConfirmBusinessOrderPaymentRequest,
   RejectBusinessOrderPaymentRequest,
+  OrderCollaboratorPickupResponse,
   UpdateBusinessOrderStatusRequest,
 } from '../models/business.model';
 
@@ -42,6 +43,10 @@ export class BusinessOrdersApiService {
 
   rejectOrderPayment(orderId: string, request: RejectBusinessOrderPaymentRequest): Observable<BusinessOrderPaymentResponse> {
     return this.http.post<BusinessOrderPaymentResponse>(`${this.restaurantOrdersBaseUrl}/${orderId}/payment/reject`, request);
+  }
+
+  confirmCollaboratorPickup(orderId: string, pickupCode: string): Observable<OrderCollaboratorPickupResponse> {
+    return this.http.post<OrderCollaboratorPickupResponse>(`${this.restaurantOrdersBaseUrl}/${orderId}/collaborator-pickup/confirm`, { pickupCode });
   }
 
   private buildParams(filters: BusinessOrderFilters): HttpParams {

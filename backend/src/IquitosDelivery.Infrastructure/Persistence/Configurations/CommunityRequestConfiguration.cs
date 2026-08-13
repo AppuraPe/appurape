@@ -12,6 +12,7 @@ public class CommunityRequestConfiguration : IEntityTypeConfiguration<CommunityR
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.SourceType).IsRequired();
         builder.Property(x => x.Type).IsRequired();
         builder.Property(x => x.Title).HasMaxLength(150).IsRequired();
         builder.Property(x => x.Description).HasMaxLength(2000).IsRequired();
@@ -33,6 +34,9 @@ public class CommunityRequestConfiguration : IEntityTypeConfiguration<CommunityR
         builder.Property(x => x.MatchScore).HasPrecision(5, 2).IsRequired();
         builder.Property(x => x.ConfirmationCode).HasMaxLength(20);
         builder.Property(x => x.ConfirmationCodeExpiresAtUtc);
+        builder.Property(x => x.PickupCode).HasMaxLength(20);
+        builder.Property(x => x.PickupCodeExpiresAtUtc);
+        builder.Property(x => x.PickupConfirmedAtUtc);
         builder.Property(x => x.ProofImageUrl).HasMaxLength(500);
         builder.Property(x => x.CollaboratorFeedback).HasMaxLength(1000);
         builder.Property(x => x.CancellationReason).HasMaxLength(500);
@@ -43,6 +47,9 @@ public class CommunityRequestConfiguration : IEntityTypeConfiguration<CommunityR
         builder.Property(x => x.CancelledAtUtc);
 
         builder.HasIndex(x => x.CreatedByUserId);
+        builder.HasIndex(x => x.OrderId)
+            .IsUnique()
+            .HasFilter("\"OrderId\" IS NOT NULL AND \"Status\" <> 6");
         builder.HasIndex(x => x.AssignedCollaboratorId);
         builder.HasIndex(x => x.Status);
 
@@ -50,5 +57,10 @@ public class CommunityRequestConfiguration : IEntityTypeConfiguration<CommunityR
             .WithOne(x => x.CommunityRequest)
             .HasForeignKey(x => x.CommunityRequestId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.Order)
+            .WithMany(x => x.CommunityRequests)
+            .HasForeignKey(x => x.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -3,7 +3,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ArrowLeft, ImagePlus, LucideAngularModule, PackagePlus } from 'lucide-angular';
+import { ImagePlus, LucideAngularModule, PackagePlus } from 'lucide-angular';
 import { CatalogCategoryResponse } from '../../core/models/business.model';
 import { MyCatalogApiService } from '../../core/services/my-catalog-api.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -33,13 +33,6 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
   ],
   template: `
     <section class="mx-auto grid w-full min-w-0 max-w-3xl gap-4 pb-2 sm:gap-5">
-      <div>
-        <app-button variant="ghost" size="sm" [routerLink]="['../']">
-          <lucide-angular class="h-4 w-4" [img]="backIcon" aria-hidden="true" />
-          Volver a productos
-        </app-button>
-      </div>
-
       <header class="grid gap-3 px-0.5">
         <app-page-header
           eyebrow="Catálogo"
@@ -173,7 +166,6 @@ export class BusinessItemNewPageComponent {
   readonly imageFileName = signal('');
   readonly imagePreviewUrl = signal<string | null>(null);
 
-  readonly backIcon = ArrowLeft;
   readonly imageIcon = ImagePlus;
   readonly productIcon = PackagePlus;
 

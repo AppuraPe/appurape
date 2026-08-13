@@ -69,7 +69,39 @@ export interface CustomerOrderDetailResponse {
 export type CreateOrderResponse = CustomerOrderDetailResponse;
 
 export type PaymentMethod = 'Cash' | 'Card' | 'Yape' | 'Plin';
-export type DeliveryMode = 'PickupOrDirect' | 'BusinessDelivery' | 'VerifiedDriverDelivery';
+export type DeliveryMode = 'PickupOrDirect' | 'BusinessDelivery' | 'VerifiedDriverDelivery' | 'CommunityCollaboratorDelivery';
+
+export interface OrderFulfillmentOptionsResponse {
+  orderId: string;
+  currentDeliveryMode: DeliveryMode | string;
+  canRequestDriver: boolean;
+  canRequestCollaborator: boolean;
+  unavailableReason?: string | null;
+  linkedCommunityRequestId?: string | null;
+}
+
+export interface OrderCollaboratorPickupQuoteResponse {
+  orderId: string;
+  collaboratorEarningAmount: number;
+  totalAdditionalAmount: number;
+  deadlineUtc: string;
+  quoteExpiresAtUtc: string;
+  quoteToken: string;
+}
+
+export interface OrderCollaboratorPickupResponse {
+  orderId: string;
+  communityRequestId: string;
+  status: string;
+  totalAdditionalAmount: number;
+}
+
+export interface OrderDriverDeliveryResponse {
+  orderId: string;
+  deliveryMode: string;
+  deliveryFee: number;
+  total: number;
+}
 
 export interface CreateOrderItemRequest {
   menuItemId: string;

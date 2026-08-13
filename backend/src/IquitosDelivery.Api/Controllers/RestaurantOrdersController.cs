@@ -11,11 +11,20 @@ namespace IquitosDelivery.Api.Controllers;
 public class RestaurantOrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly IOrderFulfillmentService _fulfillmentService;
 
-    public RestaurantOrdersController(IOrderService orderService)
+    public RestaurantOrdersController(IOrderService orderService, IOrderFulfillmentService fulfillmentService)
     {
         _orderService = orderService;
+        _fulfillmentService = fulfillmentService;
     }
+
+    [HttpPost("{orderId:guid}/collaborator-pickup/confirm")]
+    public async Task<ActionResult<OrderCollaboratorPickupResponse>> ConfirmCollaboratorPickup(
+        Guid orderId,
+        [FromBody] ConfirmCollaboratorPickupRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(await _fulfillmentService.ConfirmBusinessPickupAsync(orderId, request, cancellationToken));
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<RestaurantOrderListItemResponse>), StatusCodes.Status200OK)]

@@ -40,6 +40,8 @@ export interface CommunityRouteResponse {
 }
 
 export interface CommunityRequestListItemResponse {
+  orderId?: string | null;
+  sourceType?: string;
   id: string;
   createdByUserId: string;
   createdByFullName: string;
@@ -61,6 +63,8 @@ export interface CommunityRequestListItemResponse {
 }
 
 export interface CommunityRequestDetailResponse {
+  orderId?: string | null;
+  sourceType?: string;
   id: string;
   createdByUserId: string;
   createdByFullName: string;
@@ -86,6 +90,8 @@ export interface CommunityRequestDetailResponse {
   assignedRouteId?: string | null;
   matchScore: number;
   confirmationCode?: string | null;
+  pickupCode?: string | null;
+  pickupConfirmedAtUtc?: string | null;
   proofImageUrl?: string | null;
   collaboratorRating?: number | null;
   collaboratorFeedback?: string | null;

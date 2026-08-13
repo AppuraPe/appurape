@@ -148,6 +148,7 @@ export interface RestaurantOrderListItemResponse {
   itemCount: number;
   status: OrderStatus | string;
   businessNetAmount: number;
+  deliveryMode: string;
   platformRevenueAmount: number;
   total: number;
   paymentMethod: string;
@@ -171,6 +172,7 @@ export interface RestaurantOrderDetailResponse {
   subtotal: number;
   businessCommissionAmount: number;
   businessNetAmount: number;
+  deliveryMode: string;
   deliveryFee: number;
   deliveryPlatformCommissionAmount: number;
   courierEarningAmount: number;
@@ -209,6 +211,13 @@ export interface RestaurantOrderPaymentResponse {
 
 export interface ConfirmRestaurantOrderPaymentRequest {
   manualReference?: string | null;
+}
+
+export interface OrderCollaboratorPickupResponse {
+  orderId: string;
+  communityRequestId: string;
+  status: string;
+  totalAdditionalAmount: number;
 }
 
 export interface RejectRestaurantOrderPaymentRequest {

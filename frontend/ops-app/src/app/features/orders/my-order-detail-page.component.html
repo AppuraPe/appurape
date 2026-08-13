@@ -81,6 +81,45 @@
       </div>
     </app-surface-card>
 
+    @if (fulfillmentOptions(); as options) {
+      @if (options.linkedCommunityRequestId) {
+        <app-surface-card variant="page" extraClass="grid gap-3 p-4">
+          <app-internal-page-section-header eyebrow="Recojo" title="Un colaborador llevará tu compra" subtitle="Puedes revisar postulaciones y seguir el traslado desde Favores." />
+          <app-button [routerLink]="['/community/requests', options.linkedCommunityRequestId]" variant="secondary" block>Ver favor vinculado</app-button>
+        </app-surface-card>
+      } @else if (options.canRequestCollaborator) {
+        <app-surface-card variant="page" extraClass="grid gap-3 p-4">
+          <app-internal-page-section-header eyebrow="Entrega" title="¿Quieres que alguien recoja tu compra?" subtitle="Publica el recojo para colaboradores verificados. Tu pedido y la dirección del negocio se completan automáticamente." />
+          @if (!pickupPanelOpen()) {
+            <div class="grid gap-2 min-[390px]:grid-cols-2">
+              @if (options.canRequestDriver) {
+                <app-button type="button" [disabled]="isRequestingDriver()" (click)="requestDriverDelivery()" block>{{ isRequestingDriver() ? 'Solicitando...' : 'Pedir delivery' }}</app-button>
+              }
+              <app-button type="button" variant="secondary" (click)="openPickupPanel()" block>Buscar un colaborador</app-button>
+            </div>
+          } @else {
+            <form class="grid gap-3" [formGroup]="pickupForm" (ngSubmit)="quotePickup()">
+              <label class="grid gap-2">
+                <span class="text-sm font-semibold text-slate-700">Pago para el colaborador</span>
+                <div class="relative min-w-0">
+                  <span class="absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-500">S/</span>
+                  <input class="min-h-11 w-full rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm" type="number" min="2" step="0.50" formControlName="compensationAmount" />
+                </div>
+              </label>
+              <app-button type="submit" [disabled]="isQuotingPickup()" block>{{ isQuotingPickup() ? 'Calculando...' : 'Calcular recojo' }}</app-button>
+            </form>
+            @if (pickupQuote(); as quote) {
+              <div class="grid gap-3 rounded-2xl bg-slate-50 p-3">
+                <div class="flex items-center justify-between gap-3 text-sm"><span class="text-slate-500">Recibe el colaborador</span><strong>{{ quote.collaboratorEarningAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong></div>
+                <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-2"><span class="font-semibold text-slate-700">Total adicional</span><strong class="text-primary-700">{{ quote.totalAdditionalAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong></div>
+                <app-button type="button" [disabled]="isCreatingPickup()" (click)="confirmPickup()" block>{{ isCreatingPickup() ? 'Publicando...' : 'Confirmar y publicar recojo' }}</app-button>
+              </div>
+            }
+          }
+        </app-surface-card>
+      }
+    }
+
     <section class="grid gap-4 lg:grid-cols-[0.88fr_1.12fr]">
       <app-surface-card variant="page" extraClass="p-5">
         <div class="flex items-start justify-between gap-3">

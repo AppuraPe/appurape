@@ -11,11 +11,38 @@ namespace IquitosDelivery.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly IOrderFulfillmentService _fulfillmentService;
 
-    public OrdersController(IOrderService orderService)
+    public OrdersController(IOrderService orderService, IOrderFulfillmentService fulfillmentService)
     {
         _orderService = orderService;
+        _fulfillmentService = fulfillmentService;
     }
+
+    [HttpGet("my/{id:guid}/fulfillment-options")]
+    public async Task<ActionResult<OrderFulfillmentOptionsResponse>> GetFulfillmentOptions(Guid id, CancellationToken cancellationToken) =>
+        Ok(await _fulfillmentService.GetOptionsAsync(id, cancellationToken));
+
+    [HttpPost("my/{id:guid}/collaborator-pickup/quote")]
+    public async Task<ActionResult<OrderCollaboratorPickupQuoteResponse>> QuoteCollaboratorPickup(
+        Guid id,
+        [FromBody] OrderCollaboratorPickupQuoteRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(await _fulfillmentService.QuoteCollaboratorPickupAsync(id, request, cancellationToken));
+
+    [HttpPost("my/{id:guid}/collaborator-pickup")]
+    public async Task<ActionResult<OrderCollaboratorPickupResponse>> CreateCollaboratorPickup(
+        Guid id,
+        [FromBody] CreateOrderCollaboratorPickupRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(await _fulfillmentService.CreateCollaboratorPickupAsync(id, request, cancellationToken));
+
+    [HttpPost("my/{id:guid}/driver-delivery")]
+    public async Task<ActionResult<OrderDriverDeliveryResponse>> RequestDriverDelivery(
+        Guid id,
+        [FromBody] RequestOrderDriverDeliveryRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(await _fulfillmentService.RequestDriverDeliveryAsync(id, request, cancellationToken));
 
     [HttpPost("validate")]
     [ProducesResponseType(typeof(ValidateOrderResponse), StatusCodes.Status200OK)]

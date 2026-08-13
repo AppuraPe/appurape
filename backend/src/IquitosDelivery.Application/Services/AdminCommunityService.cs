@@ -98,6 +98,8 @@ public class AdminCommunityService : IAdminCommunityService
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => new CommunityRequestListItemResponse
             {
+                OrderId = x.OrderId,
+                SourceType = x.SourceType.ToString(),
                 Id = x.Id,
                 CreatedByUserId = x.CreatedByUserId,
                 CreatedByFullName = x.CreatedByUser.FirstName + " " + x.CreatedByUser.LastName,

@@ -346,7 +346,7 @@ public class ControllerSmokeTests
             .Setup(service => service.CreateOrderAsync(It.IsAny<CreateOrderRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CustomerOrderDetailResponse());
 
-        var controller = new OrdersController(orderService.Object);
+        var controller = new OrdersController(orderService.Object, Mock.Of<IOrderFulfillmentService>());
 
         var request = new CreateOrderRequest
         {
@@ -374,7 +374,7 @@ public class ControllerSmokeTests
             .Setup(service => service.ValidateOrderAsync(It.IsAny<CreateOrderRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidateOrderResponse());
 
-        var controller = new OrdersController(orderService.Object);
+        var controller = new OrdersController(orderService.Object, Mock.Of<IOrderFulfillmentService>());
 
         var request = new CreateOrderRequest
         {
@@ -442,7 +442,7 @@ public class ControllerSmokeTests
             .Setup(service => service.RejectRestaurantOrderPaymentAsync(It.IsAny<Guid>(), It.IsAny<RejectRestaurantOrderPaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new RestaurantOrderPaymentResponse());
 
-        var controller = new RestaurantOrdersController(orderService.Object);
+        var controller = new RestaurantOrdersController(orderService.Object, Mock.Of<IOrderFulfillmentService>());
         var orderId = Guid.NewGuid();
 
         var getResult = await controller.GetPayment(orderId, CancellationToken.None);

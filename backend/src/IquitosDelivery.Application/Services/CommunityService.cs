@@ -160,6 +160,7 @@ public class CommunityService : ICommunityService
 
         var requests = await query
             .Include(x => x.CreatedByUser)
+            .Include(x => x.Order)
             .Include(x => x.AssignedCollaborator)
                 .ThenInclude(x => x!.User)
             .OrderByDescending(x => x.CreatedAtUtc)
@@ -181,6 +182,7 @@ public class CommunityService : ICommunityService
         var currentUserId = _currentUserService.UserId!.Value;
         var request = await _dbContext.CommunityRequests
             .Include(x => x.CreatedByUser)
+            .Include(x => x.Order)
             .Include(x => x.AssignedCollaborator)
                 .ThenInclude(x => x!.User)
             .Include(x => x.Applications)
@@ -407,6 +409,23 @@ public class CommunityService : ICommunityService
         communityRequest.Status = CommunityRequestStatus.Accepted;
         communityRequest.AcceptedAtUtc = DateTime.UtcNow;
         communityRequest.MatchScore = selectedApplication.MatchScore;
+        if (communityRequest.OrderId.HasValue)
+        {
+            communityRequest.PickupCode = GenerateConfirmationCode();
+            communityRequest.PickupCodeExpiresAtUtc = DateTime.UtcNow.AddHours(12);
+        }
+
+        if (communityRequest.OrderId.HasValue)
+        {
+            var order = await _dbContext.Orders.FirstAsync(x => x.Id == communityRequest.OrderId.Value, cancellationToken);
+            if (order.AssignedCourierUserId.HasValue || order.DriverId.HasValue)
+                throw new AppException("Este pedido ya fue tomado por otro repartidor.");
+            if (order.DeliveryMode != DeliveryMode.CommunityCollaboratorDelivery)
+                throw new AppException("El pedido ya no está disponible para entrega por colaborador.");
+            order.AssignedCourierUserId = selectedApplication.Collaborator.UserId;
+            order.AssignedCourierType = CourierType.Collaborator;
+            if (order.Status == OrderStatus.ReadyForPickup) order.Status = OrderStatus.Assigned;
+        }
 
         selectedApplication.Collaborator.IsAvailable = false;
         selectedApplication.Collaborator.AvailabilityStatus = CommunityAvailabilityStatus.Busy;
@@ -415,6 +434,7 @@ public class CommunityService : ICommunityService
         await RefreshCollaboratorMetricsAsync(selectedApplication.Collaborator, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
         await NotifyCollaboratorSelectedAsync(communityRequest, selectedApplication.Collaborator.UserId, cancellationToken);
+        await NotifyBusinessAboutSelectedCollaboratorAsync(communityRequest, cancellationToken);
 
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
@@ -432,6 +452,11 @@ public class CommunityService : ICommunityService
         if (request.Status != CommunityRequestStatus.Accepted)
         {
             throw new AppException("Community request cannot be started from the current status.");
+        }
+
+        if (request.OrderId.HasValue)
+        {
+            throw new AppException("El negocio debe validar el código de recojo antes de iniciar este traslado.");
         }
 
         request.Status = CommunityRequestStatus.InProcess;
@@ -471,6 +496,13 @@ public class CommunityService : ICommunityService
 
         collaborator.IsAvailable = true;
         collaborator.AvailabilityStatus = CommunityAvailabilityStatus.Available;
+
+        if (communityRequest.OrderId.HasValue)
+        {
+            var order = await _dbContext.Orders.FirstAsync(x => x.Id == communityRequest.OrderId.Value, cancellationToken);
+            order.Status = OrderStatus.Delivered;
+            order.DeliveredAtUtc = communityRequest.DeliveredAtUtc;
+        }
 
         await RefreshCollaboratorMetricsAsync(collaborator, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -541,9 +573,27 @@ public class CommunityService : ICommunityService
             throw new AppException("Community request can no longer be cancelled.");
         }
 
+        if (communityRequest.OrderId.HasValue && communityRequest.PickupConfirmedAtUtc.HasValue)
+        {
+            throw new AppException("El recojo ya fue confirmado. Registra una incidencia para recibir soporte.");
+        }
+
         communityRequest.Status = CommunityRequestStatus.Cancelled;
         communityRequest.CancelledAtUtc = DateTime.UtcNow;
         communityRequest.CancellationReason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason.Trim();
+        var pendingMovements = await _dbContext.FinancialMovements
+            .Where(x => x.CommunityRequestId == communityRequest.Id && x.Status == FinancialMovementStatus.Pending)
+            .ToListAsync(cancellationToken);
+        foreach (var movement in pendingMovements) movement.Status = FinancialMovementStatus.Cancelled;
+
+        if (communityRequest.OrderId.HasValue)
+        {
+            var order = await _dbContext.Orders.FirstAsync(x => x.Id == communityRequest.OrderId.Value, cancellationToken);
+            order.DeliveryMode = DeliveryMode.PickupOrDirect;
+            order.AssignedCourierUserId = null;
+            order.AssignedCourierType = null;
+            if (order.Status == OrderStatus.Assigned) order.Status = OrderStatus.ReadyForPickup;
+        }
 
         if (communityRequest.AssignedCollaborator is not null)
         {
@@ -787,13 +837,18 @@ public class CommunityService : ICommunityService
 
         return new CommunityRequestListItemResponse
         {
+            OrderId = request.OrderId,
+            SourceType = request.SourceType.ToString(),
             Id = request.Id,
             CreatedByUserId = request.CreatedByUserId,
             CreatedByFullName = $"{request.CreatedByUser.FirstName} {request.CreatedByUser.LastName}".Trim(),
             Type = request.Type.ToString(),
             Title = request.Title,
             OriginLabel = request.OriginLabel,
-            DestinationLabel = request.DestinationLabel,
+            DestinationLabel = request.SourceType == CommunityRequestSourceType.AppuraPeOrder &&
+                (request.CreatedByUserId == currentUserId || request.AssignedCollaborator?.UserId == currentUserId)
+                    ? request.Order?.DeliveryAddress ?? request.DestinationLabel
+                    : request.DestinationLabel,
             CompensationAmount = request.CompensationAmount,
             EstimatedPurchaseAmount = request.EstimatedPurchaseAmount,
             FavorPlatformCommissionAmount = request.FavorPlatformCommissionAmount,
@@ -811,12 +866,15 @@ public class CommunityService : ICommunityService
     private static CommunityRequestDetailResponse MapRequestDetail(CommunityRequest request, Guid currentUserId)
     {
         var isOwner = request.CreatedByUserId == currentUserId;
+        var isAssignedCollaborator = request.AssignedCollaborator?.UserId == currentUserId;
         var visibleApplications = isOwner
             ? request.Applications
             : request.Applications.Where(x => x.Collaborator.UserId == currentUserId);
 
         return new CommunityRequestDetailResponse
         {
+            OrderId = request.OrderId,
+            SourceType = request.SourceType.ToString(),
             Id = request.Id,
             CreatedByUserId = request.CreatedByUserId,
             CreatedByFullName = $"{request.CreatedByUser.FirstName} {request.CreatedByUser.LastName}".Trim(),
@@ -826,7 +884,9 @@ public class CommunityService : ICommunityService
             OriginLabel = request.OriginLabel,
             OriginLatitude = request.OriginLatitude,
             OriginLongitude = request.OriginLongitude,
-            DestinationLabel = request.DestinationLabel,
+            DestinationLabel = request.SourceType == CommunityRequestSourceType.AppuraPeOrder && (isOwner || isAssignedCollaborator)
+                ? request.Order?.DeliveryAddress ?? request.DestinationLabel
+                : request.DestinationLabel,
             DestinationLatitude = request.DestinationLatitude,
             DestinationLongitude = request.DestinationLongitude,
             CompensationAmount = request.CompensationAmount,
@@ -842,6 +902,8 @@ public class CommunityService : ICommunityService
             AssignedRouteId = request.AssignedRouteId,
             MatchScore = request.MatchScore,
             ConfirmationCode = isOwner ? request.ConfirmationCode : null,
+            PickupCode = isAssignedCollaborator ? request.PickupCode : null,
+            PickupConfirmedAtUtc = request.PickupConfirmedAtUtc,
             ProofImageUrl = request.ProofImageUrl,
             CollaboratorRating = request.CollaboratorRating,
             CollaboratorFeedback = request.CollaboratorFeedback,
@@ -1063,6 +1125,35 @@ public class CommunityService : ICommunityService
                 Title = "Fuiste seleccionado",
                 Body = $"Te seleccionaron para el favor \"{request.Title}\".",
                 Data = NotificationPayloadFactory.CommunityRequest(request.Id, $"/community/requests/{request.Id}", "community_collaborator_selected")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyBusinessAboutSelectedCollaboratorAsync(
+        CommunityRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!request.OrderId.HasValue)
+        {
+            return;
+        }
+
+        var target = await _dbContext.Orders
+            .AsNoTracking()
+            .Where(x => x.Id == request.OrderId.Value)
+            .Select(x => new { x.Restaurant.OwnerUserId, x.Restaurant.Name })
+            .FirstAsync(cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            target.OwnerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Colaborador asignado",
+                Body = $"Un colaborador recogerá el pedido en {target.Name}. Valida su código cuando esté listo.",
+                Data = NotificationPayloadFactory.BusinessOrder(
+                    request.OrderId.Value,
+                    $"/business/orders/{request.OrderId.Value}",
+                    "order_collaborator_assigned")
             },
             cancellationToken);
     }

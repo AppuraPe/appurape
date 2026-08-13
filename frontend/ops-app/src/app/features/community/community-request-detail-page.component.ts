@@ -77,13 +77,15 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
           <app-internal-page-section-header
             eyebrow="Detalle del favor"
             [title]="currentRequest.title"
-            [subtitle]="roleSummary()"
             [meta]="requestStatusLabel(currentRequest.status)"
           />
 
           <div class="flex w-full min-w-0 max-w-full flex-wrap gap-2">
             <app-status-badge [status]="currentRequest.status" [label]="requestStatusLabel(currentRequest.status)" />
             <app-status-badge [status]="currentRequest.type" [label]="requestTypeLabel(currentRequest.type)" />
+            @if (currentRequest.sourceType === 'AppuraPeOrder') {
+              <app-status-badge status="verified" label="Compra AppuraPe" />
+            }
             @if (currentRequest.assignedCollaboratorName) {
               <div
                 class="flex w-full min-w-0 max-w-full items-center gap-2 rounded-[14px] bg-emerald-50 px-3 py-2 text-xs text-emerald-700"
@@ -95,7 +97,9 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             }
           </div>
 
-          <app-notice [tone]="roleNoticeTone()" [title]="roleNoticeTitle()" [message]="roleNoticeMessage()" />
+          @if (isOwner() || !canAccept()) {
+            <app-notice [tone]="roleNoticeTone()" [title]="roleNoticeTitle()" [message]="roleNoticeMessage()" />
+          }
 
           @if (successMessage()) {
             <app-notice tone="success" title="Acción completada" [message]="successMessage()" />
@@ -117,6 +121,13 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             />
           }
 
+          @if (currentRequest.pickupCode && isAssignedToMe() && !currentRequest.pickupConfirmedAtUtc) {
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-center">
+              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-amber-700">Código para recoger en el negocio</p>
+              <p class="mt-1 text-2xl font-black tracking-[0.2em] text-slate-950">{{ currentRequest.pickupCode }}</p>
+            </div>
+          }
+
           @if (showOwnerConfirmationHint()) {
             <app-notice
               tone="info"
@@ -134,17 +145,17 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
           }
         </app-surface-card>
 
-        <app-surface-card variant="page" extraClass="grid gap-4 p-5">
+        <app-surface-card variant="page" extraClass="grid gap-3 p-4 min-[390px]:p-5">
           <app-internal-page-section-header
-            eyebrow="Proceso"
-            title="Estado y pasos"
-            subtitle="Sigue el avance del favor y revisa qué acciones están disponibles para tu rol."
+            eyebrow="Resumen"
+            title="Datos del favor"
           />
 
+          @if (isOwner() || isAssignedToMe() || !canAccept()) {
           <app-action-chip-row>
             @for (step of timelineSteps(); track step.key) {
               <span
-                class="inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-semibold"
+                class="inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-semibold"
                 [class]="step.isCurrent
                   ? 'border-red-200 bg-red-50 text-red-600'
                   : step.isDone
@@ -155,49 +166,50 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
               </span>
             }
           </app-action-chip-row>
+          }
 
-          <div class="grid gap-3 sm:grid-cols-2">
-            <div class="rounded-[20px] bg-slate-50 px-4 py-4">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="min-w-0 rounded-2xl bg-slate-50 px-3 py-3">
               <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Publicado por</p>
-              <p class="mt-2 text-sm font-semibold text-slate-950">{{ currentRequest.createdByFullName }}</p>
+              <p class="mt-1 truncate text-sm font-semibold text-slate-950">{{ currentRequest.createdByFullName }}</p>
             </div>
 
-            <div class="rounded-[20px] bg-slate-50 px-4 py-4">
+            <div class="min-w-0 rounded-2xl bg-slate-50 px-3 py-3">
               <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Recompensa</p>
-              <p class="mt-2 text-sm font-semibold text-slate-950">
+              <p class="mt-1 text-sm font-semibold text-slate-950">
                 {{ currentRequest.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}
               </p>
             </div>
 
             @if (currentRequest.deadlineUtc) {
-              <div class="rounded-[20px] bg-slate-50 px-4 py-4">
+              <div class="col-span-2 min-w-0 rounded-2xl bg-slate-50 px-3 py-3">
                 <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Fecha límite</p>
-                <p class="mt-2 text-sm font-semibold text-slate-950">{{ currentRequest.deadlineUtc | date:'medium' }}</p>
+                <p class="mt-1 text-sm font-semibold text-slate-950">{{ currentRequest.deadlineUtc | date:'short' }}</p>
               </div>
             }
 
-            @if (progressTimestampLabel() !== 'Sin registro') {
-              <div class="rounded-[20px] bg-slate-50 px-4 py-4">
+            @if ((isOwner() || isAssignedToMe()) && progressTimestampLabel() !== 'Sin registro') {
+              <div class="col-span-2 min-w-0 rounded-2xl bg-slate-50 px-3 py-3">
                 <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Último avance</p>
-                <p class="mt-2 text-sm font-semibold text-slate-950">{{ progressTimestampLabel() }}</p>
+                <p class="mt-1 text-sm font-semibold text-slate-950">{{ progressTimestampLabel() }}</p>
               </div>
             }
           </div>
 
-          <div class="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="min-w-0 py-1">
             <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Descripción</p>
-            <p class="mt-2 text-sm leading-6 text-slate-600">{{ currentRequest.description }}</p>
+            <p class="mt-1 break-words text-sm leading-5 text-slate-600">{{ currentRequest.description }}</p>
           </div>
 
-          <div class="grid gap-3 sm:grid-cols-2">
-            <div class="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <div class="min-w-0 rounded-2xl bg-slate-50 p-3">
               <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Origen</p>
-              <p class="mt-2 text-sm font-semibold text-slate-950">{{ currentRequest.originLabel }}</p>
+              <p class="mt-1 break-words text-sm font-semibold text-slate-950">{{ currentRequest.originLabel }}</p>
             </div>
 
-            <div class="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="min-w-0 rounded-2xl bg-slate-50 p-3">
               <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Destino</p>
-              <p class="mt-2 text-sm font-semibold text-slate-950">{{ currentRequest.destinationLabel }}</p>
+              <p class="mt-1 break-words text-sm font-semibold text-slate-950">{{ currentRequest.destinationLabel }}</p>
             </div>
           </div>
         </app-surface-card>
@@ -480,8 +492,8 @@ export class CommunityRequestDetailPageComponent {
   readonly canAccept = computed(
     () => !this.isOwner() && ['Published', 'Searching'].includes(this.request()?.status ?? '') && !this.myApplication(),
   );
-  readonly canStart = computed(() => !this.isOwner() && this.request()?.status === 'Accepted');
-  readonly canComplete = computed(() => !this.isOwner() && ['Accepted', 'InProcess'].includes(this.request()?.status ?? ''));
+  readonly canStart = computed(() => !this.isOwner() && !this.request()?.orderId && this.request()?.status === 'Accepted');
+  readonly canComplete = computed(() => !this.isOwner() && this.request()?.status === 'InProcess');
   readonly canConfirm = computed(() => this.isOwner() && this.request()?.status === 'Delivered' && !this.request()?.clientConfirmedAtUtc);
   readonly canCancel = computed(() => {
     const status = this.request()?.status ?? '';
@@ -789,6 +801,10 @@ export class CommunityRequestDetailPageComponent {
 
     if (this.canComplete()) {
       return 'Cuando completes la tarea, usa el código del cliente y adjunta evidencia si la tienes.';
+    }
+
+    if (!this.isOwner() && request.orderId && request.status === 'Accepted') {
+      return 'Muestra el código de recojo en el negocio. El traslado comenzará cuando validen la entrega del paquete.';
     }
 
     return 'Revisa la información del favor y espera el siguiente cambio de estado disponible.';

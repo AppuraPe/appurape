@@ -5,6 +5,7 @@ import { CheckoutDrawerUiService } from './core/services/checkout-drawer-ui.serv
 import { PlatformSettingsApiService } from './core/services/platform-settings-api.service';
 import { ToastContainerComponent } from './shared/toast/toast-container.component';
 import { NotificationPermissionCardComponent } from './shared/components/notification-permission-card.component';
+import { ToastService } from './shared/toast/toast.service';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +22,10 @@ export class App {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformSettingsApi = inject(PlatformSettingsApiService);
+  private readonly toast = inject(ToastService);
+  private lastExitAttemptAt = 0;
+
+  private static readonly EXIT_CONFIRMATION_WINDOW_MS = 2_000;
 
   constructor() {
     void this.platformSettingsApi.ensureLoaded();
@@ -44,6 +49,23 @@ export class App {
           return;
         }
 
+        const currentPath = this.currentPath();
+
+        if (currentPath === '/businesses') {
+          const now = Date.now();
+
+          if (now - this.lastExitAttemptAt <= App.EXIT_CONFIRMATION_WINDOW_MS) {
+            this.lastExitAttemptAt = 0;
+            void CapacitorApp.exitApp();
+            return;
+          }
+
+          this.lastExitAttemptAt = now;
+          this.toast.info('Presiona Atrás otra vez para salir', App.EXIT_CONFIRMATION_WINDOW_MS);
+          return;
+        }
+
+        this.lastExitAttemptAt = 0;
         const fallbackUrl = this.resolveNativeBackFallback();
 
         if (this.navigation.canGoBack()) {
@@ -51,12 +73,9 @@ export class App {
           return;
         }
 
-        if (this.router.url !== '/businesses') {
+        if (currentPath !== '/businesses') {
           void this.router.navigateByUrl(fallbackUrl);
-          return;
         }
-
-        void CapacitorApp.exitApp();
       });
 
       this.destroyRef.onDestroy(() => {
@@ -68,7 +87,7 @@ export class App {
   }
 
   private resolveNativeBackFallback(): string {
-    const path = this.router.url.split('?')[0]?.split('#')[0] || '/businesses';
+    const path = this.currentPath();
     const productMatch = path.match(/^\/businesses\/([^/]+)\/products\/[^/]+$/);
 
     if (productMatch) {
@@ -80,5 +99,9 @@ export class App {
     }
 
     return '/businesses';
+  }
+
+  private currentPath(): string {
+    return this.router.url.split('?')[0]?.split('#')[0] || '/businesses';
   }
 }

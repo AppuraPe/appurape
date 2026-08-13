@@ -2,6 +2,10 @@ namespace IquitosDelivery.Application.DTOs.Community;
 
 public class CommunityRequestListItemResponse
 {
+    public Guid? OrderId { get; set; }
+
+    public string SourceType { get; set; } = string.Empty;
+
     public Guid Id { get; set; }
 
     public Guid CreatedByUserId { get; set; }

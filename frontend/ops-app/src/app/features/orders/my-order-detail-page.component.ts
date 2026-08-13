@@ -14,7 +14,7 @@ import {
   Ticket,
   Truck,
 } from 'lucide-angular';
-import { CustomerOrderDetailResponse } from '../../core/models/orders.models';
+import { CustomerOrderDetailResponse, OrderCollaboratorPickupQuoteResponse, OrderFulfillmentOptionsResponse } from '../../core/models/orders.models';
 import { NotificationService } from '../../core/services/notification.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
 import { getApiErrorMessage, hasText } from '../../core/utils/api-utils';
@@ -118,6 +118,12 @@ export class MyOrderDetailPageComponent {
   readonly errorMessage = signal('');
   readonly ratingMessage = signal('');
   readonly isSubmittingRating = signal(false);
+  readonly fulfillmentOptions = signal<OrderFulfillmentOptionsResponse | null>(null);
+  readonly pickupQuote = signal<OrderCollaboratorPickupQuoteResponse | null>(null);
+  readonly isQuotingPickup = signal(false);
+  readonly isCreatingPickup = signal(false);
+  readonly isRequestingDriver = signal(false);
+  readonly pickupPanelOpen = signal(false);
   readonly trackingMode = signal<'current' | 'history'>('current');
   readonly hasText = hasText;
   readonly receiptIcon = ReceiptText;
@@ -206,6 +212,9 @@ export class MyOrderDetailPageComponent {
     rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
     comment: [''],
   });
+  readonly pickupForm = this.formBuilder.nonNullable.group({
+    compensationAmount: [5, [Validators.required, Validators.min(2)]],
+  });
 
   constructor() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -229,6 +238,7 @@ export class MyOrderDetailPageComponent {
       .subscribe({
         next: (order) => {
           this.order.set(order);
+          this.loadFulfillmentOptions(order.id);
           this.ratingForm.patchValue({
             rating: order.driverRating ?? 5,
             comment: order.driverFeedback ?? '',
@@ -242,6 +252,88 @@ export class MyOrderDetailPageComponent {
           this.isLoading.set(false);
         },
       });
+  }
+
+  openPickupPanel(): void {
+    this.pickupPanelOpen.set(true);
+    this.pickupQuote.set(null);
+  }
+
+  quotePickup(): void {
+    const order = this.order();
+    if (!order || this.pickupForm.invalid) {
+      this.pickupForm.markAllAsTouched();
+      return;
+    }
+    this.isQuotingPickup.set(true);
+    this.ordersApi.quoteCollaboratorPickup(order.id, this.pickupForm.controls.compensationAmount.value)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (quote) => {
+          this.pickupQuote.set(quote);
+          this.isQuotingPickup.set(false);
+        },
+        error: (error) => {
+          this.notificationService.error(getApiErrorMessage(error, 'No pudimos calcular el recojo.'));
+          this.isQuotingPickup.set(false);
+        },
+      });
+  }
+
+  confirmPickup(): void {
+    const order = this.order();
+    const quote = this.pickupQuote();
+    if (!order || !quote) return;
+    this.isCreatingPickup.set(true);
+    this.ordersApi.createCollaboratorPickup(order.id, quote.quoteToken)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.isCreatingPickup.set(false);
+          this.pickupPanelOpen.set(false);
+          this.pickupQuote.set(null);
+          this.notificationService.success('El recojo fue publicado para colaboradores verificados.');
+          this.fulfillmentOptions.set({
+            orderId: order.id,
+            currentDeliveryMode: 'CommunityCollaboratorDelivery',
+            canRequestDriver: false,
+            canRequestCollaborator: false,
+            linkedCommunityRequestId: result.communityRequestId,
+            unavailableReason: 'Este pedido ya tiene un recojo por colaborador activo.',
+          });
+          this.order.update((current) => current ? { ...current, deliveryMode: 'CommunityCollaboratorDelivery' } : current);
+        },
+        error: (error) => {
+          this.notificationService.error(getApiErrorMessage(error, 'No pudimos publicar el recojo.'));
+          this.isCreatingPickup.set(false);
+        },
+      });
+  }
+
+  requestDriverDelivery(): void {
+    const order = this.order();
+    if (!order) return;
+    this.isRequestingDriver.set(true);
+    this.ordersApi.requestDriverDelivery(order.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.isRequestingDriver.set(false);
+          this.order.update((current) => current ? { ...current, deliveryMode: result.deliveryMode, deliveryFee: result.deliveryFee, total: result.total } : current);
+          this.fulfillmentOptions.update((current) => current ? { ...current, currentDeliveryMode: result.deliveryMode, canRequestDriver: false, canRequestCollaborator: false, unavailableReason: 'El pedido ya solicita delivery con driver.' } : current);
+          this.notificationService.success('Delivery solicitado. Aparecerá para drivers cuando el negocio termine de preparar el pedido.');
+        },
+        error: (error) => {
+          this.isRequestingDriver.set(false);
+          this.notificationService.error(getApiErrorMessage(error, 'No pudimos solicitar el delivery.'));
+        },
+      });
+  }
+
+  private loadFulfillmentOptions(orderId: string): void {
+    this.ordersApi.getFulfillmentOptions(orderId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (options) => this.fulfillmentOptions.set(options), error: () => this.fulfillmentOptions.set(null) });
   }
 
   toggleTrackingMode(): void {

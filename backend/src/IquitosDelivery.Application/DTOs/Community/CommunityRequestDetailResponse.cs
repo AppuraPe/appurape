@@ -2,6 +2,10 @@ namespace IquitosDelivery.Application.DTOs.Community;
 
 public class CommunityRequestDetailResponse
 {
+    public Guid? OrderId { get; set; }
+
+    public string SourceType { get; set; } = string.Empty;
+
     public Guid Id { get; set; }
 
     public Guid CreatedByUserId { get; set; }
@@ -51,6 +55,10 @@ public class CommunityRequestDetailResponse
     public decimal MatchScore { get; set; }
 
     public string? ConfirmationCode { get; set; }
+
+    public string? PickupCode { get; set; }
+
+    public DateTime? PickupConfirmedAtUtc { get; set; }
 
     public string? ProofImageUrl { get; set; }
 
