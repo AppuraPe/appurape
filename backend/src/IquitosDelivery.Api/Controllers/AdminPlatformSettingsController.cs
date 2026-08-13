@@ -80,7 +80,9 @@ public class AdminPlatformSettingsController : ControllerBase
             PrimaryColor = request.PrimaryColor,
             SecondaryColor = request.SecondaryColor,
             SupportEmail = request.SupportEmail,
-            SupportPhone = request.SupportPhone
+            SupportPhone = request.SupportPhone,
+            LegalEntityName = request.LegalEntityName,
+            PrivacyEmail = request.PrivacyEmail
         }, cancellationToken);
 
         await DeleteIfReplacedAsync(currentSettings.LogoUrl, response.LogoUrl, request.LogoFile, cancellationToken);

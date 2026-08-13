@@ -41,6 +41,8 @@ public class PlatformSettingsService : IPlatformSettingsService, IAdminPlatformS
         settings.SecondaryColor = NormalizeOptional(request.SecondaryColor);
         settings.SupportEmail = NormalizeOptional(request.SupportEmail);
         settings.SupportPhone = NormalizeOptional(request.SupportPhone);
+        settings.LegalEntityName = NormalizeOptional(request.LegalEntityName);
+        settings.PrivacyEmail = NormalizeOptional(request.PrivacyEmail);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return Map(settings);
@@ -85,6 +87,8 @@ public class PlatformSettingsService : IPlatformSettingsService, IAdminPlatformS
             SecondaryColor = settings.SecondaryColor,
             SupportEmail = settings.SupportEmail,
             SupportPhone = settings.SupportPhone,
+            LegalEntityName = settings.LegalEntityName,
+            PrivacyEmail = settings.PrivacyEmail,
             CreatedAtUtc = settings.CreatedAtUtc,
             UpdatedAtUtc = settings.UpdatedAtUtc
         };

@@ -21,6 +21,8 @@ public interface IFileStorageService
         CancellationToken cancellationToken = default);
 
     Task<StoredFileContent> DownloadPrivateImageAsync(string objectPath, CancellationToken cancellationToken = default);
+
+    Task DeletePrivateAsync(string objectPath, CancellationToken cancellationToken = default);
 }
 
 public sealed record StoredFileContent(byte[] Content, string ContentType);

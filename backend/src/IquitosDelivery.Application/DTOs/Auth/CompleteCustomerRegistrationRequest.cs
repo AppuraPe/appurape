@@ -7,4 +7,8 @@ public class CompleteCustomerRegistrationRequest
     public string Code { get; set; } = string.Empty;
 
     public string Password { get; set; } = string.Empty;
+
+    public IReadOnlyList<Guid> AcceptedDocumentIds { get; set; } = [];
+    public string? Platform { get; set; }
+    public string? AppVersion { get; set; }
 }

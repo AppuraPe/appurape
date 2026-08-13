@@ -10,12 +10,13 @@ import { AppButtonComponent } from '../../shared/components/app-button.component
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { LegalAcceptanceChecklistComponent } from '../../shared/components/legal-acceptance-checklist.component';
 import { clearRegistrationState, getRegistrationState } from './registration-flow.storage';
 
 @Component({
   selector: 'app-restaurant-registration-complete-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, LucideAngularModule, AppBackButtonComponent, PageHeaderComponent, AppNoticeComponent, AppButtonComponent, AppSurfaceCardComponent],
+  imports: [ReactiveFormsModule, RouterLink, LucideAngularModule, AppBackButtonComponent, PageHeaderComponent, AppNoticeComponent, AppButtonComponent, AppSurfaceCardComponent, LegalAcceptanceChecklistComponent],
   template: `
     <section class="px-4 py-4 sm:px-6 sm:py-6">
       <div class="mx-auto grid w-full max-w-[860px] gap-3">
@@ -81,8 +82,10 @@ import { clearRegistrationState, getRegistrationState } from './registration-flo
               <input id="confirmPassword" [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword" />
             </div>
 
+            <app-legal-acceptance-checklist role="Restaurant" (selectionChange)="acceptedLegalDocumentIds.set($event)" (readyChange)="legalReady.set($event)" />
+
             <div class="grid gap-3 sm:grid-cols-2">
-              <app-button type="submit" [disabled]="isSubmitting()" size="lg" block>
+              <app-button type="submit" [disabled]="isSubmitting() || !legalReady()" size="lg" block>
                 {{ isSubmitting() ? 'Creando cuenta...' : 'Completar registro' }}
               </app-button>
               <app-button variant="ghost" routerLink="/register/restaurant/verify" block>Volver</app-button>
@@ -103,6 +106,8 @@ export class RestaurantRegistrationCompletePageComponent {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly showPassword = signal(false);
+  readonly acceptedLegalDocumentIds = signal<string[]>([]);
+  readonly legalReady = signal(false);
   readonly eyeIcon = Eye;
   readonly eyeOffIcon = EyeOff;
 
@@ -152,6 +157,8 @@ export class RestaurantRegistrationCompletePageComponent {
         email: raw.email.trim(),
         code: raw.code.trim(),
         password: raw.password,
+        acceptedDocumentIds: this.acceptedLegalDocumentIds(),
+        platform: 'web',
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

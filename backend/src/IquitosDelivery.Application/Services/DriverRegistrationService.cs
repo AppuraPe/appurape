@@ -15,6 +15,7 @@ public class DriverRegistrationService
     private readonly IValidator<VerifyDriverRegistrationCodeRequest> _verifyValidator;
     private readonly IValidator<CompleteDriverRegistrationRequest> _completeValidator;
     private readonly IValidator<ResendDriverRegistrationCodeRequest> _resendValidator;
+    private readonly ILegalService _legalService;
 
     public DriverRegistrationService(
         IAppDbContext dbContext,
@@ -24,13 +25,15 @@ public class DriverRegistrationService
         IValidator<StartDriverRegistrationRequest> startValidator,
         IValidator<VerifyDriverRegistrationCodeRequest> verifyValidator,
         IValidator<CompleteDriverRegistrationRequest> completeValidator,
-        IValidator<ResendDriverRegistrationCodeRequest> resendValidator)
+        IValidator<ResendDriverRegistrationCodeRequest> resendValidator,
+        ILegalService legalService)
         : base(dbContext, emailSender, jwtTokenService, passwordHasher)
     {
         _startValidator = startValidator;
         _verifyValidator = verifyValidator;
         _completeValidator = completeValidator;
         _resendValidator = resendValidator;
+        _legalService = legalService;
     }
 
     public async Task<VerificationCodeResponse> StartDriverRegistrationAsync(StartDriverRegistrationRequest request, CancellationToken cancellationToken = default)
@@ -122,6 +125,7 @@ public class DriverRegistrationService
 
         DbContext.Add(user);
         DbContext.Add(driverProfile);
+        await _legalService.EnsureDocumentsAcceptedAsync(user.Id, "Driver", request.AcceptedDocumentIds.ToHashSet(), request.Platform, request.AppVersion, null, null, cancellationToken);
         await DbContext.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse

@@ -69,6 +69,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               <span class="text-sm font-bold text-loreto-carbon">Teléfono de soporte</span>
               <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20" type="text" formControlName="supportPhone" />
             </label>
+            <label class="grid gap-2"><span class="text-sm font-bold text-loreto-carbon">Razón social</span><input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm" type="text" formControlName="legalEntityName" /></label>
+            <label class="grid gap-2"><span class="text-sm font-bold text-loreto-carbon">Email de privacidad</span><input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm" type="email" formControlName="privacyEmail" /></label>
           </div>
 
           <div class="grid gap-4 lg:grid-cols-3">
@@ -145,6 +147,8 @@ export class AdminBrandingPageComponent {
     secondaryColor: [''],
     supportEmail: [''],
     supportPhone: [''],
+    legalEntityName: [''],
+    privacyEmail: ['', Validators.email],
   });
 
   constructor() {
@@ -165,6 +169,8 @@ export class AdminBrandingPageComponent {
             secondaryColor: settings.secondaryColor ?? '',
             supportEmail: settings.supportEmail ?? '',
             supportPhone: settings.supportPhone ?? '',
+            legalEntityName: settings.legalEntityName ?? '',
+            privacyEmail: settings.privacyEmail ?? '',
           });
           this.logoPreviewUrl.set(settings.logoUrl);
           this.appIconPreviewUrl.set(settings.appIconUrl);
@@ -214,6 +220,8 @@ export class AdminBrandingPageComponent {
     formData.append('SecondaryColor', this.form.controls.secondaryColor.value.trim());
     formData.append('SupportEmail', this.form.controls.supportEmail.value.trim());
     formData.append('SupportPhone', this.form.controls.supportPhone.value.trim());
+    formData.append('LegalEntityName', this.form.controls.legalEntityName.value.trim());
+    formData.append('PrivacyEmail', this.form.controls.privacyEmail.value.trim());
     formData.append('LogoUrl', currentSettings?.logoUrl ?? '');
     formData.append('AppIconUrl', currentSettings?.appIconUrl ?? '');
     formData.append('SplashImageUrl', currentSettings?.splashImageUrl ?? '');

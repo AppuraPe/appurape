@@ -4,6 +4,8 @@ using IquitosDelivery.Domain.Entities;
 using IquitosDelivery.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace IquitosDelivery.Infrastructure.Persistence;
 
@@ -38,7 +40,68 @@ public static class AppDbContextSeeder
         await SeedZonesAsync(dbContext, cancellationToken);
         await SeedBusinessTypesAsync(dbContext, cancellationToken);
         await SeedCommissionRulesAsync(dbContext, cancellationToken);
+        await SeedLegalDraftsAsync(dbContext, cancellationToken);
         await SeedAdminAsync(dbContext, passwordHasher, configuration, cancellationToken);
+    }
+
+    private static async Task SeedLegalDraftsAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var settings = await dbContext.PlatformSettings.FirstOrDefaultAsync(x => x.Key == "default", cancellationToken);
+        if (settings is null)
+        {
+            settings = new PlatformSettings { Id = Guid.NewGuid(), Key = "default", AppName = "AppuraPe", Tagline = "Entrega local para negocios y comunidad", PrimaryColor = "#E51B23", SecondaryColor = "#F59E0B" };
+            dbContext.PlatformSettings.Add(settings);
+        }
+        if (await dbContext.LegalDocuments.AnyAsync(cancellationToken)) return;
+        var drafts = new[]
+        {
+            ("PrivacyPolicy", "General", "privacy", "Política de privacidad", @"# Política de privacidad de AppuraPe
+
+AppuraPe trata datos de identificación, contacto, direcciones, pedidos, pagos, datos del dispositivo y tokens de notificación para prestar, proteger y mejorar el servicio. Cuando una persona solicita ser colaboradora también tratamos su foto de perfil, DNI y selfie en vivo exclusivamente para verificar identidad y prevenir fraude.
+
+Los datos pueden ser procesados por proveedores de infraestructura y comunicaciones como Render, Supabase, Firebase y Brevo bajo instrucciones de AppuraPe. No vendemos datos personales. Aplicamos controles de acceso, cifrado en tránsito y almacenamiento privado para evidencias de identidad.
+
+La información se conserva mientras la cuenta esté activa y durante los plazos necesarios por seguridad, atención de reclamos y obligaciones legales. La persona puede solicitar acceso, rectificación, oposición o eliminación escribiendo al correo de privacidad configurado en AppuraPe. La eliminación de cuenta tiene un plazo reversible de siete días; después se eliminan o anonimizan los datos, conservando únicamente registros transaccionales exigibles sin identificación directa.
+
+Este documento es un borrador operativo y debe ser revisado legalmente antes de publicarse."),
+            ("TermsOfService", "General", "terms", "Términos y condiciones", @"# Términos y condiciones de AppuraPe
+
+AppuraPe conecta clientes, negocios, repartidores y colaboradores. Cada persona debe proporcionar información veraz, proteger su cuenta y utilizar la plataforma de manera lícita. Las operaciones, cancelaciones, pagos y responsabilidades se rigen por las reglas visibles antes de confirmar cada servicio.
+
+AppuraPe puede suspender cuentas ante fraude, suplantación, abuso o incumplimiento. Las notificaciones son opcionales y sirven para informar cambios operativos. Estos términos no sustituyen las condiciones específicas de cada rol.
+
+Este documento es un borrador operativo y debe ser revisado legalmente antes de publicarse."),
+            ("CustomerTerms", "Customer", "customer-terms", "Condiciones para clientes", @"# Condiciones para clientes
+
+El cliente debe revisar negocio, productos, dirección, total y modalidad de entrega antes de confirmar. Debe mantener datos de contacto correctos y atender la recepción del pedido o favor. Si decide colaborar en Favores deberá completar una verificación de identidad adicional y esperar aprobación administrativa.
+
+Este documento es un borrador operativo y debe ser revisado legalmente antes de publicarse."),
+            ("BusinessTerms", "Restaurant", "business-terms", "Condiciones para negocios", @"# Condiciones para negocios
+
+El negocio es responsable de la veracidad de su catálogo, precios, disponibilidad, preparación, inocuidad y atención de pedidos. Debe mantener actualizados sus datos y cumplir las comisiones y liquidaciones informadas en su panel.
+
+Este documento es un borrador operativo y debe ser revisado legalmente antes de publicarse."),
+            ("DriverTerms", "Driver", "driver-terms", "Condiciones para repartidores", @"# Condiciones para repartidores
+
+El repartidor debe mantener vigentes sus documentos, conducir de forma segura, proteger los pedidos y completar únicamente entregas realmente realizadas. La disponibilidad es voluntaria y las ganancias se muestran antes de aceptar cuando estén disponibles.
+
+Este documento es un borrador operativo y debe ser revisado legalmente antes de publicarse."),
+            ("CollaboratorIdentityConsent", "Collaborator", "collaborator-identity-consent", "Consentimiento para verificar identidad", @"# Consentimiento para verificación de colaborador
+
+Autorizo a AppuraPe a recibir y comparar mi foto de perfil, fotografía de DNI y selfie tomada en vivo para verificar mi identidad, prevenir suplantaciones y evaluar mi solicitud como colaborador. Comprendo que DNI y selfie se almacenan de forma privada, solo pueden ser revisados por personal administrador autorizado y se eliminan o anonimizan conforme a la política de conservación.
+
+Este consentimiento es independiente y debe aceptarse antes de enviar las evidencias.")
+        };
+        foreach (var (type, audience, slug, title, content) in drafts)
+        {
+            dbContext.LegalDocuments.Add(new LegalDocument
+            {
+                Id = Guid.NewGuid(), Type = type, Audience = audience, Slug = slug, Version = "1.0-draft",
+                Title = title, ContentMarkdown = content, ContentHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content))),
+                Status = LegalDocumentStatus.Draft
+            });
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public static async Task SeedDevelopmentQaUsersAsync(

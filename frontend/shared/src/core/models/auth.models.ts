@@ -102,6 +102,9 @@ export interface CompleteCustomerRegistrationRequest {
   email: string;
   code: string;
   password: string;
+  acceptedDocumentIds: string[];
+  platform?: string;
+  appVersion?: string | null;
 }
 
 export interface VerifyRegistrationCodeRequest {
@@ -117,6 +120,9 @@ export interface CompleteRegistrationRequest {
   email: string;
   code: string;
   password: string;
+  acceptedDocumentIds: string[];
+  platform?: string;
+  appVersion?: string | null;
 }
 
 export interface StartRestaurantRegistrationRequest {
@@ -165,10 +171,16 @@ export interface CompleteRestaurantRegistrationRequest {
   email: string;
   code: string;
   password: string;
+  acceptedDocumentIds: string[];
+  platform?: string;
+  appVersion?: string | null;
 }
 
 export interface CompleteDriverRegistrationRequest {
   email: string;
   code: string;
   password: string;
+  acceptedDocumentIds: string[];
+  platform?: string;
+  appVersion?: string | null;
 }

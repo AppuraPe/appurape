@@ -66,6 +66,12 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
 
+    public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
+
+    public DbSet<UserLegalAcceptance> UserLegalAcceptances => Set<UserLegalAcceptance>();
+
+    public DbSet<AccountDeletionRequest> AccountDeletionRequests => Set<AccountDeletionRequest>();
+
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     public DbSet<OrderIncident> OrderIncidents => Set<OrderIncident>();
@@ -121,6 +127,12 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<Payment> IAppDbContext.Payments => Payments;
 
     IQueryable<UserDeviceToken> IAppDbContext.UserDeviceTokens => UserDeviceTokens;
+
+    IQueryable<LegalDocument> IAppDbContext.LegalDocuments => LegalDocuments;
+
+    IQueryable<UserLegalAcceptance> IAppDbContext.UserLegalAcceptances => UserLegalAcceptances;
+
+    IQueryable<AccountDeletionRequest> IAppDbContext.AccountDeletionRequests => AccountDeletionRequests;
 
     IQueryable<OrderItem> IAppDbContext.OrderItems => OrderItems;
 

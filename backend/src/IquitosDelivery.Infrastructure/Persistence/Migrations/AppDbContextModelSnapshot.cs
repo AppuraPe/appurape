@@ -22,6 +22,56 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.AccountDeletionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CodeExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PreviousUserStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ScheduledForUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VerificationCodeHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "ScheduledForUtc");
+
+                    b.HasIndex("UserId", "Status");
+
+                    b.ToTable("account_deletion_requests", (string)null);
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.BusinessType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -788,6 +838,71 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.ToTable("financial_movements", (string)null);
                 });
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.LegalDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("ContentHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ContentMarkdown")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Audience", "Status");
+
+                    b.HasIndex("Slug", "Version")
+                        .IsUnique();
+
+                    b.ToTable("legal_documents", (string)null);
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.MenuCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1498,6 +1613,10 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("LegalEntityName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("LogoUrl")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -1505,6 +1624,10 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Property<string>("PrimaryColor")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PrivacyEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("SecondaryColor")
                         .HasMaxLength(20)
@@ -1850,6 +1973,68 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.ToTable("user_device_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.UserLegalAcceptance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AppVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DocumentHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DocumentVersion")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("LegalDocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Platform")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegalDocumentId");
+
+                    b.HasIndex("UserId", "LegalDocumentId")
+                        .IsUnique();
+
+                    b.ToTable("user_legal_acceptances", (string)null);
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.Zone", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1871,6 +2056,17 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("zones", (string)null);
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.AccountDeletionRequest", b =>
+                {
+                    b.HasOne("IquitosDelivery.Domain.Entities.User", "User")
+                        .WithMany("AccountDeletionRequests")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.CollaboratorProfile", b =>
@@ -2270,6 +2466,25 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.UserLegalAcceptance", b =>
+                {
+                    b.HasOne("IquitosDelivery.Domain.Entities.LegalDocument", "LegalDocument")
+                        .WithMany("Acceptances")
+                        .HasForeignKey("LegalDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IquitosDelivery.Domain.Entities.User", "User")
+                        .WithMany("LegalAcceptances")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LegalDocument");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.BusinessType", b =>
                 {
                     b.Navigation("PendingRestaurantRegistrations");
@@ -2301,6 +2516,11 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.DriverProfile", b =>
                 {
                     b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.LegalDocument", b =>
+                {
+                    b.Navigation("Acceptances");
                 });
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.MenuCategory", b =>
@@ -2338,6 +2558,8 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.User", b =>
                 {
+                    b.Navigation("AccountDeletionRequests");
+
                     b.Navigation("CollaboratorProfile");
 
                     b.Navigation("CommunityCollaborator");
@@ -2347,6 +2569,8 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Navigation("DeviceTokens");
 
                     b.Navigation("DriverProfile");
+
+                    b.Navigation("LegalAcceptances");
 
                     b.Navigation("OwnedRestaurants");
                 });

@@ -19,4 +19,8 @@ public class UpdatePlatformSettingsRequest
     public string? SupportEmail { get; set; }
 
     public string? SupportPhone { get; set; }
+
+    public string? LegalEntityName { get; set; }
+
+    public string? PrivacyEmail { get; set; }
 }

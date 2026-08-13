@@ -56,6 +56,12 @@ public interface IAppDbContext
 
     IQueryable<UserDeviceToken> UserDeviceTokens { get; }
 
+    IQueryable<LegalDocument> LegalDocuments { get; }
+
+    IQueryable<UserLegalAcceptance> UserLegalAcceptances { get; }
+
+    IQueryable<AccountDeletionRequest> AccountDeletionRequests { get; }
+
     IQueryable<OrderItem> OrderItems { get; }
 
     IQueryable<Zone> Zones { get; }

@@ -21,6 +21,8 @@ public class PlatformSettingsConfiguration : IEntityTypeConfiguration<PlatformSe
         builder.Property(x => x.PrimaryColor).HasMaxLength(20);
         builder.Property(x => x.SecondaryColor).HasMaxLength(20);
         builder.Property(x => x.SupportEmail).HasMaxLength(200);
+        builder.Property(x => x.LegalEntityName).HasMaxLength(200);
+        builder.Property(x => x.PrivacyEmail).HasMaxLength(200);
         builder.Property(x => x.SupportPhone).HasMaxLength(50);
 
         builder.HasIndex(x => x.Key).IsUnique();

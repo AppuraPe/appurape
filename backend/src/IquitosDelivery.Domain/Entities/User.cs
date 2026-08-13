@@ -32,4 +32,8 @@ public class User : BaseEntity
     public ICollection<Restaurant> OwnedRestaurants { get; set; } = new List<Restaurant>();
 
     public ICollection<UserDeviceToken> DeviceTokens { get; set; } = new List<UserDeviceToken>();
+
+    public ICollection<UserLegalAcceptance> LegalAcceptances { get; set; } = new List<UserLegalAcceptance>();
+
+    public ICollection<AccountDeletionRequest> AccountDeletionRequests { get; set; } = new List<AccountDeletionRequest>();
 }

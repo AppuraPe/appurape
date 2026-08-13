@@ -153,7 +153,8 @@ public class AuthServiceTests
             Mock.Of<IValidator<RegisterDriverRequest>>(),
             Mock.Of<IValidator<RegisterRestaurantRequest>>(),
             new ResendPasswordResetCodeRequestValidator(),
-            new ResetPasswordRequestValidator());
+            new ResetPasswordRequestValidator(),
+            Mock.Of<ILegalService>());
     }
 
     private static async Task<Guid> SeedUserWithProfileAsync(

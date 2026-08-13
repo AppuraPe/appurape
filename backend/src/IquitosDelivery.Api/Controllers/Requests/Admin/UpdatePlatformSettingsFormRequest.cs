@@ -22,6 +22,10 @@ public class UpdatePlatformSettingsFormRequest
 
     public string? SupportPhone { get; set; }
 
+    public string? LegalEntityName { get; set; }
+
+    public string? PrivacyEmail { get; set; }
+
     public IFormFile? LogoFile { get; set; }
 
     public IFormFile? AppIconFile { get; set; }

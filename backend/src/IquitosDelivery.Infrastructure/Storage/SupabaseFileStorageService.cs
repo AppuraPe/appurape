@@ -67,6 +67,16 @@ public class SupabaseFileStorageService : IFileStorageService
             response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
     }
 
+    public async Task DeletePrivateAsync(string objectPath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(objectPath)) return;
+        ValidateSettings();
+        using var request = CreateAuthorizedRequest(HttpMethod.Delete, $"/storage/v1/object/{_storageSettings.Supabase.PrivateBucket.Trim()}/{NormalizeObjectPath(objectPath)}");
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.NotFound)
+            throw new AppException("No se pudo eliminar la evidencia privada.");
+    }
+
     private async Task<string> UploadToBucketAsync(Stream content, string fileName, string contentType, long contentLength, string objectPath, string bucketName, CancellationToken cancellationToken)
     {
         ValidateSettings();

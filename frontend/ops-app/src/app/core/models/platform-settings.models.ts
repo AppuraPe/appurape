@@ -9,6 +9,8 @@ export interface PlatformSettingsResponse {
   secondaryColor: string | null;
   supportEmail: string | null;
   supportPhone: string | null;
+  legalEntityName: string | null;
+  privacyEmail: string | null;
   createdAtUtc: string;
   updatedAtUtc: string | null;
 }

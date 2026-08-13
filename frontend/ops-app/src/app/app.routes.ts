@@ -36,6 +36,30 @@ const businessOpsChildren: Routes = [
 
 export const routes: Routes = [
   {
+    path: 'privacy', data: { slug: 'privacy' },
+    loadComponent: () => import('./features/legal/legal-document-page.component').then((m) => m.LegalDocumentPageComponent),
+  },
+  {
+    path: 'terms', data: { slug: 'terms' },
+    loadComponent: () => import('./features/legal/legal-document-page.component').then((m) => m.LegalDocumentPageComponent),
+  },
+  {
+    path: 'legal/document/:slug',
+    loadComponent: () => import('./features/legal/legal-document-page.component').then((m) => m.LegalDocumentPageComponent),
+  },
+  {
+    path: 'legal/consent', canActivate: [authGuard],
+    loadComponent: () => import('./features/legal/legal-consent-page.component').then((m) => m.LegalConsentPageComponent),
+  },
+  {
+    path: 'account-deletion',
+    loadComponent: () => import('./features/legal/account-deletion-page.component').then((m) => m.AccountDeletionPageComponent),
+  },
+  {
+    path: 'account/deletion-pending', canActivate: [authGuard],
+    loadComponent: () => import('./features/legal/account-deletion-pending-page.component').then((m) => m.AccountDeletionPendingPageComponent),
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login-page.component').then((m) => m.LoginPageComponent),
   },
@@ -173,6 +197,10 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
+        path: 'account-settings',
+        loadComponent: () => import('./features/legal/account-privacy-page.component').then((m) => m.AccountPrivacyPageComponent),
+      },
+      {
         path: 'restaurant',
         canActivate: [roleGuard],
         data: { roles: ['Restaurant'] },
@@ -257,6 +285,10 @@ export const routes: Routes = [
           {
             path: 'collaborator-verifications',
             loadComponent: () => import('./features/admin/admin-collaborator-verifications-page.component').then((m) => m.AdminCollaboratorVerificationsPageComponent),
+          },
+          {
+            path: 'legal',
+            loadComponent: () => import('./features/admin/admin-legal-page.component').then((m) => m.AdminLegalPageComponent),
           },
           {
             path: 'businesses/pending',

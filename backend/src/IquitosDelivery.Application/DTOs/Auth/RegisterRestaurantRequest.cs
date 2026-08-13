@@ -29,4 +29,7 @@ public class RegisterRestaurantRequest
     public TimeSpan CloseTime { get; set; }
 
     public string? LogoUrl { get; set; }
+    public IReadOnlyList<Guid> AcceptedDocumentIds { get; set; } = [];
+    public string? Platform { get; set; }
+    public string? AppVersion { get; set; }
 }

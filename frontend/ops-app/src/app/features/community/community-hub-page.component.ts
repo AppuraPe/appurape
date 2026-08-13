@@ -12,6 +12,8 @@ import {
   CommunityRouteResponse,
 } from '../../core/models/community.models';
 import { NotificationService } from '../../core/services/notification.service';
+import { LegalApiService } from '../../core/services/legal-api.service';
+import { LegalDocument } from '../../core/models/legal.models';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
@@ -109,6 +111,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                 <label class="grid gap-2"><span class="text-sm font-semibold text-slate-700">Foto de perfil</span><input class="min-h-11 rounded-2xl border border-slate-200 p-2 text-sm" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectVerificationFile($event, 'profile')" /></label>
                 <label class="grid gap-2"><span class="text-sm font-semibold text-slate-700">Foto del DNI</span><input class="min-h-11 rounded-2xl border border-slate-200 p-2 text-sm" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectVerificationFile($event, 'dni')" /></label>
                 <div class="grid gap-2"><span class="text-sm font-semibold text-slate-700">Selfie en vivo</span><app-button type="button" variant="secondary" block (click)="captureLiveSelfie()">{{ verificationSelfieReady() ? 'Volver a tomar selfie' : 'Abrir cámara frontal' }}</app-button><small class="text-xs leading-5 text-slate-500">Android solicitará permiso de cámara. La galería no se utiliza para esta evidencia.</small></div>
+                @if (collaboratorConsentDocument(); as consent) { <label class="flex items-start gap-3 rounded-2xl border border-slate-200 p-3"><input class="mt-1 h-5 w-5 shrink-0" type="checkbox" [checked]="collaboratorConsentAccepted()" (change)="collaboratorConsentAccepted.set(!collaboratorConsentAccepted())" /><span class="min-w-0 text-xs leading-5 text-slate-600">Acepto el tratamiento privado de mi foto, DNI y selfie para verificar mi identidad. <a class="font-bold text-primary-700" [routerLink]="'/legal/document/' + consent.slug" target="_blank">Leer consentimiento</a>.</span></label> }
                 <app-button type="submit" block [disabled]="isSubmittingVerification()">{{ isSubmittingVerification() ? 'Enviando validación...' : 'Enviar para validación' }}</app-button>
               </form>
             }
@@ -514,6 +517,7 @@ export class CommunityHubPageComponent {
   private readonly communityApi = inject(CommunityApiService);
   private readonly authService = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
+  private readonly legalApi = inject(LegalApiService);
 
   readonly collaborator = signal<CommunityCollaboratorResponse | null>(null);
   readonly routes = signal<CommunityRouteResponse[]>([]);
@@ -525,6 +529,8 @@ export class CommunityHubPageComponent {
   readonly isSubmittingVerification = signal(false);
   readonly verificationStatus = signal('NotVerified');
   readonly verificationSelfieReady = signal(false);
+  readonly collaboratorConsentDocument = signal<LegalDocument | null>(null);
+  readonly collaboratorConsentAccepted = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly hubWarnings = signal<HubWarning[]>([]);
@@ -728,6 +734,7 @@ export class CommunityHubPageComponent {
           }
           this.isLoading.set(false);
           if (this.isCustomerView() && this.isCollaboratorView()) this.loadVerification();
+          if (this.isCustomerView() && this.isCollaboratorView()) this.loadCollaboratorConsent();
         },
         error: (error) => {
           this.errorMessage.set(getErrorMessage(error, 'No pudimos cargar Favores. Intenta nuevamente.'));
@@ -741,6 +748,10 @@ export class CommunityHubPageComponent {
       next: (verification) => this.verificationStatus.set(verification.status),
       error: () => this.verificationStatus.set('NotVerified'),
     });
+  }
+
+  loadCollaboratorConsent(): void {
+    this.legalApi.getActive('Collaborator').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: documents => this.collaboratorConsentDocument.set(documents.find(x => x.audience === 'Collaborator') ?? null) });
   }
 
   verificationStatusLabel(): string {
@@ -788,12 +799,18 @@ export class CommunityHubPageComponent {
       this.notificationService.warning('Selecciona la foto de perfil, el DNI y toma la selfie con la cámara.');
       return;
     }
+    const consent = this.collaboratorConsentDocument();
+    if (consent && !this.collaboratorConsentAccepted()) {
+      this.notificationService.warning('Debes aceptar el consentimiento para verificar tu identidad.');
+      return;
+    }
     const data = new FormData();
     data.set('ProfilePhoto', this.verificationProfileFile);
     data.set('IdentityDocument', this.verificationDniFile);
     data.set('LiveSelfie', this.verificationSelfieFile);
     this.isSubmittingVerification.set(true);
-    this.communityApi.submitVerification(data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    const submission = consent ? this.legalApi.accept([consent.id], 'native').pipe(switchMap(() => this.communityApi.submitVerification(data))) : this.communityApi.submitVerification(data);
+    submission.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (verification) => { this.verificationStatus.set(verification.status); this.isSubmittingVerification.set(false); this.notificationService.success('Validación enviada a Administración.'); },
       error: (error) => { this.isSubmittingVerification.set(false); this.notificationService.error(getErrorMessage(error, 'No se pudo enviar la validación.')); },
     });

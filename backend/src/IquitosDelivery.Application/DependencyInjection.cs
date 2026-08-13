@@ -36,6 +36,8 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.IBusinessTypeService, Services.BusinessTypeService>();
         services.AddScoped<Interfaces.IDeviceTokenService, Services.DeviceTokenService>();
         services.AddScoped<Interfaces.INotificationService, Services.NotificationService>();
+        services.AddScoped<Interfaces.ILegalService, Services.LegalService>();
+        services.AddScoped<Interfaces.IAccountDeletionService, Services.AccountDeletionService>();
 
         return services;
     }

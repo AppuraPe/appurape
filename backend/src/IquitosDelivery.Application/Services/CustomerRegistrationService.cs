@@ -15,6 +15,7 @@ public class CustomerRegistrationService
     private readonly IValidator<VerifyCustomerRegistrationCodeRequest> _verifyValidator;
     private readonly IValidator<CompleteCustomerRegistrationRequest> _completeValidator;
     private readonly IValidator<ResendCustomerRegistrationCodeRequest> _resendValidator;
+    private readonly ILegalService _legalService;
 
     public CustomerRegistrationService(
         IAppDbContext dbContext,
@@ -24,13 +25,15 @@ public class CustomerRegistrationService
         IValidator<StartCustomerRegistrationRequest> startValidator,
         IValidator<VerifyCustomerRegistrationCodeRequest> verifyValidator,
         IValidator<CompleteCustomerRegistrationRequest> completeValidator,
-        IValidator<ResendCustomerRegistrationCodeRequest> resendValidator)
+        IValidator<ResendCustomerRegistrationCodeRequest> resendValidator,
+        ILegalService legalService)
         : base(dbContext, emailSender, jwtTokenService, passwordHasher)
     {
         _startValidator = startValidator;
         _verifyValidator = verifyValidator;
         _completeValidator = completeValidator;
         _resendValidator = resendValidator;
+        _legalService = legalService;
     }
 
     public async Task<VerificationCodeResponse> StartRegistrationAsync(StartCustomerRegistrationRequest request, CancellationToken cancellationToken = default)
@@ -104,6 +107,7 @@ public class CustomerRegistrationService
 
         DbContext.Add(user);
         DbContext.Add(customerProfile);
+        await _legalService.EnsureDocumentsAcceptedAsync(user.Id, "Customer", request.AcceptedDocumentIds.ToHashSet(), request.Platform, request.AppVersion, null, null, cancellationToken);
         await DbContext.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse

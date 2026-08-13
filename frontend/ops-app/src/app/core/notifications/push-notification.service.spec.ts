@@ -168,4 +168,30 @@ describe('PushNotificationService', () => {
     );
     expect(localStorage.getItem('appurape.push.device-token')).toBe('refreshed-fcm-token');
   });
+
+  it('shows a non-blocking reminder without opening the Android prompt automatically', async () => {
+    capacitorMocks.checkPermissions.mockResolvedValue({ receive: 'prompt' });
+    const service = TestBed.inject(PushNotificationService);
+    await service.initializeForAuthenticatedUser({ authToken: 'jwt-test', userId: 'user-1', role: 'Customer' });
+    expect(service.permissionReminderVisible()).toBe(true);
+    expect(capacitorMocks.requestPermissions).not.toHaveBeenCalled();
+    expect(capacitorMocks.register).not.toHaveBeenCalled();
+  });
+
+  it('does not show the reminder again before 24 hours', async () => {
+    capacitorMocks.checkPermissions.mockResolvedValue({ receive: 'denied' });
+    localStorage.setItem('appurape.push.permission-reminder-at', String(Date.now() - 23 * 60 * 60 * 1000));
+    const service = TestBed.inject(PushNotificationService);
+    await service.initializeForAuthenticatedUser({ authToken: 'jwt-test', userId: 'user-1', role: 'Driver' });
+    expect(service.permissionReminderVisible()).toBe(false);
+  });
+
+  it('requests permission only after the user taps activate', async () => {
+    capacitorMocks.checkPermissions.mockResolvedValue({ receive: 'prompt' });
+    const service = TestBed.inject(PushNotificationService);
+    await service.initializeForAuthenticatedUser({ authToken: 'jwt-test', userId: 'user-1', role: 'Restaurant' });
+    await service.enableNotifications();
+    expect(capacitorMocks.requestPermissions).toHaveBeenCalledTimes(1);
+    expect(capacitorMocks.register).toHaveBeenCalledTimes(1);
+  });
 });

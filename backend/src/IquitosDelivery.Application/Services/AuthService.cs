@@ -28,6 +28,7 @@ public class AuthService : IAuthService
     private readonly IValidator<RegisterRestaurantRequest> _registerRestaurantValidator;
     private readonly IValidator<ResendPasswordResetCodeRequest> _resendPasswordResetCodeValidator;
     private readonly IValidator<ResetPasswordRequest> _resetPasswordValidator;
+    private readonly ILegalService _legalService;
 
     public AuthService(
         IAppDbContext dbContext,
@@ -42,7 +43,8 @@ public class AuthService : IAuthService
         IValidator<RegisterDriverRequest> registerDriverValidator,
         IValidator<RegisterRestaurantRequest> registerRestaurantValidator,
         IValidator<ResendPasswordResetCodeRequest> resendPasswordResetCodeValidator,
-        IValidator<ResetPasswordRequest> resetPasswordValidator)
+        IValidator<ResetPasswordRequest> resetPasswordValidator,
+        ILegalService legalService)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
@@ -57,6 +59,7 @@ public class AuthService : IAuthService
         _registerRestaurantValidator = registerRestaurantValidator;
         _resendPasswordResetCodeValidator = resendPasswordResetCodeValidator;
         _resetPasswordValidator = resetPasswordValidator;
+        _legalService = legalService;
     }
 
     public async Task<AuthResponse> RegisterRestaurantAsync(RegisterRestaurantRequest request, CancellationToken cancellationToken = default)
@@ -89,6 +92,7 @@ public class AuthService : IAuthService
 
         _dbContext.Add(user);
         _dbContext.Add(restaurant);
+        await _legalService.EnsureDocumentsAcceptedAsync(user.Id, "Restaurant", request.AcceptedDocumentIds.ToHashSet(), request.Platform, request.AppVersion, null, null, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return CreateAuthResponse(user);
@@ -123,6 +127,7 @@ public class AuthService : IAuthService
 
         _dbContext.Add(user);
         _dbContext.Add(driverProfile);
+        await _legalService.EnsureDocumentsAcceptedAsync(user.Id, "Driver", request.AcceptedDocumentIds.ToHashSet(), request.Platform, request.AppVersion, null, null, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return CreateAuthResponse(user);

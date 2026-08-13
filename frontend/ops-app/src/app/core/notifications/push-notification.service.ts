@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -23,6 +23,8 @@ export class PushNotificationService {
   private static readonly DEVICE_TOKEN_STORAGE_KEY = 'appurape.push.device-token';
   private static readonly DEVICE_TOKEN_SYNC_SIGNATURE_KEY =
     'appurape.push.device-token.sync-signature';
+  private static readonly LAST_PERMISSION_REMINDER_KEY = 'appurape.push.permission-reminder-at';
+  private static readonly REMINDER_INTERVAL_MS = 24 * 60 * 60 * 1000;
   private static readonly ANDROID_NOTIFICATION_CHANNEL = {
     id: 'appurape_default',
     name: 'Pedidos y operaciones',
@@ -44,6 +46,8 @@ export class PushNotificationService {
   private lastSyncSignature = this.readStorage(
     PushNotificationService.DEVICE_TOKEN_SYNC_SIGNATURE_KEY,
   );
+  readonly permissionReminderVisible = signal(false);
+  readonly permissionState = signal<'prompt' | 'denied' | 'granted'>('prompt');
 
   async initializeForAuthenticatedUser(context: AuthPushContext): Promise<void> {
     this.currentAuthContext = context;
@@ -58,12 +62,9 @@ export class PushNotificationService {
       await this.ensureAndroidNotificationChannelAsync(PushNotifications);
 
       const currentPermission = await PushNotifications.checkPermissions();
-      const permission =
-        currentPermission.receive === 'prompt'
-          ? await PushNotifications.requestPermissions()
-          : currentPermission;
-
-      if (permission.receive !== 'granted') {
+      this.permissionState.set(this.normalizePermission(currentPermission.receive));
+      if (currentPermission.receive !== 'granted') {
+        this.showReminderWhenDue();
         return;
       }
 
@@ -72,10 +73,44 @@ export class PushNotificationService {
       }
 
       await PushNotifications.register();
+      this.permissionReminderVisible.set(false);
     } catch (error) {
       console.warn('Push notifications initialization failed.', error);
     }
   }
+
+  async enableNotifications(): Promise<void> {
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const current = await PushNotifications.checkPermissions();
+      if (current.receive === 'denied') { await this.openAppSettings(); return; }
+      const permission = current.receive === 'granted' ? current : await PushNotifications.requestPermissions();
+      this.permissionState.set(this.normalizePermission(permission.receive));
+      this.markReminderShown();
+      if (permission.receive !== 'granted') { this.permissionReminderVisible.set(false); return; }
+      this.permissionReminderVisible.set(false);
+      if (this.currentDeviceToken) await this.registerTokenWithBackendAsync(this.currentDeviceToken);
+      await PushNotifications.register();
+    } catch (error) { console.warn('Push permission request failed.', error); }
+  }
+
+  dismissPermissionReminder(): void { this.markReminderShown(); this.permissionReminderVisible.set(false); }
+
+  private showReminderWhenDue(): void {
+    const stored = Number(this.readStorage(PushNotificationService.LAST_PERMISSION_REMINDER_KEY) || 0);
+    if (!Number.isFinite(stored) || Date.now() - stored >= PushNotificationService.REMINDER_INTERVAL_MS) this.permissionReminderVisible.set(true);
+  }
+
+  private markReminderShown(): void { this.writeStorage(PushNotificationService.LAST_PERMISSION_REMINDER_KEY, String(Date.now())); }
+
+  private async openAppSettings(): Promise<void> {
+    const { registerPlugin } = await import('@capacitor/core');
+    const appSettings = registerPlugin<{ open(): Promise<void> }>('AppSettings');
+    await appSettings.open();
+    this.markReminderShown(); this.permissionReminderVisible.set(false);
+  }
+
+  private normalizePermission(value: string): 'prompt' | 'denied' | 'granted' { return value === 'granted' ? 'granted' : value === 'denied' ? 'denied' : 'prompt'; }
 
   deactivateCurrentDeviceToken(authToken: string | null | undefined): void {
     if (!authToken || !this.currentDeviceToken) {

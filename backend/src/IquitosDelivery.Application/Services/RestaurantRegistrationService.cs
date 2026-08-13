@@ -15,6 +15,7 @@ public class RestaurantRegistrationService
     private readonly IValidator<VerifyRestaurantRegistrationCodeRequest> _verifyValidator;
     private readonly IValidator<CompleteRestaurantRegistrationRequest> _completeValidator;
     private readonly IValidator<ResendRestaurantRegistrationCodeRequest> _resendValidator;
+    private readonly ILegalService _legalService;
 
     public RestaurantRegistrationService(
         IAppDbContext dbContext,
@@ -24,13 +25,15 @@ public class RestaurantRegistrationService
         IValidator<StartRestaurantRegistrationRequest> startValidator,
         IValidator<VerifyRestaurantRegistrationCodeRequest> verifyValidator,
         IValidator<CompleteRestaurantRegistrationRequest> completeValidator,
-        IValidator<ResendRestaurantRegistrationCodeRequest> resendValidator)
+        IValidator<ResendRestaurantRegistrationCodeRequest> resendValidator,
+        ILegalService legalService)
         : base(dbContext, emailSender, jwtTokenService, passwordHasher)
     {
         _startValidator = startValidator;
         _verifyValidator = verifyValidator;
         _completeValidator = completeValidator;
         _resendValidator = resendValidator;
+        _legalService = legalService;
     }
 
     public async Task<VerificationCodeResponse> StartRestaurantRegistrationAsync(StartRestaurantRegistrationRequest request, CancellationToken cancellationToken = default)
@@ -127,6 +130,7 @@ public class RestaurantRegistrationService
 
         DbContext.Add(user);
         DbContext.Add(restaurant);
+        await _legalService.EnsureDocumentsAcceptedAsync(user.Id, "Restaurant", request.AcceptedDocumentIds.ToHashSet(), request.Platform, request.AppVersion, null, null, cancellationToken);
         await DbContext.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse

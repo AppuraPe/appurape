@@ -253,7 +253,7 @@ export class OpsLayoutComponent {
     }
 
     if (role === 'Driver') {
-      return '/driver/dashboard';
+      return '/account-settings';
     }
 
     return this.authService.getDefaultRoute();
@@ -283,6 +283,7 @@ export class OpsLayoutComponent {
           { label: 'Inicio', path: '/admin/dashboard', helper: 'Pendientes clave' },
           { label: 'Favores', path: '/admin/community', helper: 'Colaboradores y métricas', exact: false },
           { label: 'Marca', path: '/admin/settings/branding', helper: 'Logo, icono y splash' },
+          { label: 'Legal', path: '/admin/legal', helper: 'Privacidad y condiciones' },
           { label: 'Pagos', path: '/admin/payments', helper: 'Yape y Plin pendientes', exact: false },
           { label: 'Comisiones', path: '/admin/commissions', helper: 'Ingresos y deuda Cash', exact: false },
           { label: 'Liquidaciones', path: '/admin/settlements', helper: 'Pagos manuales', exact: false },
@@ -314,7 +315,7 @@ export class OpsLayoutComponent {
           { label: 'Disponibles', path: '/driver/orders', exact: true, icon: Bike },
           { label: 'Activo', path: '/driver/active-order', exact: false, icon: ClipboardList },
           { label: 'Historial', path: '/driver/orders/my', exact: false, icon: Tags },
-          { label: 'Cuenta', path: '/driver/dashboard', exact: true, icon: UserRound },
+          { label: 'Cuenta', path: '/account-settings', exact: true, icon: UserRound },
         ];
       case 'Admin':
         return [

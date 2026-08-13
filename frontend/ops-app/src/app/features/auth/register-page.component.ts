@@ -16,6 +16,7 @@ import { AppBackButtonComponent } from '../../shared/components/app-back-button.
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
+import { LegalAcceptanceChecklistComponent } from '../../shared/components/legal-acceptance-checklist.component';
 
 type RegisterStep = 'start' | 'verify' | 'complete';
 
@@ -46,7 +47,7 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, LucideAngularModule, AppBackButtonComponent, PageHeaderComponent, AppButtonComponent, AppSurfaceCardComponent],
+  imports: [ReactiveFormsModule, RouterLink, LucideAngularModule, AppBackButtonComponent, PageHeaderComponent, AppButtonComponent, AppSurfaceCardComponent, LegalAcceptanceChecklistComponent],
   template: `
     <section class="px-4 py-4 sm:px-6 sm:py-6">
       <div class="mx-auto grid w-full max-w-[980px] gap-3">
@@ -204,8 +205,10 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
                   Código verificado
                 </div>
 
+                <app-legal-acceptance-checklist role="Customer" (selectionChange)="acceptedLegalDocumentIds.set($event)" (readyChange)="legalReady.set($event)" />
+
                 <div class="grid gap-3 sm:grid-cols-3">
-                  <app-button type="submit" [disabled]="isSubmittingComplete()" size="lg" block>
+                  <app-button type="submit" [disabled]="isSubmittingComplete() || !legalReady()" size="lg" block>
                     {{ isSubmittingComplete() ? 'Creando...' : 'Completar' }}
                   </app-button>
                   <app-button variant="ghost" type="button" (click)="goToVerify()" block>Volver</app-button>
@@ -234,6 +237,8 @@ export class RegisterPageComponent {
   readonly isSubmittingComplete = signal(false);
   readonly verifiedCode = signal('');
   readonly showPassword = signal(false);
+  readonly acceptedLegalDocumentIds = signal<string[]>([]);
+  readonly legalReady = signal(false);
 
   readonly userPlusIcon = UserPlus;
   readonly mailIcon = Mail;
@@ -411,6 +416,8 @@ export class RegisterPageComponent {
       email,
       code,
       password: this.completeForm.getRawValue().password,
+      acceptedDocumentIds: this.acceptedLegalDocumentIds(),
+      platform: 'web',
     };
 
     this.clearMessages();

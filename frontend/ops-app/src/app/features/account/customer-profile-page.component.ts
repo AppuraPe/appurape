@@ -161,6 +161,7 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
             Cerrar sesión
           </app-button>
         </div>
+        <a routerLink="/account-deletion" class="flex min-h-12 w-full items-center border-t border-slate-100 px-4 py-3 text-sm font-bold text-red-700 no-underline">Solicitar eliminación de cuenta</a>
       </app-surface-card>
 
       <p class="w-full min-w-0 max-w-full pb-3 text-center text-xs text-slate-400">AppuraPe · Cuenta protegida</p>

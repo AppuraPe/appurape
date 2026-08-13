@@ -19,6 +19,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddHostedService<AccountDeletionWorker>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(options =>
@@ -181,6 +182,8 @@ app.UseRouting();
 app.UseCors("DefaultCors");
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<AccountStateMiddleware>();
+app.UseMiddleware<LegalConsentMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.MapGet("/health", async (AppDbContext dbContext, CancellationToken cancellationToken) =>

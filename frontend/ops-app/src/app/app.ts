@@ -4,13 +4,15 @@ import { AppNavigationService } from './core/services/app-navigation.service';
 import { CheckoutDrawerUiService } from './core/services/checkout-drawer-ui.service';
 import { PlatformSettingsApiService } from './core/services/platform-settings-api.service';
 import { ToastContainerComponent } from './shared/toast/toast-container.component';
+import { NotificationPermissionCardComponent } from './shared/components/notification-permission-card.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToastContainerComponent],
+  imports: [RouterOutlet, ToastContainerComponent, NotificationPermissionCardComponent],
   template: `
     <router-outlet />
     <app-toast-container />
+    <app-notification-permission-card />
   `,
 })
 export class App {

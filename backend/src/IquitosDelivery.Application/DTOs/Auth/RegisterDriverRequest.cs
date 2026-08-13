@@ -23,4 +23,7 @@ public class RegisterDriverRequest
     public string? IdentityDocumentUrl { get; set; }
 
     public string? VehiclePhotoUrl { get; set; }
+    public IReadOnlyList<Guid> AcceptedDocumentIds { get; set; } = [];
+    public string? Platform { get; set; }
+    public string? AppVersion { get; set; }
 }

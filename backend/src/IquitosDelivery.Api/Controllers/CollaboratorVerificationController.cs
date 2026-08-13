@@ -12,11 +12,13 @@ public class CollaboratorVerificationController : ControllerBase
 {
     private readonly ICollaboratorVerificationService _verificationService;
     private readonly IFileStorageService _fileStorageService;
+    private readonly ILegalService _legalService;
 
-    public CollaboratorVerificationController(ICollaboratorVerificationService verificationService, IFileStorageService fileStorageService)
+    public CollaboratorVerificationController(ICollaboratorVerificationService verificationService, IFileStorageService fileStorageService, ILegalService legalService)
     {
         _verificationService = verificationService;
         _fileStorageService = fileStorageService;
+        _legalService = legalService;
     }
 
     [HttpGet("me")]
@@ -39,6 +41,7 @@ public class CollaboratorVerificationController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<CollaboratorVerificationResponse>> Submit([FromForm] SubmitCollaboratorVerificationForm request, CancellationToken cancellationToken)
     {
+        await _legalService.EnsureAudienceAcceptedAsync("Collaborator", cancellationToken);
         if (request.ProfilePhoto is null || request.IdentityDocument is null || request.LiveSelfie is null)
             return BadRequest(new { message = "Foto de perfil, DNI y selfie en vivo son obligatorios." });
 
