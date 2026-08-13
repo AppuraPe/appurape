@@ -24,10 +24,10 @@ services:
       - key: Storage__Provider
         value: Supabase
       - key: Storage__Supabase__Url
-        value: https://sxfyeqvuxcblmngvezim.supabase.co
+        value: https://fbkachlnychsbptztbux.supabase.co
       - key: Storage__Supabase__ServiceKey
         sync: false
       - key: Storage__Supabase__Bucket
         value: appurape
       - key: Storage__PublicBaseUrl
-        value: https://sxfyeqvuxcblmngvezim.supabase.co/storage/v1/object/public/appurape
+        value: https://fbkachlnychsbptztbux.supabase.co/storage/v1/object/public/appurape
