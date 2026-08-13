@@ -20,6 +20,7 @@ public class CommunityService : ICommunityService
     private readonly IValidator<UpsertCommunityRouteRequest> _upsertRouteValidator;
     private readonly IValidator<CompleteCommunityRequestRequest> _completeRequestValidator;
     private readonly IValidator<RateCommunityCollaboratorRequest> _rateValidator;
+    private readonly IOrderDeliveryConfirmationService? _deliveryConfirmationService;
 
     public CommunityService(
         IAppDbContext dbContext,
@@ -29,7 +30,8 @@ public class CommunityService : ICommunityService
         IValidator<UpdateCommunityCollaboratorRequest> updateCollaboratorValidator,
         IValidator<UpsertCommunityRouteRequest> upsertRouteValidator,
         IValidator<CompleteCommunityRequestRequest> completeRequestValidator,
-        IValidator<RateCommunityCollaboratorRequest> rateValidator)
+        IValidator<RateCommunityCollaboratorRequest> rateValidator,
+        IOrderDeliveryConfirmationService? deliveryConfirmationService = null)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
@@ -39,6 +41,7 @@ public class CommunityService : ICommunityService
         _upsertRouteValidator = upsertRouteValidator;
         _completeRequestValidator = completeRequestValidator;
         _rateValidator = rateValidator;
+        _deliveryConfirmationService = deliveryConfirmationService;
     }
 
     public async Task<CommunityCollaboratorResponse> GetMyCollaboratorProfileAsync(CancellationToken cancellationToken = default)
@@ -474,37 +477,54 @@ public class CommunityService : ICommunityService
         var collaborator = await GetOrCreateCollaboratorAsync(cancellationToken);
         var communityRequest = await GetAssignedRequestAsync(requestId, collaborator.Id, cancellationToken);
 
+        if (communityRequest.Status == CommunityRequestStatus.Delivered)
+            return await GetRequestByIdAsync(requestId, cancellationToken);
         if (communityRequest.Status != CommunityRequestStatus.InProcess)
         {
             throw new AppException("Community request cannot be completed from the current status.");
         }
 
-        if (string.IsNullOrWhiteSpace(communityRequest.ConfirmationCode) ||
-            !string.Equals(communityRequest.ConfirmationCode, request.ConfirmationCode.Trim(), StringComparison.Ordinal))
+        Order? linkedOrder = null;
+        if (communityRequest.OrderId.HasValue)
         {
-            throw new AppException("Confirmation code is invalid.");
+            linkedOrder = await _dbContext.Orders.FirstAsync(x => x.Id == communityRequest.OrderId.Value, cancellationToken);
+            if (_deliveryConfirmationService is null) throw new AppException("La confirmación de entrega no está configurada.");
+            await _deliveryConfirmationService.ValidateAsync(linkedOrder, request.ConfirmationCode, collaborator.UserId, cancellationToken);
         }
-
-        if (communityRequest.ConfirmationCodeExpiresAtUtc.HasValue && communityRequest.ConfirmationCodeExpiresAtUtc.Value < DateTime.UtcNow)
+        else
         {
-            throw new AppException("Confirmation code expired. Ask the requester to recreate the task.");
+            if (string.IsNullOrWhiteSpace(communityRequest.ConfirmationCode) ||
+                !string.Equals(communityRequest.ConfirmationCode, request.ConfirmationCode.Trim(), StringComparison.Ordinal))
+                throw new AppException("El código de confirmación no es válido.");
+            if (communityRequest.ConfirmationCodeExpiresAtUtc.HasValue && communityRequest.ConfirmationCodeExpiresAtUtc.Value < DateTime.UtcNow)
+                throw new AppException("El código de confirmación venció.");
         }
 
         communityRequest.Status = CommunityRequestStatus.Delivered;
         communityRequest.DeliveredAtUtc = DateTime.UtcNow;
         communityRequest.ProofImageUrl = string.IsNullOrWhiteSpace(proofImageUrl) ? communityRequest.ProofImageUrl : proofImageUrl;
+        communityRequest.FavorPaymentStatus = PaymentStatus.Paid;
+        communityRequest.FavorPaidAtUtc = communityRequest.DeliveredAtUtc;
 
         collaborator.IsAvailable = true;
         collaborator.AvailabilityStatus = CommunityAvailabilityStatus.Available;
 
-        if (communityRequest.OrderId.HasValue)
+        if (linkedOrder is not null)
         {
-            var order = await _dbContext.Orders.FirstAsync(x => x.Id == communityRequest.OrderId.Value, cancellationToken);
-            order.Status = OrderStatus.Delivered;
-            order.DeliveredAtUtc = communityRequest.DeliveredAtUtc;
+            linkedOrder.Status = OrderStatus.Delivered;
+            linkedOrder.DeliveredAtUtc = communityRequest.DeliveredAtUtc;
+            var cashDebt = await _dbContext.FinancialMovements.FirstOrDefaultAsync(x =>
+                x.CommunityRequestId == communityRequest.Id && x.Type == FinancialMovementType.CashFavorDebt, cancellationToken);
+            if (cashDebt is not null)
+            {
+                cashDebt.UserId = collaborator.UserId;
+                cashDebt.Status = FinancialMovementStatus.Available;
+                cashDebt.AvailableAtUtc = communityRequest.DeliveredAtUtc;
+            }
         }
 
         await RefreshCollaboratorMetricsAsync(collaborator, cancellationToken);
+        await MarkCommunityFinancialMovementsAvailableAsync(communityRequest.Id, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
         await NotifyRequesterAboutDeliveredRequestAsync(communityRequest, cancellationToken);
 
@@ -1008,7 +1028,8 @@ public class CommunityService : ICommunityService
     private async Task AssignCollaboratorFinancialMovementsAsync(Guid requestId, Guid collaboratorUserId, CancellationToken cancellationToken)
     {
         var movements = await _dbContext.FinancialMovements
-            .Where(x => x.CommunityRequestId == requestId && x.Type == FinancialMovementType.CourierEarning)
+            .Where(x => x.CommunityRequestId == requestId &&
+                (x.Type == FinancialMovementType.CourierEarning || x.Type == FinancialMovementType.CashFavorDebt))
             .ToListAsync(cancellationToken);
 
         foreach (var movement in movements)

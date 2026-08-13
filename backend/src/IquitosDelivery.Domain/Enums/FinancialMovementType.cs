@@ -13,5 +13,6 @@ public enum FinancialMovementType
     BusinessSettlement = 8,
     CourierSettlement = 9,
     CashOrderDebt = 10,
-    CollaboratorVerificationFee = 11
+    CollaboratorVerificationFee = 11,
+    CashFavorDebt = 12
 }

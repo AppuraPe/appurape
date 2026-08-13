@@ -304,7 +304,7 @@ export class DriverMyOrdersPageComponent {
       case 'PickedUp':
         return [{ label: 'Marcar en camino', status: 'OnTheWay' }];
       case 'OnTheWay':
-        return [{ label: 'Marcar entregado', status: 'Delivered' }];
+        return [];
       default:
         return [];
     }
@@ -319,7 +319,7 @@ export class DriverMyOrdersPageComponent {
         ? this.driverOrdersApi.markPickedUp(order.id)
         : action.status === 'OnTheWay'
           ? this.driverOrdersApi.markOnTheWay(order.id)
-          : this.driverOrdersApi.markDelivered(order.id);
+          : this.driverOrdersApi.getMyOrderById(order.id);
 
     request$
       .pipe(takeUntilDestroyed(this.destroyRef))

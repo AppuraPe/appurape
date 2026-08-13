@@ -23,6 +23,16 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult<OrderFulfillmentOptionsResponse>> GetFulfillmentOptions(Guid id, CancellationToken cancellationToken) =>
         Ok(await _fulfillmentService.GetOptionsAsync(id, cancellationToken));
 
+    [HttpGet("my/{id:guid}/delivery-confirmation")]
+    public async Task<ActionResult<OrderDeliveryConfirmationResponse>> GetDeliveryConfirmation(
+        Guid id, [FromServices] IOrderDeliveryConfirmationService confirmationService, CancellationToken cancellationToken) =>
+        Ok(await confirmationService.GetForCustomerAsync(id, cancellationToken));
+
+    [HttpPost("my/{id:guid}/delivery-confirmation/regenerate")]
+    public async Task<ActionResult<OrderDeliveryConfirmationResponse>> RegenerateDeliveryConfirmation(
+        Guid id, [FromServices] IOrderDeliveryConfirmationService confirmationService, CancellationToken cancellationToken) =>
+        Ok(await confirmationService.RegenerateForCustomerAsync(id, cancellationToken));
+
     [HttpPost("my/{id:guid}/collaborator-pickup/quote")]
     public async Task<ActionResult<OrderCollaboratorPickupQuoteResponse>> QuoteCollaboratorPickup(
         Guid id,

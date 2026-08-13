@@ -45,6 +45,12 @@ public class CommunityRequest : BaseEntity
 
     public decimal PlatformRevenueAmount { get; set; }
 
+    public PaymentMethod FavorPaymentMethod { get; set; } = PaymentMethod.Cash;
+
+    public PaymentStatus FavorPaymentStatus { get; set; } = PaymentStatus.Pending;
+
+    public DateTime? FavorPaidAtUtc { get; set; }
+
     public string? PricingSnapshotJson { get; set; }
 
     public DateTime? DeadlineUtc { get; set; }

@@ -11,6 +11,7 @@ import {
   OrderCollaboratorPickupQuoteResponse,
   OrderCollaboratorPickupResponse,
   OrderDriverDeliveryResponse,
+  OrderDeliveryConfirmationResponse,
   ValidateOrderResponse,
 } from '../models/orders.models';
 import { buildApiUrl } from '../utils/api-utils';
@@ -40,16 +41,28 @@ export class OrdersApiService {
     return this.http.get<OrderFulfillmentOptionsResponse>(`${this.baseUrl}/my/${id}/fulfillment-options`);
   }
 
-  quoteCollaboratorPickup(id: string, compensationAmount: number, deadlineUtc?: string | null): Observable<OrderCollaboratorPickupQuoteResponse> {
-    return this.http.post<OrderCollaboratorPickupQuoteResponse>(`${this.baseUrl}/my/${id}/collaborator-pickup/quote`, { compensationAmount, deadlineUtc });
+  quoteCollaboratorPickup(id: string, compensationAmount: number, customerAddressId: string, deadlineUtc?: string | null): Observable<OrderCollaboratorPickupQuoteResponse> {
+    return this.http.post<OrderCollaboratorPickupQuoteResponse>(`${this.baseUrl}/my/${id}/collaborator-pickup/quote`, { compensationAmount, customerAddressId, deadlineUtc });
   }
 
   createCollaboratorPickup(id: string, quoteToken: string): Observable<OrderCollaboratorPickupResponse> {
     return this.http.post<OrderCollaboratorPickupResponse>(`${this.baseUrl}/my/${id}/collaborator-pickup`, { quoteToken });
   }
 
-  requestDriverDelivery(id: string, offeredDeliveryAmount?: number | null): Observable<OrderDriverDeliveryResponse> {
-    return this.http.post<OrderDriverDeliveryResponse>(`${this.baseUrl}/my/${id}/driver-delivery`, { offeredDeliveryAmount });
+  requestDriverDelivery(id: string, customerAddressId: string, offeredDeliveryAmount?: number | null): Observable<OrderDriverDeliveryResponse> {
+    return this.http.post<OrderDriverDeliveryResponse>(`${this.baseUrl}/my/${id}/driver-delivery`, { customerAddressId, offeredDeliveryAmount });
+  }
+
+  getDeliveryConfirmation(id: string): Observable<OrderDeliveryConfirmationResponse> {
+    return this.http.get<OrderDeliveryConfirmationResponse>(`${this.baseUrl}/my/${id}/delivery-confirmation`);
+  }
+
+  regenerateDeliveryConfirmation(id: string): Observable<OrderDeliveryConfirmationResponse> {
+    return this.http.post<OrderDeliveryConfirmationResponse>(`${this.baseUrl}/my/${id}/delivery-confirmation/regenerate`, {});
+  }
+
+  cancelOrder(id: string, reason?: string): Observable<CustomerOrderDetailResponse> {
+    return this.http.post<CustomerOrderDetailResponse>(`${this.baseUrl}/my/${id}/cancel`, { reason });
   }
 
   rateDriver(id: string, request: RateDriverRequest): Observable<CustomerOrderDetailResponse> {

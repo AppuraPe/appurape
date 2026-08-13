@@ -81,21 +81,46 @@
       </div>
     </app-surface-card>
 
+    @if (deliveryConfirmation(); as confirmation) {
+      <app-surface-card variant="page" extraClass="grid gap-3 border-primary-200 bg-primary-50 p-4">
+        <app-internal-page-section-header eyebrow="Entrega segura" title="Tu código de entrega" subtitle="Compártelo únicamente cuando tengas el pedido en tus manos." />
+        <p class="text-center text-3xl font-black tracking-[0.28em] text-primary-800">{{ confirmation.code }}</p>
+        <p class="text-center text-xs text-slate-600">Vence {{ confirmation.expiresAtUtc | date:'short' }} · {{ confirmation.remainingAttempts }} intentos disponibles</p>
+        @if (confirmation.canRegenerate) {
+          <app-button type="button" variant="secondary" size="sm" (click)="regenerateDeliveryCode()" block>Generar otro código</app-button>
+        }
+      </app-surface-card>
+    }
+
     @if (fulfillmentOptions(); as options) {
       @if (options.linkedCommunityRequestId) {
         <app-surface-card variant="page" extraClass="grid gap-3 p-4">
           <app-internal-page-section-header eyebrow="Recojo" title="Un colaborador llevará tu compra" subtitle="Puedes revisar postulaciones y seguir el traslado desde Favores." />
           <app-button [routerLink]="['/community/requests', options.linkedCommunityRequestId]" variant="secondary" block>Ver favor vinculado</app-button>
         </app-surface-card>
-      } @else if (options.canRequestCollaborator) {
+      } @else if (options.canRequestCollaborator || options.canRequestDriver) {
         <app-surface-card variant="page" extraClass="grid gap-3 p-4">
           <app-internal-page-section-header eyebrow="Entrega" title="¿Quieres que alguien recoja tu compra?" subtitle="Publica el recojo para colaboradores verificados. Tu pedido y la dirección del negocio se completan automáticamente." />
+          <label class="grid gap-2">
+            <span class="text-sm font-semibold text-slate-700">Dirección de entrega</span>
+            <select class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm" [formControl]="pickupForm.controls.customerAddressId">
+              <option value="">Selecciona una dirección</option>
+              @for (address of addresses(); track address.id) {
+                <option [value]="address.id">{{ address.label }} · {{ address.addressLine }}</option>
+              }
+            </select>
+            @if (!addresses().length) {
+              <a class="text-xs font-bold text-primary-700" routerLink="/account/addresses">Registrar una dirección</a>
+            }
+          </label>
           @if (!pickupPanelOpen()) {
             <div class="grid gap-2 min-[390px]:grid-cols-2">
               @if (options.canRequestDriver) {
                 <app-button type="button" [disabled]="isRequestingDriver()" (click)="requestDriverDelivery()" block>{{ isRequestingDriver() ? 'Solicitando...' : 'Pedir delivery' }}</app-button>
               }
-              <app-button type="button" variant="secondary" (click)="openPickupPanel()" block>Buscar un colaborador</app-button>
+              @if (options.canRequestCollaborator) {
+                <app-button type="button" variant="secondary" (click)="openPickupPanel()" block>Buscar un colaborador</app-button>
+              }
             </div>
           } @else {
             <form class="grid gap-3" [formGroup]="pickupForm" (ngSubmit)="quotePickup()">
@@ -118,6 +143,10 @@
           }
         </app-surface-card>
       }
+    }
+
+    @if (currentOrder.status === 'Pending') {
+      <app-button type="button" variant="danger" size="md" (click)="cancelOrder()" block>Cancelar pedido</app-button>
     }
 
     <section class="grid gap-4 lg:grid-cols-[0.88fr_1.12fr]">

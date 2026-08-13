@@ -49,6 +49,14 @@ export class BusinessOrdersApiService {
     return this.http.post<OrderCollaboratorPickupResponse>(`${this.restaurantOrdersBaseUrl}/${orderId}/collaborator-pickup/confirm`, { pickupCode });
   }
 
+  dispatchBusinessDelivery(orderId: string): Observable<BusinessOrderDetailResponse> {
+    return this.http.post<BusinessOrderDetailResponse>(`${this.baseUrl}/${orderId}/dispatch`, {});
+  }
+
+  confirmBusinessDelivery(orderId: string, confirmationCode: string): Observable<BusinessOrderDetailResponse> {
+    return this.http.post<BusinessOrderDetailResponse>(`${this.baseUrl}/${orderId}/confirm-delivery`, { confirmationCode });
+  }
+
   private buildParams(filters: BusinessOrderFilters): HttpParams {
     let params = new HttpParams();
 

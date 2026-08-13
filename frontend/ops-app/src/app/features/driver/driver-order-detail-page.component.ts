@@ -186,9 +186,12 @@ interface DriverAction {
 
         @if (availableActions().length) {
           <app-bottom-safe-action-bar mode="fixed">
-            <div class="grid gap-2 min-[390px]:grid-cols-2">
+            <div class="grid gap-2">
+              @if (order.status === 'OnTheWay') {
+                <input class="min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-center text-lg font-black tracking-[0.2em]" inputmode="numeric" maxlength="6" placeholder="Código de entrega" [value]="deliveryCode()" (input)="deliveryCode.set($any($event.target).value)" />
+              }
               @for (action of availableActions(); track action.type) {
-                <app-button type="button" size="md" [disabled]="isSubmitting()" (click)="runAction(action)" block>
+                <app-button type="button" size="md" [disabled]="isSubmitting() || (action.type === 'delivered' && deliveryCode().length !== 6)" (click)="runAction(action)" block>
                   {{ isSubmitting() ? 'Procesando...' : action.label }}
                 </app-button>
               }
@@ -219,6 +222,7 @@ export class DriverOrderDetailPageComponent {
   readonly isLoading = signal(true);
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal('');
+  readonly deliveryCode = signal('');
   readonly availableActions = computed(() => this.getActions(this.order()?.status ?? ''));
 
   private readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
@@ -269,7 +273,7 @@ export class DriverOrderDetailPageComponent {
           ? this.driverOrdersApi.markPickedUp(currentOrder.id)
           : action.type === 'on-the-way'
             ? this.driverOrdersApi.markOnTheWay(currentOrder.id)
-            : this.driverOrdersApi.markDelivered(currentOrder.id);
+            : this.driverOrdersApi.markDelivered(currentOrder.id, this.deliveryCode());
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (order) => {

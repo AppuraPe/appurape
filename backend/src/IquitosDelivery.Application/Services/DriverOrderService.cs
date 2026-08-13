@@ -19,17 +19,20 @@ public class DriverOrderService : IDriverOrderService
     private readonly ICurrentUserService _currentUserService;
     private readonly INotificationService _notificationService;
     private readonly IValidator<UpdateDriverOrderStatusRequest> _updateDriverOrderStatusValidator;
+    private readonly IOrderDeliveryConfirmationService? _deliveryConfirmationService;
 
     public DriverOrderService(
         IAppDbContext dbContext,
         ICurrentUserService currentUserService,
         INotificationService notificationService,
-        IValidator<UpdateDriverOrderStatusRequest> updateDriverOrderStatusValidator)
+        IValidator<UpdateDriverOrderStatusRequest> updateDriverOrderStatusValidator,
+        IOrderDeliveryConfirmationService? deliveryConfirmationService = null)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _notificationService = notificationService;
         _updateDriverOrderStatusValidator = updateDriverOrderStatusValidator;
+        _deliveryConfirmationService = deliveryConfirmationService;
     }
 
     public async Task<IReadOnlyList<AvailableDriverOrderListItemResponse>> GetAvailableOrdersAsync(
@@ -359,6 +362,8 @@ public class DriverOrderService : IDriverOrderService
         if (request.Status == OrderStatus.Delivered)
         {
             EnsurePaymentAllowsOperationalProgress(order, payment);
+            if (_deliveryConfirmationService is not null)
+                await _deliveryConfirmationService.ValidateAsync(order, request.ConfirmationCode ?? string.Empty, driver.UserId, cancellationToken);
         }
 
         EnsureValidDriverTransition(order.Status, request.Status);

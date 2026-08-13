@@ -14,7 +14,9 @@ import {
   Ticket,
   Truck,
 } from 'lucide-angular';
-import { CustomerOrderDetailResponse, OrderCollaboratorPickupQuoteResponse, OrderFulfillmentOptionsResponse } from '../../core/models/orders.models';
+import { CustomerOrderDetailResponse, OrderCollaboratorPickupQuoteResponse, OrderDeliveryConfirmationResponse, OrderFulfillmentOptionsResponse } from '../../core/models/orders.models';
+import { CustomerAddressResponse } from '../../core/models/customer-addresses.models';
+import { CustomerAddressesApiService } from '../../core/services/customer-addresses-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
 import { getApiErrorMessage, hasText } from '../../core/utils/api-utils';
@@ -57,6 +59,7 @@ export class MyOrderDetailPageComponent {
   private static readonly PRODUCT_PLACEHOLDER_IMAGE = '/img/catalog-placeholder.svg';
   private static readonly TRACKING_PLACEHOLDER_IMAGE = '/img/order-status-placeholder.svg';
   private readonly formBuilder = inject(FormBuilder);
+  private readonly addressesApi = inject(CustomerAddressesApiService);
   private readonly trackingStates = [
     {
       key: 'Created',
@@ -120,6 +123,8 @@ export class MyOrderDetailPageComponent {
   readonly isSubmittingRating = signal(false);
   readonly fulfillmentOptions = signal<OrderFulfillmentOptionsResponse | null>(null);
   readonly pickupQuote = signal<OrderCollaboratorPickupQuoteResponse | null>(null);
+  readonly addresses = signal<CustomerAddressResponse[]>([]);
+  readonly deliveryConfirmation = signal<OrderDeliveryConfirmationResponse | null>(null);
   readonly isQuotingPickup = signal(false);
   readonly isCreatingPickup = signal(false);
   readonly isRequestingDriver = signal(false);
@@ -214,6 +219,7 @@ export class MyOrderDetailPageComponent {
   });
   readonly pickupForm = this.formBuilder.nonNullable.group({
     compensationAmount: [5, [Validators.required, Validators.min(2)]],
+    customerAddressId: ['', Validators.required],
   });
 
   constructor() {
@@ -239,6 +245,8 @@ export class MyOrderDetailPageComponent {
         next: (order) => {
           this.order.set(order);
           this.loadFulfillmentOptions(order.id);
+          this.loadAddresses();
+          if (['ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay'].includes(order.status)) this.loadDeliveryConfirmation(order.id);
           this.ratingForm.patchValue({
             rating: order.driverRating ?? 5,
             comment: order.driverFeedback ?? '',
@@ -266,7 +274,7 @@ export class MyOrderDetailPageComponent {
       return;
     }
     this.isQuotingPickup.set(true);
-    this.ordersApi.quoteCollaboratorPickup(order.id, this.pickupForm.controls.compensationAmount.value)
+    this.ordersApi.quoteCollaboratorPickup(order.id, this.pickupForm.controls.compensationAmount.value, this.pickupForm.controls.customerAddressId.value)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (quote) => {
@@ -312,9 +320,13 @@ export class MyOrderDetailPageComponent {
 
   requestDriverDelivery(): void {
     const order = this.order();
-    if (!order) return;
+    if (!order || !this.pickupForm.controls.customerAddressId.value) {
+      this.pickupForm.controls.customerAddressId.markAsTouched();
+      this.notificationService.warning('Selecciona la dirección donde recibirás el pedido.');
+      return;
+    }
     this.isRequestingDriver.set(true);
-    this.ordersApi.requestDriverDelivery(order.id)
+    this.ordersApi.requestDriverDelivery(order.id, this.pickupForm.controls.customerAddressId.value)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
@@ -346,7 +358,43 @@ export class MyOrderDetailPageComponent {
 
   canRateDriver(): boolean {
     const order = this.order();
-    return !!order && order.status === 'Delivered';
+    return !!order && order.status === 'Delivered' && !order.driverRating;
+  }
+
+  cancelOrder(): void {
+    const order = this.order();
+    if (!order || order.status !== 'Pending' || !window.confirm('¿Cancelar este pedido? Esta acción restaurará el stock.')) return;
+    this.ordersApi.cancelOrder(order.id, 'Cancelado por el cliente').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => { this.order.set(updated); this.notificationService.success('Pedido cancelado.'); },
+      error: (error) => this.notificationService.error(getApiErrorMessage(error, 'No se pudo cancelar el pedido.')),
+    });
+  }
+
+  regenerateDeliveryCode(): void {
+    const order = this.order();
+    if (!order || !window.confirm('El código anterior dejará de funcionar. ¿Generar uno nuevo?')) return;
+    this.ordersApi.regenerateDeliveryConfirmation(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => { this.deliveryConfirmation.set(result); this.notificationService.success('Código regenerado.'); },
+      error: (error) => this.notificationService.error(getApiErrorMessage(error, 'No se pudo regenerar el código.')),
+    });
+  }
+
+  private loadDeliveryConfirmation(orderId: string): void {
+    this.ordersApi.getDeliveryConfirmation(orderId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => this.deliveryConfirmation.set(result),
+      error: () => this.deliveryConfirmation.set(null),
+    });
+  }
+
+  private loadAddresses(): void {
+    this.addressesApi.getMyAddresses().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (addresses) => {
+        this.addresses.set(addresses.filter((address) => address.isActive));
+        const preferred = addresses.find((address) => address.isDefault && address.isActive) ?? addresses.find((address) => address.isActive);
+        if (preferred) this.pickupForm.controls.customerAddressId.setValue(preferred.id);
+      },
+      error: () => this.addresses.set([]),
+    });
   }
 
   submitRating(): void {

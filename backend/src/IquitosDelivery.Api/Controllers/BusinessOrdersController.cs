@@ -1,4 +1,5 @@
 using IquitosDelivery.Application.Interfaces;
+using IquitosDelivery.Application.DTOs.Orders;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -52,4 +53,12 @@ public class BusinessOrdersController : ControllerBase
         var response = await _businessOrderService.CancelBusinessOrderAsync(id, request, cancellationToken);
         return Ok(response);
     }
+
+    [HttpPost("{id:guid}/dispatch")]
+    public async Task<ActionResult<BusinessOrderDetailResponse>> Dispatch(Guid id, CancellationToken cancellationToken) =>
+        Ok(await _businessOrderService.DispatchBusinessDeliveryAsync(id, cancellationToken));
+
+    [HttpPost("{id:guid}/confirm-delivery")]
+    public async Task<ActionResult<BusinessOrderDetailResponse>> ConfirmDelivery(Guid id, [FromBody] ConfirmOrderDeliveryRequest request, CancellationToken cancellationToken) =>
+        Ok(await _businessOrderService.ConfirmBusinessDeliveryAsync(id, request, cancellationToken));
 }

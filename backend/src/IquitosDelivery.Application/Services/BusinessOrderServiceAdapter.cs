@@ -1,4 +1,5 @@
 using IquitosDelivery.Application.Interfaces;
+using IquitosDelivery.Application.DTOs.Orders;
 
 namespace IquitosDelivery.Application.Services;
 
@@ -32,4 +33,10 @@ public class BusinessOrderServiceAdapter : IBusinessOrderService
     {
         return _orderService.CancelRestaurantOrderAsync(orderId, request, cancellationToken);
     }
+
+    public Task<BusinessOrderDetailResponse> DispatchBusinessDeliveryAsync(Guid orderId, CancellationToken cancellationToken = default) =>
+        _orderService.DispatchBusinessDeliveryAsync(orderId, cancellationToken);
+
+    public Task<BusinessOrderDetailResponse> ConfirmBusinessDeliveryAsync(Guid orderId, ConfirmOrderDeliveryRequest request, CancellationToken cancellationToken = default) =>
+        _orderService.ConfirmBusinessDeliveryAsync(orderId, request, cancellationToken);
 }

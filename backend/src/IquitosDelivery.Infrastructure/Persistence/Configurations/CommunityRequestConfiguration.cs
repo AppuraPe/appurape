@@ -28,6 +28,9 @@ public class CommunityRequestConfiguration : IEntityTypeConfiguration<CommunityR
         builder.Property(x => x.CollaboratorEarningAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.TotalClientAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.PlatformRevenueAmount).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.FavorPaymentMethod).IsRequired();
+        builder.Property(x => x.FavorPaymentStatus).IsRequired();
+        builder.Property(x => x.FavorPaidAtUtc);
         builder.Property(x => x.PricingSnapshotJson);
         builder.Property(x => x.DeadlineUtc);
         builder.Property(x => x.Status).IsRequired();

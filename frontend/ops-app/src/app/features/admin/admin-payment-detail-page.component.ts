@@ -174,6 +174,16 @@ type PaymentAction = 'confirm' | 'reject';
           </div>
         </app-surface-card>
 
+        @if (['ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay'].includes(payment.orderStatus)) {
+          <app-surface-card variant="page" extraClass="grid gap-3 p-4">
+            <app-internal-page-section-header eyebrow="Soporte" title="Regenerar código de entrega" subtitle="Úsalo solo si el cliente agotó su regeneración. La acción queda auditada y nunca muestra el código al admin." />
+            <textarea class="min-h-20 w-full rounded-2xl border border-slate-200 bg-white p-3 text-sm" maxlength="500" placeholder="Motivo de soporte" [value]="deliveryCodeReason()" (input)="deliveryCodeReason.set($any($event.target).value)"></textarea>
+            <app-button type="button" variant="secondary" [disabled]="isRegeneratingCode() || deliveryCodeReason().trim().length < 5" (click)="regenerateDeliveryCode()" block>
+              {{ isRegeneratingCode() ? 'Regenerando...' : 'Regenerar código' }}
+            </app-button>
+          </app-surface-card>
+        }
+
         @if (canReviewPayment()) {
           <app-bottom-safe-action-bar mode="fixed">
             <div class="flex flex-wrap gap-3">
@@ -246,6 +256,8 @@ export class AdminPaymentDetailPageComponent {
   readonly errorMessage = signal('');
   readonly confirmationAction = signal<PaymentAction | null>(null);
   readonly canReviewPayment = computed(() => this.payment()?.paymentStatus === 'PendingConfirmation');
+  readonly deliveryCodeReason = signal('');
+  readonly isRegeneratingCode = signal(false);
 
   private readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
 
@@ -318,6 +330,23 @@ export class AdminPaymentDetailPageComponent {
         }
 
         this.notificationService.error('No se pudo actualizar el pago. Intenta nuevamente.');
+      },
+    });
+  }
+
+  regenerateDeliveryCode(): void {
+    const reason = this.deliveryCodeReason().trim();
+    if (reason.length < 5) return;
+    this.isRegeneratingCode.set(true);
+    this.adminPaymentsApi.regenerateDeliveryCode(this.orderId, reason).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.isRegeneratingCode.set(false);
+        this.deliveryCodeReason.set('');
+        this.notificationService.success('Código regenerado y cliente notificado.');
+      },
+      error: (error) => {
+        this.isRegeneratingCode.set(false);
+        this.notificationService.error(getErrorMessage(error, 'No se pudo regenerar el código.'));
       },
     });
   }

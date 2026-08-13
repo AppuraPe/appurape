@@ -71,6 +71,20 @@ public class Order : BaseEntity
 
     public DateTime? DeliveredAtUtc { get; set; }
 
+    public int DeliveryConfirmationVersion { get; set; }
+
+    public DateTime? DeliveryConfirmationExpiresAtUtc { get; set; }
+
+    public int DeliveryConfirmationFailedAttempts { get; set; }
+
+    public int DeliveryConfirmationRegenerations { get; set; }
+
+    public DateTime? DeliveryConfirmationLockedAtUtc { get; set; }
+
+    public DateTime? DeliveryConfirmedAtUtc { get; set; }
+
+    public Guid? DeliveryConfirmedByUserId { get; set; }
+
     public int? DriverRating { get; set; }
 
     public string? DriverFeedback { get; set; }
@@ -82,4 +96,6 @@ public class Order : BaseEntity
     public ICollection<OrderIncident> Incidents { get; set; } = new List<OrderIncident>();
 
     public ICollection<CommunityRequest> CommunityRequests { get; set; } = new List<CommunityRequest>();
+
+    public ICollection<OrderDeliveryConfirmationAudit> DeliveryConfirmationAudits { get; set; } = new List<OrderDeliveryConfirmationAudit>();
 }

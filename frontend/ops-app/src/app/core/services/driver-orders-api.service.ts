@@ -60,8 +60,8 @@ export class DriverOrdersApiService {
     return this.http.post<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/on-the-way`, {});
   }
 
-  markDelivered(id: string): Observable<DriverOrderDetailResponse> {
-    return this.http.post<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/delivered`, {});
+  markDelivered(id: string, confirmationCode: string): Observable<DriverOrderDetailResponse> {
+    return this.http.post<DriverOrderDetailResponse>(`${this.baseUrl}/${id}/delivered`, { confirmationCode });
   }
 
   updateMyOrderStatus(id: string, request: UpdateDriverOrderStatusRequest): Observable<DriverOrderDetailResponse> {

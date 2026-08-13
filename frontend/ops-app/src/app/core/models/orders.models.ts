@@ -103,6 +103,15 @@ export interface OrderDriverDeliveryResponse {
   total: number;
 }
 
+export interface OrderDeliveryConfirmationResponse {
+  orderId: string;
+  code: string;
+  expiresAtUtc: string;
+  remainingAttempts: number;
+  canRegenerate: boolean;
+  isLocked: boolean;
+}
+
 export interface CreateOrderItemRequest {
   menuItemId: string;
   quantity: number;
@@ -113,9 +122,9 @@ export interface CreateOrderRequest {
   clientRequestId: string;
   restaurantId: string;
   customerAddressId?: string;
-  zoneId: string;
-  deliveryAddress: string;
-  deliveryReference: string;
+  zoneId?: string;
+  deliveryAddress?: string;
+  deliveryReference?: string;
   notes?: string;
   paymentMethod: number;
   deliveryMode?: number;

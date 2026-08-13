@@ -45,13 +45,15 @@ public class OrderFulfillmentService : IOrderFulfillmentService
             .FirstOrDefaultAsync(cancellationToken);
         var reason = ResolveUnavailableReason(order, linked);
         var payment = await _dbContext.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.OrderId == order.Id, cancellationToken);
+        var collaboratorReason = reason ?? (payment?.Status == PaymentStatus.Paid ? null : "Para solicitar un colaborador, primero confirma el pago de la compra con el negocio.");
         return new OrderFulfillmentOptionsResponse
         {
             OrderId = order.Id,
             CurrentDeliveryMode = order.DeliveryMode.ToString(),
             CanRequestDriver = reason is null && payment is not null && payment.Method == PaymentMethod.Cash && payment.Status == PaymentStatus.Pending,
-            CanRequestCollaborator = reason is null,
-            UnavailableReason = reason,
+            CanRequestCollaborator = collaboratorReason is null,
+            UnavailableReason = reason ?? (payment?.Status != PaymentStatus.Paid && !(payment?.Method == PaymentMethod.Cash && payment.Status == PaymentStatus.Pending)
+                ? collaboratorReason : null),
             LinkedCommunityRequestId = linked
         };
     }
@@ -70,6 +72,8 @@ public class OrderFulfillmentService : IOrderFulfillmentService
         if (payment.Method != PaymentMethod.Cash || payment.Status != PaymentStatus.Pending)
             throw new AppException("Solo puedes agregar delivery después de comprar cuando el pago en efectivo sigue pendiente.");
 
+        var driverDestination = await ResolveDestinationAsync(order, request.CustomerAddressId, request.ZoneId, request.DeliveryAddress, request.DeliveryReference, cancellationToken);
+        ApplyDestination(order, driverDestination);
         var now = DateTime.UtcNow;
         var rules = await _dbContext.CommissionRules.AsNoTracking()
             .Where(x => x.Scope == CommissionRuleScope.CommercialOrder && x.IsEnabled &&
@@ -139,12 +143,14 @@ public class OrderFulfillmentService : IOrderFulfillmentService
         var linked = await ActiveLinkedRequestIdAsync(order.Id, cancellationToken);
         var reason = ResolveUnavailableReason(order, linked);
         if (reason is not null) throw new AppException(reason);
+        await EnsurePurchasePaidForCollaboratorAsync(order.Id, cancellationToken);
 
         var rules = await ActiveCommunityRulesAsync(cancellationToken);
         var minimum = ResolveRuleAmount(rules, FinancialRuleCodes.SimpleFavorMinimum, 2m);
         if (request.CompensationAmount < minimum)
             throw new AppException($"El pago al colaborador debe ser como mínimo S/ {minimum:0.00}.");
 
+        var destination = await ResolveDestinationAsync(order, request.CustomerAddressId, request.ZoneId, request.DeliveryAddress, request.DeliveryReference, cancellationToken);
         var now = DateTime.UtcNow;
         var deadline = request.DeadlineUtc ?? now.AddHours(12);
         if (deadline <= now || deadline > now.AddHours(24))
@@ -152,7 +158,8 @@ public class OrderFulfillmentService : IOrderFulfillmentService
 
         var breakdown = FinancialCalculator.CalculateCommunityRequest(request.CompensationAmount, 0m, rules);
         var expires = now.Add(QuoteLifetime);
-        var payload = new QuotePayload(order.Id, breakdown.CompensationAmount, breakdown.FavorPlatformCommissionAmount, breakdown.TotalClientAmount, deadline, expires);
+        var payload = new QuotePayload(order.Id, breakdown.CompensationAmount, breakdown.FavorPlatformCommissionAmount, breakdown.TotalClientAmount, deadline, expires,
+            destination.ZoneId, destination.Address, destination.Reference);
         return new OrderCollaboratorPickupQuoteResponse
         {
             OrderId = order.Id,
@@ -177,12 +184,14 @@ public class OrderFulfillmentService : IOrderFulfillmentService
         var linked = await ActiveLinkedRequestIdAsync(order.Id, cancellationToken);
         var reason = ResolveUnavailableReason(order, linked);
         if (reason is not null) throw new AppException(reason);
+        await EnsurePurchasePaidForCollaboratorAsync(order.Id, cancellationToken);
 
         var rules = await ActiveCommunityRulesAsync(cancellationToken);
         var recalculated = FinancialCalculator.CalculateCommunityRequest(quote.CompensationAmount, 0m, rules);
         if (recalculated.FavorPlatformCommissionAmount != quote.PlatformCommissionAmount || recalculated.TotalClientAmount != quote.TotalAdditionalAmount)
             throw new AppException("La tarifa cambió. Solicita una nueva cotización.");
 
+        ApplyDestination(order, new ResolvedDestination(quote.ZoneId, quote.DeliveryAddress, quote.DeliveryReference));
         var userId = RequiredUserId();
         var pickupCode = GenerateCode();
         var deliveryCode = GenerateCode();
@@ -234,7 +243,7 @@ public class OrderFulfillmentService : IOrderFulfillmentService
         {
             Id = Guid.NewGuid(),
             CommunityRequestId = communityRequest.Id,
-            Type = FinancialMovementType.FavorPlatformCommission,
+            Type = FinancialMovementType.CashFavorDebt,
             Status = FinancialMovementStatus.Pending,
             Amount = communityRequest.FavorPlatformCommissionAmount,
             CurrencyCode = "PEN",
@@ -312,6 +321,39 @@ public class OrderFulfillmentService : IOrderFulfillmentService
             .Select(x => (Guid?)x.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
+    private async Task EnsurePurchasePaidForCollaboratorAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var payment = await _dbContext.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
+        if (payment?.Status != PaymentStatus.Paid)
+            throw new AppException("Para solicitar un colaborador, primero confirma el pago de la compra con el negocio.");
+    }
+
+    private async Task<ResolvedDestination> ResolveDestinationAsync(
+        Order order, Guid? customerAddressId, Guid? zoneId, string? address, string? reference, CancellationToken cancellationToken)
+    {
+        if (customerAddressId.HasValue)
+        {
+            var saved = await _dbContext.CustomerAddresses.AsNoTracking().FirstOrDefaultAsync(x =>
+                x.Id == customerAddressId.Value && x.CustomerProfileId == order.CustomerId && x.IsActive, cancellationToken)
+                ?? throw new AppException("La dirección seleccionada no está disponible.");
+            return new ResolvedDestination(saved.ZoneId, saved.AddressLine, saved.Reference);
+        }
+        if (order.ZoneId != Guid.Empty && !string.IsNullOrWhiteSpace(order.DeliveryAddress) && !string.IsNullOrWhiteSpace(order.DeliveryReference))
+            return new ResolvedDestination(order.ZoneId, order.DeliveryAddress, order.DeliveryReference);
+        if (!zoneId.HasValue || zoneId == Guid.Empty || string.IsNullOrWhiteSpace(address) || string.IsNullOrWhiteSpace(reference))
+            throw new AppException("Selecciona o ingresa una dirección de entrega completa.");
+        var zoneExists = await _dbContext.Zones.AnyAsync(x => x.Id == zoneId.Value && x.IsActive, cancellationToken);
+        if (!zoneExists) throw new AppException("La zona seleccionada no está disponible.");
+        return new ResolvedDestination(zoneId.Value, address.Trim(), reference.Trim());
+    }
+
+    private static void ApplyDestination(Order order, ResolvedDestination destination)
+    {
+        order.ZoneId = destination.ZoneId;
+        order.DeliveryAddress = destination.Address;
+        order.DeliveryReference = destination.Reference;
+    }
+
     private async Task<List<CommissionRule>> ActiveCommunityRulesAsync(CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
@@ -376,5 +418,7 @@ public class OrderFulfillmentService : IOrderFulfillmentService
         TotalAdditionalAmount = request.TotalClientAmount
     };
 
-    private sealed record QuotePayload(Guid OrderId, decimal CompensationAmount, decimal PlatformCommissionAmount, decimal TotalAdditionalAmount, DateTime DeadlineUtc, DateTime ExpiresAtUtc);
+    private sealed record ResolvedDestination(Guid ZoneId, string Address, string Reference);
+    private sealed record QuotePayload(Guid OrderId, decimal CompensationAmount, decimal PlatformCommissionAmount, decimal TotalAdditionalAmount,
+        DateTime DeadlineUtc, DateTime ExpiresAtUtc, Guid ZoneId, string DeliveryAddress, string DeliveryReference);
 }

@@ -28,7 +28,8 @@ import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empt
 
 interface BusinessOrderAction {
   label: string;
-  status: BusinessOrderStatus | 'Cancelled';
+  status?: BusinessOrderStatus | 'Cancelled';
+  kind?: 'dispatch';
   variant?: 'danger';
 }
 
@@ -165,6 +166,19 @@ interface BusinessOrderAction {
           </app-surface-card>
         }
 
+        @if ((order.deliveryMode === 'PickupOrDirect' && order.status === 'ReadyForPickup') || (order.deliveryMode === 'BusinessDelivery' && order.status === 'OnTheWay')) {
+          <app-surface-card variant="default" extraClass="grid gap-3 p-4">
+            <app-internal-page-section-header eyebrow="Entrega segura" title="Confirmar entrega" subtitle="Solicita al cliente el código de seis dígitos cuando ya tenga su pedido." />
+            <label class="grid gap-2">
+              <span class="text-sm font-semibold text-slate-700">Código de entrega</span>
+              <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-center text-lg font-black tracking-[0.2em]" inputmode="numeric" maxlength="6" [value]="deliveryCode()" (input)="deliveryCode.set($any($event.target).value)" />
+            </label>
+            <app-button type="button" [disabled]="isSubmitting() || deliveryCode().length !== 6" (click)="confirmBusinessDelivery()" block>
+              {{ isSubmitting() ? 'Confirmando...' : 'Confirmar entrega' }}
+            </app-button>
+          </app-surface-card>
+        }
+
         <app-surface-card variant="default" extraClass="grid w-full min-w-0 max-w-full gap-3 p-3.5 sm:p-4">
           <div class="flex items-center gap-2">
             <lucide-angular class="h-4 w-4 text-primary-700" [img]="packageIcon" aria-hidden="true"></lucide-angular>
@@ -289,9 +303,10 @@ export class BusinessOrderDetailPageComponent {
   readonly rejectConfirmationOpen = signal(false);
   readonly pickupCode = signal('');
   readonly isConfirmingPickup = signal(false);
+  readonly deliveryCode = signal('');
 
   readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
-  readonly availableActions = computed(() => this.getActions(this.order()?.status ?? ''));
+  readonly availableActions = computed(() => this.getActions(this.order()));
 
   constructor() {
     this.loadOrder();
@@ -402,12 +417,34 @@ export class BusinessOrderDetailPageComponent {
   }
 
   handleAction(action: BusinessOrderAction): void {
+    if (action.kind === 'dispatch') {
+      this.dispatchBusinessDelivery();
+      return;
+    }
+    if (!action.status) return;
     if (action.status === 'Cancelled') {
       this.rejectConfirmationOpen.set(true);
       return;
     }
 
     this.runStatusUpdate(action.status);
+  }
+
+  dispatchBusinessDelivery(): void {
+    this.isSubmitting.set(true);
+    this.businessOrdersApi.dispatchBusinessDelivery(this.orderId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (order) => { this.order.set(order); this.isSubmitting.set(false); this.notificationService.success('Pedido despachado.'); },
+      error: (error) => { this.isSubmitting.set(false); this.notificationService.error(getErrorMessage(error, 'No se pudo despachar el pedido.')); },
+    });
+  }
+
+  confirmBusinessDelivery(): void {
+    if (this.deliveryCode().length !== 6) return;
+    this.isSubmitting.set(true);
+    this.businessOrdersApi.confirmBusinessDelivery(this.orderId, this.deliveryCode()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (order) => { this.order.set(order); this.deliveryCode.set(''); this.isSubmitting.set(false); this.notificationService.success('Entrega confirmada.'); },
+      error: (error) => { this.isSubmitting.set(false); this.errorMessage.set(getErrorMessage(error, 'No se pudo confirmar la entrega.')); },
+    });
   }
 
   closeRejectConfirmation(): void {
@@ -457,8 +494,9 @@ export class BusinessOrderDetailPageComponent {
       });
   }
 
-  private getActions(status: string): BusinessOrderAction[] {
-    switch (status) {
+  private getActions(order: BusinessOrderDetailResponse | null): BusinessOrderAction[] {
+    if (!order) return [];
+    switch (order.status) {
       case 'Pending':
         return [
           { label: 'Aceptar pedido', status: 'Accepted' },
@@ -468,6 +506,8 @@ export class BusinessOrderDetailPageComponent {
         return [{ label: 'Marcar en preparación', status: 'Preparing' }];
       case 'Preparing':
         return [{ label: 'Marcar como listo', status: 'ReadyForPickup' }];
+      case 'ReadyForPickup':
+        return order.deliveryMode === 'BusinessDelivery' ? [{ label: 'Despachar pedido', kind: 'dispatch' }] : [];
       default:
         return [];
     }

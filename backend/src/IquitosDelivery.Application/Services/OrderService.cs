@@ -66,6 +66,7 @@ public class OrderService : IOrderService
     private readonly IValidator<RateDriverRequest> _rateDriverValidator;
     private readonly IValidator<RejectRestaurantOrderPaymentRequest> _rejectRestaurantOrderPaymentValidator;
     private readonly IValidator<UpdateOrderStatusRequest> _updateOrderStatusValidator;
+    private readonly IOrderDeliveryConfirmationService? _deliveryConfirmationService;
 
     public OrderService(
         IAppDbContext dbContext,
@@ -75,7 +76,8 @@ public class OrderService : IOrderService
         IValidator<ConfirmRestaurantOrderPaymentRequest> confirmRestaurantOrderPaymentValidator,
         IValidator<RateDriverRequest> rateDriverValidator,
         IValidator<RejectRestaurantOrderPaymentRequest> rejectRestaurantOrderPaymentValidator,
-        IValidator<UpdateOrderStatusRequest> updateOrderStatusValidator)
+        IValidator<UpdateOrderStatusRequest> updateOrderStatusValidator,
+        IOrderDeliveryConfirmationService? deliveryConfirmationService = null)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
@@ -85,6 +87,7 @@ public class OrderService : IOrderService
         _rateDriverValidator = rateDriverValidator;
         _rejectRestaurantOrderPaymentValidator = rejectRestaurantOrderPaymentValidator;
         _updateOrderStatusValidator = updateOrderStatusValidator;
+        _deliveryConfirmationService = deliveryConfirmationService;
     }
 
     public async Task<ValidateOrderResponse> ValidateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
@@ -389,6 +392,11 @@ public class OrderService : IOrderService
             throw new AppException("You can only rate a delivered order with a driver assigned.");
         }
 
+        if (order.DriverRating.HasValue)
+        {
+            throw new AppException("Este pedido ya fue calificado.");
+        }
+
         order.DriverRating = request.Rating;
         order.DriverFeedback = NormalizeNotes(request.Comment);
 
@@ -423,7 +431,7 @@ public class OrderService : IOrderService
 
         EnsureDeliveryModeCanBeRequested(restaurant, request);
 
-        var resolvedDeliveryAddress = await ResolveDeliveryAddressAsync(customer.Id, request, cancellationToken);
+        var resolvedDeliveryAddress = await ResolveDeliveryAddressAsync(customer.Id, restaurant, request, cancellationToken);
 
         var normalizedItems = request.Items
             .GroupBy(x => x.MenuItemId)
@@ -610,6 +618,7 @@ public class OrderService : IOrderService
 
     private async Task<ResolvedDeliveryAddress> ResolveDeliveryAddressAsync(
         Guid customerId,
+        Restaurant restaurant,
         CreateOrderRequest request,
         CancellationToken cancellationToken)
     {
@@ -643,8 +652,11 @@ public class OrderService : IOrderService
             };
         }
 
+        var requestedZoneId = request.DeliveryMode == DeliveryMode.PickupOrDirect && request.ZoneId == Guid.Empty
+            ? restaurant.ZoneId
+            : request.ZoneId;
         var zone = await _dbContext.Zones
-            .FirstOrDefaultAsync(x => x.Id == request.ZoneId && x.IsActive, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == requestedZoneId && x.IsActive, cancellationToken);
 
         if (zone is null)
         {
@@ -655,8 +667,8 @@ public class OrderService : IOrderService
         {
             Zone = zone,
             CustomerAddressId = null,
-            DeliveryAddress = request.DeliveryAddress.Trim(),
-            DeliveryReference = request.DeliveryReference.Trim()
+            DeliveryAddress = request.DeliveryMode == DeliveryMode.PickupOrDirect ? string.Empty : request.DeliveryAddress.Trim(),
+            DeliveryReference = request.DeliveryMode == DeliveryMode.PickupOrDirect ? string.Empty : request.DeliveryReference.Trim()
         };
     }
 
@@ -917,11 +929,49 @@ public class OrderService : IOrderService
                     linkedPickup.PickupCodeExpiresAtUtc = DateTime.UtcNow.AddHours(12);
                 }
             }
+            _deliveryConfirmationService?.EnsureIssued(order, _currentUserService.UserId!.Value);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await NotifyRestaurantOrderStatusChangedAsync(order, restaurant, request.Status, cancellationToken);
 
+        return await GetRestaurantOrderByIdAsync(order.Id, cancellationToken);
+    }
+
+    public async Task<RestaurantOrderDetailResponse> DispatchBusinessDeliveryAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
+        var order = await _dbContext.Orders.Include(x => x.Payment).FirstOrDefaultAsync(x => x.Id == orderId && x.RestaurantId == restaurant.Id, cancellationToken)
+            ?? throw new NotFoundException("No encontramos el pedido.");
+        if (order.DeliveryMode != DeliveryMode.BusinessDelivery || order.Status != OrderStatus.ReadyForPickup)
+            throw new AppException("Solo puedes despachar un pedido con delivery propio que esté listo.");
+        order.Status = OrderStatus.OnTheWay;
+        order.PickedUpAtUtc ??= DateTime.UtcNow;
+        _deliveryConfirmationService?.EnsureIssued(order, _currentUserService.UserId!.Value);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCustomerAboutBusinessDispatchAsync(order, restaurant.Name, cancellationToken);
+        return await GetRestaurantOrderByIdAsync(order.Id, cancellationToken);
+    }
+
+    public async Task<RestaurantOrderDetailResponse> ConfirmBusinessDeliveryAsync(Guid orderId, ConfirmOrderDeliveryRequest request, CancellationToken cancellationToken = default)
+    {
+        var restaurant = await GetCurrentRestaurantAsync(cancellationToken);
+        var order = await _dbContext.Orders.Include(x => x.Payment).FirstOrDefaultAsync(x => x.Id == orderId && x.RestaurantId == restaurant.Id, cancellationToken)
+            ?? throw new NotFoundException("No encontramos el pedido.");
+        var validState = order.DeliveryMode == DeliveryMode.PickupOrDirect
+            ? order.Status == OrderStatus.ReadyForPickup
+            : order.DeliveryMode == DeliveryMode.BusinessDelivery && order.Status == OrderStatus.OnTheWay;
+        if (order.Status == OrderStatus.Delivered && order.DeliveryConfirmedAtUtc.HasValue)
+            return await GetRestaurantOrderByIdAsync(order.Id, cancellationToken);
+        if (!validState) throw new AppException("El pedido todavía no puede confirmarse como entregado.");
+        if (_deliveryConfirmationService is null) throw new AppException("La confirmación de entrega no está configurada.");
+        await _deliveryConfirmationService.ValidateAsync(order, request.ConfirmationCode, _currentUserService.UserId!.Value, cancellationToken);
+        order.Status = OrderStatus.Delivered;
+        order.DeliveredAtUtc = DateTime.UtcNow;
+        CloseCashPaymentOnBusinessDelivery(order.Payment, _currentUserService.UserId.Value, order.DeliveredAtUtc.Value);
+        await MarkOrderFinancialMovementsAvailableAsync(order.Id, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyCustomerAboutBusinessDeliveryAsync(order, restaurant.Name, cancellationToken);
         return await GetRestaurantOrderByIdAsync(order.Id, cancellationToken);
     }
 
@@ -1279,20 +1329,61 @@ public class OrderService : IOrderService
 
     private async Task NotifyBusinessAboutNewOrderAsync(Order order, Guid businessOwnerUserId, CancellationToken cancellationToken)
     {
-        if (order.PaymentMethod != PaymentMethod.Cash)
-        {
-            return;
-        }
-
         await _notificationService.SendToUserAsync(
             businessOwnerUserId,
             new EventPushNotificationRequest
             {
-                Title = "Nuevo pedido en efectivo",
-                Body = $"Tienes un nuevo pedido #{order.Id.ToString("N")[..8]}.",
-                Data = NotificationPayloadFactory.BusinessOrder(order.Id, $"/business/orders/{order.Id}", "order_created_cash")
+                Title = order.PaymentMethod == PaymentMethod.Cash ? "Nuevo pedido en efectivo" : "Nuevo pedido por verificar",
+                Body = order.PaymentMethod == PaymentMethod.Cash
+                    ? $"Tienes un nuevo pedido #{order.Id.ToString("N")[..8]}."
+                    : $"Revisa y confirma el pago del pedido #{order.Id.ToString("N")[..8]}.",
+                Data = NotificationPayloadFactory.BusinessOrder(order.Id, $"/business/orders/{order.Id}", order.PaymentMethod == PaymentMethod.Cash ? "order_created_cash" : "order_created_payment_review")
             },
             cancellationToken);
+    }
+
+    private static void CloseCashPaymentOnBusinessDelivery(Payment? payment, Guid actorUserId, DateTime deliveredAtUtc)
+    {
+        if (payment is null || payment.Method != PaymentMethod.Cash || payment.Status == PaymentStatus.Paid) return;
+        payment.Status = PaymentStatus.Paid;
+        payment.PaidAtUtc = deliveredAtUtc;
+        payment.ConfirmedAtUtc = deliveredAtUtc;
+        payment.ConfirmedByUserId = actorUserId;
+    }
+
+    private async Task MarkOrderFinancialMovementsAvailableAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var availableAtUtc = DateTime.UtcNow;
+        var movements = await _dbContext.FinancialMovements
+            .Where(x => x.OrderId == orderId && x.Status == FinancialMovementStatus.Pending)
+            .ToListAsync(cancellationToken);
+        foreach (var movement in movements)
+        {
+            movement.Status = FinancialMovementStatus.Available;
+            movement.AvailableAtUtc = availableAtUtc;
+        }
+    }
+
+    private async Task NotifyCustomerAboutBusinessDispatchAsync(Order order, string restaurantName, CancellationToken cancellationToken)
+    {
+        var customerUserId = await _dbContext.Customers.Where(x => x.Id == order.CustomerId).Select(x => x.UserId).FirstAsync(cancellationToken);
+        await _notificationService.SendToUserAsync(customerUserId, new EventPushNotificationRequest
+        {
+            Title = "Pedido en camino",
+            Body = $"{restaurantName} despachó tu pedido.",
+            Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "business_order_on_the_way")
+        }, cancellationToken);
+    }
+
+    private async Task NotifyCustomerAboutBusinessDeliveryAsync(Order order, string restaurantName, CancellationToken cancellationToken)
+    {
+        var customerUserId = await _dbContext.Customers.Where(x => x.Id == order.CustomerId).Select(x => x.UserId).FirstAsync(cancellationToken);
+        await _notificationService.SendToUserAsync(customerUserId, new EventPushNotificationRequest
+        {
+            Title = "Pedido entregado",
+            Body = $"La entrega de {restaurantName} fue confirmada.",
+            Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "business_order_delivered")
+        }, cancellationToken);
     }
 
     private async Task NotifyCustomerAboutPaymentStatusAsync(

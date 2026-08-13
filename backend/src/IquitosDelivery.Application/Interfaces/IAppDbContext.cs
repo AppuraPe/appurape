@@ -52,6 +52,8 @@ public interface IAppDbContext
 
     IQueryable<Order> Orders { get; }
 
+    IQueryable<OrderDeliveryConfirmationAudit> OrderDeliveryConfirmationAudits { get; }
+
     IQueryable<Payment> Payments { get; }
 
     IQueryable<UserDeviceToken> UserDeviceTokens { get; }

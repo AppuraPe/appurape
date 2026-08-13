@@ -1,4 +1,5 @@
 using IquitosDelivery.Application.DTOs.Drivers;
+using IquitosDelivery.Application.DTOs.Orders;
 using IquitosDelivery.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -113,9 +114,9 @@ public class DriverOrdersController : ControllerBase
 
     [HttpPost("{id:guid}/delivered")]
     [ProducesResponseType(typeof(DriverOrderDetailResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<DriverOrderDetailResponse>> MarkDelivered(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<DriverOrderDetailResponse>> MarkDelivered(Guid id, [FromBody] ConfirmOrderDeliveryRequest request, CancellationToken cancellationToken)
     {
-        var response = await _driverOrderService.UpdateMyOrderStatusAsync(id, new UpdateDriverOrderStatusRequest { Status = Domain.Enums.OrderStatus.Delivered }, cancellationToken);
+        var response = await _driverOrderService.UpdateMyOrderStatusAsync(id, new UpdateDriverOrderStatusRequest { Status = Domain.Enums.OrderStatus.Delivered, ConfirmationCode = request.ConfirmationCode }, cancellationToken);
         return Ok(response);
     }
 }

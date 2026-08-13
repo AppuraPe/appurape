@@ -39,4 +39,8 @@ public interface IOrderService
     Task<RestaurantOrderDetailResponse> UpdateRestaurantOrderStatusAsync(Guid orderId, UpdateOrderStatusRequest request, CancellationToken cancellationToken = default);
 
     Task<RestaurantOrderDetailResponse> CancelRestaurantOrderAsync(Guid orderId, CancelOrderRequest request, CancellationToken cancellationToken = default);
+
+    Task<RestaurantOrderDetailResponse> DispatchBusinessDeliveryAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+    Task<RestaurantOrderDetailResponse> ConfirmBusinessDeliveryAsync(Guid orderId, ConfirmOrderDeliveryRequest request, CancellationToken cancellationToken = default);
 }

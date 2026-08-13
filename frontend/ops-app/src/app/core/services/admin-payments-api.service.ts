@@ -24,4 +24,8 @@ export class AdminPaymentsApiService {
   rejectPayment(orderId: string): Observable<AdminPaymentDetail> {
     return this.http.post<AdminPaymentDetail>(`${this.baseUrl}/${orderId}/reject`, {});
   }
+
+  regenerateDeliveryCode(orderId: string, reason: string): Observable<{ orderId: string; expiresAtUtc: string; regenerated: boolean }> {
+    return this.http.post<{ orderId: string; expiresAtUtc: string; regenerated: boolean }>(`${environment.apiBaseUrl}/api/admin/orders/${orderId}/delivery-confirmation/regenerate`, { reason });
+  }
 }

@@ -14,6 +14,10 @@ public class OrderCollaboratorPickupQuoteRequest
 {
     public decimal CompensationAmount { get; set; }
     public DateTime? DeadlineUtc { get; set; }
+    public Guid? CustomerAddressId { get; set; }
+    public Guid? ZoneId { get; set; }
+    public string? DeliveryAddress { get; set; }
+    public string? DeliveryReference { get; set; }
 }
 
 public class OrderCollaboratorPickupQuoteResponse
@@ -47,6 +51,10 @@ public class ConfirmCollaboratorPickupRequest
 public class RequestOrderDriverDeliveryRequest
 {
     public decimal? OfferedDeliveryAmount { get; set; }
+    public Guid? CustomerAddressId { get; set; }
+    public Guid? ZoneId { get; set; }
+    public string? DeliveryAddress { get; set; }
+    public string? DeliveryReference { get; set; }
 }
 
 public class OrderDriverDeliveryResponse

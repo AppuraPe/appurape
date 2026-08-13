@@ -288,6 +288,7 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     if (mode === 'VerifiedDriverDelivery') {
       this.checkoutForm.controls.offeredDeliveryAmount.setValue(this.verifiedDriverMinimum());
     }
+    this.updateAddressValidators(mode);
 
     this.resetClientRequestAttempt();
     this.checkoutErrorMessage.set('');
@@ -716,6 +717,20 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     this.selectedCustomerAddressId.set(defaultAddress?.id ?? null);
     this.addressMode.set(defaultAddress ? 'saved' : 'manual');
     this.isHydratingAddress = false;
+    this.updateAddressValidators('VerifiedDriverDelivery');
+  }
+
+  private updateAddressValidators(mode: DeliveryMode): void {
+    const controls = [this.checkoutForm.controls.deliveryAddress, this.checkoutForm.controls.deliveryReference];
+    for (const control of controls) {
+      if (mode === 'PickupOrDirect') {
+        control.clearValidators();
+        control.addValidators(Validators.maxLength(300));
+      } else {
+        control.setValidators([Validators.required, Validators.maxLength(300)]);
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    }
   }
 
   private formatMoney(amount: number): string {

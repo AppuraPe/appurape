@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<Interfaces.ICatalogService, Services.CatalogServiceAdapter>();
         services.AddScoped<Interfaces.IOrderService, Services.OrderService>();
         services.AddScoped<Interfaces.IOrderFulfillmentService, Services.OrderFulfillmentService>();
+        services.AddScoped<Interfaces.IOrderDeliveryConfirmationService, Services.OrderDeliveryConfirmationService>();
         services.AddScoped<Interfaces.IBusinessOrderService, Services.BusinessOrderServiceAdapter>();
         services.AddScoped<Interfaces.IDriverOrderService, Services.DriverOrderService>();
         services.AddScoped<Interfaces.IAdminRestaurantService, Services.AdminRestaurantService>();

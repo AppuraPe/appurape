@@ -522,7 +522,7 @@ public class ControllerSmokeTests
         Assert.IsType<OkObjectResult>((await controller.UpdateMyOrderStatus(orderId, new UpdateDriverOrderStatusRequest(), CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.MarkPickedUp(orderId, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.MarkOnTheWay(orderId, CancellationToken.None)).Result);
-        Assert.IsType<OkObjectResult>((await controller.MarkDelivered(orderId, CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.MarkDelivered(orderId, new ConfirmOrderDeliveryRequest { ConfirmationCode = "123456" }, CancellationToken.None)).Result);
     }
 
     private static void AssertEndpointRateLimit(string methodName, string expectedPolicy)

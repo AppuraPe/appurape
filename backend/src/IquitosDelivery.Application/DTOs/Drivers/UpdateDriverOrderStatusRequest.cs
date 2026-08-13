@@ -5,4 +5,5 @@ namespace IquitosDelivery.Application.DTOs.Drivers;
 public class UpdateDriverOrderStatusRequest
 {
     public OrderStatus Status { get; set; }
+    public string? ConfirmationCode { get; set; }
 }

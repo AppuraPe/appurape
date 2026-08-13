@@ -37,6 +37,9 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.ReadyAtUtc);
         builder.Property(x => x.PickedUpAtUtc);
         builder.Property(x => x.DeliveredAtUtc);
+        builder.Property(x => x.DeliveryConfirmationVersion).HasDefaultValue(0);
+        builder.Property(x => x.DeliveryConfirmationFailedAttempts).HasDefaultValue(0);
+        builder.Property(x => x.DeliveryConfirmationRegenerations).HasDefaultValue(0);
         builder.Property(x => x.AssignedCourierUserId);
         builder.Property(x => x.AssignedCourierType);
         builder.Property(x => x.DriverRating);
@@ -74,6 +77,11 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(x => x.Incidents)
+            .WithOne(x => x.Order)
+            .HasForeignKey(x => x.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.DeliveryConfirmationAudits)
             .WithOne(x => x.Order)
             .HasForeignKey(x => x.OrderId)
             .OnDelete(DeleteBehavior.Cascade);

@@ -19,6 +19,7 @@ public class OrderFulfillmentServiceTests
     {
         await using var db = CreateDbContext();
         var seeded = await SeedAsync(db);
+        await AddPaidPaymentAsync(db, seeded.Order);
         var service = CreateService(db, seeded.CustomerUser.Id);
         var originalTotal = seeded.Order.Total;
 
@@ -39,6 +40,7 @@ public class OrderFulfillmentServiceTests
     {
         await using var db = CreateDbContext();
         var seeded = await SeedAsync(db);
+        await AddPaidPaymentAsync(db, seeded.Order);
         var service = CreateService(db, seeded.CustomerUser.Id);
         var quote = await service.QuoteCollaboratorPickupAsync(seeded.Order.Id, new OrderCollaboratorPickupQuoteRequest { CompensationAmount = 5m });
         await service.CreateCollaboratorPickupAsync(seeded.Order.Id, new CreateOrderCollaboratorPickupRequest { QuoteToken = quote.QuoteToken });
@@ -53,6 +55,7 @@ public class OrderFulfillmentServiceTests
     {
         await using var db = CreateDbContext();
         var seeded = await SeedAsync(db);
+        await AddPaidPaymentAsync(db, seeded.Order);
         var customerService = CreateService(db, seeded.CustomerUser.Id);
         var quote = await customerService.QuoteCollaboratorPickupAsync(seeded.Order.Id, new OrderCollaboratorPickupQuoteRequest { CompensationAmount = 5m });
         var created = await customerService.CreateCollaboratorPickupAsync(seeded.Order.Id, new CreateOrderCollaboratorPickupRequest { QuoteToken = quote.QuoteToken });
@@ -116,6 +119,11 @@ public class OrderFulfillmentServiceTests
     }
 
     private static User NewUser(UserRole role, string email) => new() { Id = Guid.NewGuid(), FirstName = "Test", LastName = "User", Email = email, Phone = "900000000", PasswordHash = "hash", Role = role, Status = UserStatus.Active };
+    private static async Task AddPaidPaymentAsync(AppDbContext db, Order order)
+    {
+        db.Payments.Add(new Payment { Id = Guid.NewGuid(), OrderId = order.Id, Order = order, Method = PaymentMethod.Yape, Status = PaymentStatus.Paid, Amount = order.Total });
+        await db.SaveChangesAsync();
+    }
     private static AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString("N")).Options);
     private sealed class CurrentUser(Guid userId) : ICurrentUserService { public Guid? UserId => userId; public string? Email => null; public string? Role => null; public bool IsAuthenticated => true; }
     private sealed record Seeded(User CustomerUser, User BusinessUser, Order Order);

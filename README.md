@@ -168,6 +168,7 @@ Variables que Render pedira o que debes revisar:
 
 - `ConnectionStrings__DefaultConnection`
 - `Jwt__Key`
+- `OrderConfirmation__Key` (secreto aleatorio de al menos 32 bytes para los códigos de entrega)
 - `Email__Provider=Logging`
 - `Storage__Supabase__ServiceKey`
  

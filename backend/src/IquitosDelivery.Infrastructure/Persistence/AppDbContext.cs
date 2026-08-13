@@ -62,6 +62,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Order> Orders => Set<Order>();
 
+    public DbSet<OrderDeliveryConfirmationAudit> OrderDeliveryConfirmationAudits => Set<OrderDeliveryConfirmationAudit>();
+
     public DbSet<Payment> Payments => Set<Payment>();
 
     public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
@@ -123,6 +125,8 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<MenuItem> IAppDbContext.MenuItems => MenuItems;
 
     IQueryable<Order> IAppDbContext.Orders => Orders;
+
+    IQueryable<OrderDeliveryConfirmationAudit> IAppDbContext.OrderDeliveryConfirmationAudits => OrderDeliveryConfirmationAudits;
 
     IQueryable<Payment> IAppDbContext.Payments => Payments;
 
