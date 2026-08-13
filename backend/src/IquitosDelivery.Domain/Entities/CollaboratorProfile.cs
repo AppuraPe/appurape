@@ -22,5 +22,9 @@ public class CollaboratorProfile
 
     public string? ProfilePhotoUrl { get; set; }
 
+    public string? LiveSelfieUrl { get; set; }
+
+    public DateTime? LiveSelfieCapturedAtUtc { get; set; }
+
     public string? Notes { get; set; }
 }

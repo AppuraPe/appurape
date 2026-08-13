@@ -44,6 +44,18 @@ public class CollaboratorVerificationService : ICollaboratorVerificationService
     public async Task<CollaboratorVerificationResponse> RequestVerificationAsync(CancellationToken cancellationToken = default)
     {
         var userId = GetCurrentUserId();
+        var profile = await _dbContext.CollaboratorProfiles
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken)
+            ?? throw new AppException("Completa tu perfil de colaborador antes de solicitar la validación.");
+
+        if (string.IsNullOrWhiteSpace(profile.ProfilePhotoUrl) ||
+            string.IsNullOrWhiteSpace(profile.IdentityDocumentUrl) ||
+            string.IsNullOrWhiteSpace(profile.LiveSelfieUrl) ||
+            !profile.LiveSelfieCapturedAtUtc.HasValue)
+        {
+            throw new AppException("Debes registrar tu foto de perfil, DNI y selfie en vivo antes de solicitar la validación.");
+        }
+
         var active = await _dbContext.CollaboratorVerifications
             .FirstOrDefaultAsync(
                 x => x.UserId == userId &&
@@ -102,6 +114,21 @@ public class CollaboratorVerificationService : ICollaboratorVerificationService
         verification.RejectReason = null;
         verification.ExpiresAtUtc = reviewedAtUtc.AddYears(1);
 
+        var profile = await _dbContext.CollaboratorProfiles
+            .FirstOrDefaultAsync(x => x.UserId == verification.UserId, cancellationToken)
+            ?? throw new AppException("El usuario no tiene un perfil de colaborador completo.");
+
+        if (string.IsNullOrWhiteSpace(profile.ProfilePhotoUrl) ||
+            string.IsNullOrWhiteSpace(profile.IdentityDocumentUrl) ||
+            string.IsNullOrWhiteSpace(profile.LiveSelfieUrl) ||
+            !profile.LiveSelfieCapturedAtUtc.HasValue)
+        {
+            throw new AppException("No se puede aprobar: faltan la foto de perfil, el DNI o la selfie en vivo.");
+        }
+
+        profile.ApprovalStatus = ApprovalStatus.Approved;
+        profile.IsIdentityVerified = true;
+
         _dbContext.Add(new FinancialMovement
         {
             Id = Guid.NewGuid(),
@@ -139,6 +166,14 @@ public class CollaboratorVerificationService : ICollaboratorVerificationService
         verification.ReviewedAtUtc = DateTime.UtcNow;
         verification.ReviewedByAdminId = GetCurrentUserId();
         verification.RejectReason = request.Reason.Trim();
+
+        var profile = await _dbContext.CollaboratorProfiles
+            .FirstOrDefaultAsync(x => x.UserId == verification.UserId, cancellationToken);
+        if (profile is not null)
+        {
+            profile.ApprovalStatus = ApprovalStatus.Rejected;
+            profile.IsIdentityVerified = false;
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetByIdAsync(verification.Id, cancellationToken);

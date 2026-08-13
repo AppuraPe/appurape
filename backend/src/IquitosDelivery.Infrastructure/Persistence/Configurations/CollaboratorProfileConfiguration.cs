@@ -18,6 +18,7 @@ public class CollaboratorProfileConfiguration : IEntityTypeConfiguration<Collabo
         builder.Property(x => x.IdentityDocumentNumber).HasMaxLength(30);
         builder.Property(x => x.IdentityDocumentUrl).HasMaxLength(500);
         builder.Property(x => x.ProfilePhotoUrl).HasMaxLength(500);
+        builder.Property(x => x.LiveSelfieUrl).HasMaxLength(500);
         builder.Property(x => x.Notes).HasMaxLength(1000);
 
         builder.HasIndex(x => x.UserId).IsUnique();

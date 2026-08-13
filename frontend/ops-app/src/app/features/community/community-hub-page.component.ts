@@ -98,7 +98,15 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
       @if (isLoading()) {
         <app-unified-loading-state label="Cargando favores" />
       } @else {
-        @if (isCollaboratorView() && collaborator()) {
+        @if (isCustomerView() && isCollaboratorView() && !isApprovedCollaborator()) {
+          <app-notice
+            tone="warning"
+            title="Valida tu identidad para colaborar"
+            message="Antes de ayudar debes registrar una foto de perfil, enviar la foto de tu DNI, tomar una selfie en vivo con la cámara y esperar la aprobación de AppuraPe. Hasta entonces no podrás activar tu disponibilidad ni postularte."
+          />
+        }
+
+        @if (isCollaboratorView() && collaborator() && (!isCustomerView() || isApprovedCollaborator())) {
         <details class="group min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
           <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
             <span class="min-w-0">
@@ -281,7 +289,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
         }
 
         <div class="grid gap-4">
-          @if (isCollaboratorView()) {
+          @if (isCollaboratorView() && (!isCustomerView() || isApprovedCollaborator())) {
           <details class="group order-2 min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
             <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
               <span class="min-w-0">
@@ -514,6 +522,12 @@ export class CommunityHubPageComponent {
   readonly hubMode = signal<HubMode>(this.authService.currentRole() === 'Driver' ? 'collaborator' : 'requester');
   readonly isCollaboratorView = computed(() => this.isDriverView() || this.hubMode() === 'collaborator');
   readonly isRequesterView = computed(() => this.isCustomerView() && this.hubMode() === 'requester');
+  readonly isApprovedCollaborator = computed(() => {
+    const collaborator = this.collaborator();
+    return !!collaborator &&
+      collaborator.collaboratorApprovalStatus === 'Approved' &&
+      collaborator.isIdentityVerified;
+  });
   readonly selectedScope = signal<RequestScope>(this.authService.currentRole() === 'Driver' ? 'available' : 'active');
   readonly deadlineMinimum = signal(this.toLocalInputValue(new Date(Date.now() + 5 * 60 * 1000)));
   readonly deadlineMaximum = signal(this.toLocalInputValue(new Date(Date.now() + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS)));

@@ -21,6 +21,17 @@ public class InternalCommerceMvpFinanceTests
         var adminUserId = Guid.NewGuid();
         SeedUser(dbContext, collaboratorUserId, "driver@appurape.test", UserRole.Driver);
         SeedUser(dbContext, adminUserId, "admin@appurape.test", UserRole.Admin);
+        dbContext.CollaboratorProfiles.Add(new CollaboratorProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = collaboratorUserId,
+            ApprovalStatus = ApprovalStatus.Pending,
+            IsPhoneVerified = true,
+            ProfilePhotoUrl = "https://public.example.test/profile.jpg",
+            IdentityDocumentUrl = "private/identity-document.jpg",
+            LiveSelfieUrl = "private/live-selfie.jpg",
+            LiveSelfieCapturedAtUtc = DateTime.UtcNow
+        });
         SeedRule(dbContext, FinancialRuleCodes.CollaboratorVerificationFee, 5m);
         await dbContext.SaveChangesAsync();
 

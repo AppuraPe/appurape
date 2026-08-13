@@ -54,6 +54,11 @@ public class CommunityService : ICommunityService
         await _updateCollaboratorValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var collaborator = await GetOrCreateCollaboratorAsync(cancellationToken);
+        if (request.IsAvailable || request.AvailabilityStatus == CommunityAvailabilityStatus.Available)
+        {
+            EnsureCollaboratorIdentityIsApproved(collaborator);
+        }
+
         collaborator.IsAvailable = request.IsAvailable;
         collaborator.AvailabilityStatus = request.IsAvailable ? request.AvailabilityStatus : CommunityAvailabilityStatus.Disconnected;
         collaborator.CurrentLatitude = request.CurrentLatitude;
@@ -966,9 +971,31 @@ public class CommunityService : ICommunityService
 
     private static void EnsureCollaboratorCanOperate(CommunityCollaborator collaborator)
     {
+        EnsureCollaboratorIdentityIsApproved(collaborator);
+
         if (!collaborator.IsAvailable || collaborator.AvailabilityStatus != CommunityAvailabilityStatus.Available)
         {
-            throw new AppException("Activate your community availability before accepting requests.");
+            throw new AppException("Activa tu disponibilidad en Favores antes de postularte.");
+        }
+    }
+
+    private static void EnsureCollaboratorIdentityIsApproved(CommunityCollaborator collaborator)
+    {
+        if (collaborator.User.Role != UserRole.Customer)
+        {
+            return;
+        }
+
+        var profile = collaborator.User.CollaboratorProfile;
+        if (profile is null ||
+            profile.ApprovalStatus != ApprovalStatus.Approved ||
+            !profile.IsIdentityVerified ||
+            string.IsNullOrWhiteSpace(profile.IdentityDocumentUrl) ||
+            string.IsNullOrWhiteSpace(profile.ProfilePhotoUrl) ||
+            string.IsNullOrWhiteSpace(profile.LiveSelfieUrl) ||
+            !profile.LiveSelfieCapturedAtUtc.HasValue)
+        {
+            throw new AppException("Tu perfil de colaborador debe ser validado por AppuraPe antes de ayudar en un favor.");
         }
     }
 
