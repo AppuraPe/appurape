@@ -160,14 +160,10 @@ public class CommunityService : ICommunityService
             .OrderByDescending(x => x.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
-        CommunityCollaborator? currentCollaborator = null;
-        if (string.Equals(_currentUserService.Role, nameof(UserRole.Driver), StringComparison.OrdinalIgnoreCase))
-        {
-            currentCollaborator = await _dbContext.CommunityCollaborators
-                .Include(x => x.User)
-                .Include(x => x.Routes)
-                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
-        }
+        var currentCollaborator = await _dbContext.CommunityCollaborators
+            .Include(x => x.User)
+            .Include(x => x.Routes)
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
         return requests
             .Select(x => MapRequestListItem(x, userId, currentCollaborator))

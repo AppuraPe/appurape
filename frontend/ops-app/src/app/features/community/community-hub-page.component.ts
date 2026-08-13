@@ -24,6 +24,7 @@ import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empt
 import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
 type RequestScope = 'active' | 'completed' | 'cancelled' | 'available' | 'taken' | 'history';
+type HubMode = 'requester' | 'collaborator';
 type HubWarning = { title: string; message: string };
 type HubLoadResult<T> = { data: T; warning: HubWarning | null };
 
@@ -59,6 +60,27 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
           [title]="pageTitle()"
           [subtitle]="pageSubtitle()"
         />
+
+        @if (isCustomerView()) {
+          <div class="grid min-w-0 grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Elegir cómo participar en Favores">
+            <button
+              type="button"
+              class="min-h-11 min-w-0 rounded-xl px-2 text-xs font-semibold transition min-[360px]:text-sm"
+              [class]="hubModeClass('requester')"
+              (click)="selectHubMode('requester')"
+            >
+              Necesito ayuda
+            </button>
+            <button
+              type="button"
+              class="min-h-11 min-w-0 rounded-xl px-2 text-xs font-semibold transition min-[360px]:text-sm"
+              [class]="hubModeClass('collaborator')"
+              (click)="selectHubMode('collaborator')"
+            >
+              Quiero ayudar
+            </button>
+          </div>
+        }
       </section>
 
       @if (errorMessage()) {
@@ -76,7 +98,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
       @if (isLoading()) {
         <app-unified-loading-state label="Cargando favores" />
       } @else {
-        @if (isDriverView() && collaborator()) {
+        @if (isCollaboratorView() && collaborator()) {
         <details class="group min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
           <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
             <span class="min-w-0">
@@ -152,7 +174,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
         </details>
         }
 
-        @if (isCustomerView()) {
+        @if (isRequesterView()) {
         <details class="group min-w-0 overflow-hidden rounded-[20px] border border-red-100 bg-white shadow-sm">
           <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
             <span class="min-w-0">
@@ -259,7 +281,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
         }
 
         <div class="grid gap-4">
-          @if (isDriverView()) {
+          @if (isCollaboratorView()) {
           <details class="group order-2 min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
             <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
               <span class="min-w-0">
@@ -367,7 +389,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
 
           <app-surface-card class="order-1" variant="page" extraClass="grid gap-4 p-4 sm:p-5">
             <div class="grid w-full min-w-0 grid-cols-3 gap-2 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Filtrar favores">
-              @if (isDriverView()) {
+              @if (isCollaboratorView()) {
               <button
                 type="button"
                 class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs"
@@ -435,7 +457,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
                       @if (request.isAssignedToMe) {
                         <app-status-badge status="trusted" label="Asignada a mí" />
                       }
-                      @if (isDriverView() && selectedScope() === 'available') {
+                      @if (isCollaboratorView() && selectedScope() === 'available') {
                         <span>Coincidencia {{ formatMatchScore(request.matchScore) }}</span>
                       }
                     </div>
@@ -489,6 +511,9 @@ export class CommunityHubPageComponent {
   readonly routeEditingId = signal<string | null>(null);
   readonly isDriverView = computed(() => this.authService.currentRole() === 'Driver');
   readonly isCustomerView = computed(() => this.authService.currentRole() === 'Customer');
+  readonly hubMode = signal<HubMode>(this.authService.currentRole() === 'Driver' ? 'collaborator' : 'requester');
+  readonly isCollaboratorView = computed(() => this.isDriverView() || this.hubMode() === 'collaborator');
+  readonly isRequesterView = computed(() => this.isCustomerView() && this.hubMode() === 'requester');
   readonly selectedScope = signal<RequestScope>(this.authService.currentRole() === 'Driver' ? 'available' : 'active');
   readonly deadlineMinimum = signal(this.toLocalInputValue(new Date(Date.now() + 5 * 60 * 1000)));
   readonly deadlineMaximum = signal(this.toLocalInputValue(new Date(Date.now() + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS)));
@@ -533,7 +558,7 @@ export class CommunityHubPageComponent {
     const scope = this.selectedScope();
     const requests = this.requests();
 
-    if (this.isDriverView()) {
+    if (this.isCollaboratorView()) {
       switch (scope) {
         case 'taken':
           return requests.filter(
@@ -582,7 +607,7 @@ export class CommunityHubPageComponent {
     const count = this.filteredRequests().length;
     const scope = this.selectedScope();
 
-    if (this.isDriverView()) {
+    if (this.isCollaboratorView()) {
       if (scope === 'taken') {
         return count === 1 ? 'Tienes 1 favor en seguimiento.' : `Tienes ${count} favores en seguimiento.`;
       }
@@ -601,14 +626,14 @@ export class CommunityHubPageComponent {
     return count === 1 ? 'Tienes 1 favor activo.' : `Tienes ${count} favores activos.`;
   });
 
-  readonly pageTitle = computed(() => this.isDriverView() ? 'Favores disponibles' : 'Mis favores');
-  readonly pageSubtitle = computed(() => this.isDriverView()
-    ? 'Encuentra encargos que puedes tomar.'
-    : 'Revisa el estado de tus solicitudes.');
-  readonly emptyTitle = computed(() => this.isDriverView() && this.selectedScope() === 'available'
+  readonly pageTitle = computed(() => this.isCollaboratorView() ? 'Favores disponibles' : 'Mis favores');
+  readonly pageSubtitle = computed(() => this.isCollaboratorView()
+    ? 'Encuentra encargos cercanos en los que puedes colaborar.'
+    : 'Publica solicitudes y revisa su estado.');
+  readonly emptyTitle = computed(() => this.isCollaboratorView() && this.selectedScope() === 'available'
     ? 'No hay favores disponibles por ahora'
     : 'No hay favores en esta sección');
-  readonly emptyMessage = computed(() => this.isDriverView() && this.selectedScope() === 'available'
+  readonly emptyMessage = computed(() => this.isCollaboratorView() && this.selectedScope() === 'available'
     ? 'Vuelve a revisar en unos minutos.'
     : 'Cuando haya actividad, aparecerá aquí.');
 
@@ -627,7 +652,7 @@ export class CommunityHubPageComponent {
     this.errorMessage.set('');
     this.hubWarnings.set([]);
 
-    const collaboratorLoad$ = (this.isDriverView()
+    const collaboratorLoad$ = (this.isCollaboratorView()
       ? this.wrapLoad(
           this.communityApi.getMyCollaborator(),
           null,
@@ -640,13 +665,13 @@ export class CommunityHubPageComponent {
       collaborator: collaboratorLoad$,
       routes: collaboratorLoad$.pipe(
         switchMap((collaborator) =>
-          this.isDriverView() && collaborator.data
+          this.isCollaboratorView() && collaborator.data
             ? this.wrapLoad(this.communityApi.getMyRoutes(), [], 'No pudimos cargar rutas disponibles')
             : of({ data: [], warning: null } satisfies HubLoadResult<CommunityRouteResponse[]>),
         ),
       ),
       requests: this.wrapLoad(
-        this.communityApi.getRequests(this.isDriverView() ? {} : { mine: true }),
+        this.communityApi.getRequests(this.isCollaboratorView() ? {} : { mine: true }),
         [],
         'No pudimos cargar tus solicitudes',
       ),
@@ -831,8 +856,25 @@ export class CommunityHubPageComponent {
       : 'text-slate-600';
   }
 
+  hubModeClass(mode: HubMode): string {
+    return this.hubMode() === mode
+      ? 'bg-white text-red-600 shadow-sm ring-1 ring-slate-200'
+      : 'text-slate-600';
+  }
+
+  selectHubMode(mode: HubMode): void {
+    if (this.hubMode() === mode) {
+      return;
+    }
+
+    this.hubMode.set(mode);
+    this.selectedScope.set(mode === 'collaborator' ? 'available' : 'active');
+    this.successMessage.set('');
+    this.loadHub();
+  }
+
   displayStatusLabel(request: CommunityRequestListItemResponse): string {
-    if (this.isDriverView() && ['Published', 'Searching'].includes(request.status)) {
+    if (this.isCollaboratorView() && ['Published', 'Searching'].includes(request.status)) {
       return 'Disponible';
     }
 
@@ -844,7 +886,7 @@ export class CommunityHubPageComponent {
   }
 
   requestActionLabel(request: CommunityRequestListItemResponse): string {
-    if (this.isDriverView() && ['Published', 'Searching'].includes(request.status)) {
+    if (this.isCollaboratorView() && ['Published', 'Searching'].includes(request.status)) {
       return 'Tomar favor';
     }
 
