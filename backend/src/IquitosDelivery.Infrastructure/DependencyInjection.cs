@@ -57,7 +57,8 @@ public static class DependencyInjection
                 {
                     Url = storageSection.GetSection("Supabase")["Url"] ?? string.Empty,
                     ServiceKey = storageSection.GetSection("Supabase")["ServiceKey"] ?? string.Empty,
-                    Bucket = storageSection.GetSection("Supabase")["Bucket"] ?? "appurape"
+                    Bucket = storageSection.GetSection("Supabase")["Bucket"] ?? "appurape",
+                    PrivateBucket = storageSection.GetSection("Supabase")["PrivateBucket"] ?? "appurape-private"
                 }
             });
         });

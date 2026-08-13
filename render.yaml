@@ -29,5 +29,7 @@ services:
         sync: false
       - key: Storage__Supabase__Bucket
         value: appurape
+      - key: Storage__Supabase__PrivateBucket
+        value: appurape-private
       - key: Storage__PublicBaseUrl
         value: https://fbkachlnychsbptztbux.supabase.co/storage/v1/object/public/appurape

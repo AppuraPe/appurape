@@ -21,4 +21,10 @@ public class CollaboratorVerificationResponse
     public string? RejectReason { get; set; }
 
     public DateTime? ExpiresAtUtc { get; set; }
+
+    public bool HasProfilePhoto { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
+    public bool HasIdentityDocument { get; set; }
+    public bool HasLiveSelfie { get; set; }
+    public DateTime? LiveSelfieCapturedAtUtc { get; set; }
 }

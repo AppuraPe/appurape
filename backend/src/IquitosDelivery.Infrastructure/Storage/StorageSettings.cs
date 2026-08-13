@@ -16,4 +16,6 @@ public class SupabaseStorageSettings
     public string ServiceKey { get; set; } = string.Empty;
 
     public string Bucket { get; set; } = "appurape";
+
+    public string PrivateBucket { get; set; } = "appurape-private";
 }

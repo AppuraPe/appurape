@@ -80,6 +80,11 @@ export interface CollaboratorVerification {
   reviewedByAdminId?: string | null;
   rejectReason?: string | null;
   expiresAtUtc?: string | null;
+  hasProfilePhoto: boolean;
+  profilePhotoUrl?: string | null;
+  hasIdentityDocument: boolean;
+  hasLiveSelfie: boolean;
+  liveSelfieCapturedAtUtc?: string | null;
 }
 
 export interface RejectCollaboratorVerificationRequest {

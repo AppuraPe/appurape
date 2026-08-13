@@ -82,6 +82,37 @@ public class CollaboratorVerificationService : ICollaboratorVerificationService
         return await GetByIdAsync(verification.Id, cancellationToken);
     }
 
+    public async Task<CollaboratorVerificationResponse> SubmitVerificationAsync(string profilePhotoUrl, string identityDocumentPath, string liveSelfiePath, CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        var user = await _dbContext.Users
+            .Include(x => x.CollaboratorProfile)
+            .FirstAsync(x => x.Id == userId, cancellationToken);
+
+        var profile = user.CollaboratorProfile;
+        if (profile is null)
+        {
+            profile = new CollaboratorProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                User = user,
+                ApprovalStatus = ApprovalStatus.Pending,
+                IsPhoneVerified = !string.IsNullOrWhiteSpace(user.Phone)
+            };
+            _dbContext.Add(profile);
+        }
+
+        profile.ProfilePhotoUrl = profilePhotoUrl;
+        profile.IdentityDocumentUrl = identityDocumentPath;
+        profile.LiveSelfieUrl = liveSelfiePath;
+        profile.LiveSelfieCapturedAtUtc = DateTime.UtcNow;
+        profile.ApprovalStatus = ApprovalStatus.Pending;
+        profile.IsIdentityVerified = false;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return await RequestVerificationAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<CollaboratorVerificationResponse>> GetPendingAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.CollaboratorVerifications
@@ -179,6 +210,21 @@ public class CollaboratorVerificationService : ICollaboratorVerificationService
         return await GetByIdAsync(verification.Id, cancellationToken);
     }
 
+    public async Task<string> GetPrivateEvidencePathAsync(Guid verificationId, string evidenceType, CancellationToken cancellationToken = default)
+    {
+        var profile = await _dbContext.CollaboratorVerifications
+            .Where(x => x.Id == verificationId)
+            .Select(x => x.User.CollaboratorProfile)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new NotFoundException("No se encontró el perfil del colaborador.");
+        return evidenceType.ToLowerInvariant() switch
+        {
+            "dni" when !string.IsNullOrWhiteSpace(profile.IdentityDocumentUrl) => profile.IdentityDocumentUrl,
+            "selfie" when !string.IsNullOrWhiteSpace(profile.LiveSelfieUrl) => profile.LiveSelfieUrl,
+            _ => throw new NotFoundException("No se encontró la evidencia solicitada.")
+        };
+    }
+
     private async Task<CollaboratorVerificationResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _dbContext.CollaboratorVerifications
@@ -223,7 +269,12 @@ public class CollaboratorVerificationService : ICollaboratorVerificationService
             ReviewedAtUtc = x.ReviewedAtUtc,
             ReviewedByAdminId = x.ReviewedByAdminId,
             RejectReason = x.RejectReason,
-            ExpiresAtUtc = x.ExpiresAtUtc
+            ExpiresAtUtc = x.ExpiresAtUtc,
+            HasProfilePhoto = x.User.CollaboratorProfile != null && x.User.CollaboratorProfile.ProfilePhotoUrl != null,
+            ProfilePhotoUrl = x.User.CollaboratorProfile != null ? x.User.CollaboratorProfile.ProfilePhotoUrl : null,
+            HasIdentityDocument = x.User.CollaboratorProfile != null && x.User.CollaboratorProfile.IdentityDocumentUrl != null,
+            HasLiveSelfie = x.User.CollaboratorProfile != null && x.User.CollaboratorProfile.LiveSelfieUrl != null,
+            LiveSelfieCapturedAtUtc = x.User.CollaboratorProfile != null ? x.User.CollaboratorProfile.LiveSelfieCapturedAtUtc : null
         };
     }
 }

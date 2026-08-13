@@ -99,11 +99,20 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
         <app-unified-loading-state label="Cargando favores" />
       } @else {
         @if (isCustomerView() && isCollaboratorView() && !isApprovedCollaborator()) {
-          <app-notice
-            tone="warning"
-            title="Valida tu identidad para colaborar"
-            message="Antes de ayudar debes registrar una foto de perfil, enviar la foto de tu DNI, tomar una selfie en vivo con la cámara y esperar la aprobación de AppuraPe. Hasta entonces no podrás activar tu disponibilidad ni postularte."
-          />
+          <app-surface-card variant="page" extraClass="grid gap-4 p-4 sm:p-5">
+            <app-internal-page-section-header eyebrow="Identidad" title="Valida tu perfil de colaborador" subtitle="Necesitamos comparar tu perfil, DNI y una selfie tomada ahora antes de permitirte ayudar." [meta]="verificationStatusLabel()" />
+            <app-notice tone="warning" title="Revisión administrativa" message="La cámara frontal se abrirá para una selfie en vivo. DNI y selfie se guardan de forma privada y solo Administración puede revisarlos." />
+            @if (verificationStatus() === 'PendingVerification') {
+              <app-notice tone="info" title="Solicitud enviada" message="Tu identidad está pendiente de revisión. Te avisaremos cuando Administración termine la validación." />
+            } @else {
+              <form class="grid gap-4" (ngSubmit)="submitCollaboratorVerification()">
+                <label class="grid gap-2"><span class="text-sm font-semibold text-slate-700">Foto de perfil</span><input class="min-h-11 rounded-2xl border border-slate-200 p-2 text-sm" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectVerificationFile($event, 'profile')" /></label>
+                <label class="grid gap-2"><span class="text-sm font-semibold text-slate-700">Foto del DNI</span><input class="min-h-11 rounded-2xl border border-slate-200 p-2 text-sm" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectVerificationFile($event, 'dni')" /></label>
+                <div class="grid gap-2"><span class="text-sm font-semibold text-slate-700">Selfie en vivo</span><app-button type="button" variant="secondary" block (click)="captureLiveSelfie()">{{ verificationSelfieReady() ? 'Volver a tomar selfie' : 'Abrir cámara frontal' }}</app-button><small class="text-xs leading-5 text-slate-500">Android solicitará permiso de cámara. La galería no se utiliza para esta evidencia.</small></div>
+                <app-button type="submit" block [disabled]="isSubmittingVerification()">{{ isSubmittingVerification() ? 'Enviando validación...' : 'Enviar para validación' }}</app-button>
+              </form>
+            }
+          </app-surface-card>
         }
 
         @if (isCollaboratorView() && collaborator() && (!isCustomerView() || isApprovedCollaborator())) {
@@ -513,6 +522,9 @@ export class CommunityHubPageComponent {
   readonly isSavingAvailability = signal(false);
   readonly isSavingRoute = signal(false);
   readonly isCreatingRequest = signal(false);
+  readonly isSubmittingVerification = signal(false);
+  readonly verificationStatus = signal('NotVerified');
+  readonly verificationSelfieReady = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly hubWarnings = signal<HubWarning[]>([]);
@@ -531,6 +543,9 @@ export class CommunityHubPageComponent {
   readonly selectedScope = signal<RequestScope>(this.authService.currentRole() === 'Driver' ? 'available' : 'active');
   readonly deadlineMinimum = signal(this.toLocalInputValue(new Date(Date.now() + 5 * 60 * 1000)));
   readonly deadlineMaximum = signal(this.toLocalInputValue(new Date(Date.now() + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS)));
+  private verificationProfileFile: File | null = null;
+  private verificationDniFile: File | null = null;
+  private verificationSelfieFile: File | null = null;
 
   readonly availabilityForm = this.formBuilder.nonNullable.group({
     isAvailable: false,
@@ -712,12 +727,76 @@ export class CommunityHubPageComponent {
             });
           }
           this.isLoading.set(false);
+          if (this.isCustomerView() && this.isCollaboratorView()) this.loadVerification();
         },
         error: (error) => {
           this.errorMessage.set(getErrorMessage(error, 'No pudimos cargar Favores. Intenta nuevamente.'));
           this.isLoading.set(false);
         },
       });
+  }
+
+  loadVerification(): void {
+    this.communityApi.getMyVerification().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (verification) => this.verificationStatus.set(verification.status),
+      error: () => this.verificationStatus.set('NotVerified'),
+    });
+  }
+
+  verificationStatusLabel(): string {
+    return ({ NotVerified: 'Falta validar', PendingVerification: 'En revisión', Rejected: 'Rechazado', Verified: 'Aprobado' } as Record<string, string>)[this.verificationStatus()] ?? this.verificationStatus();
+  }
+
+  selectVerificationFile(event: Event, type: 'profile' | 'dni' | 'selfie'): void {
+    const file = (event.target as HTMLInputElement).files?.item(0) ?? null;
+    if (type === 'profile') this.verificationProfileFile = file;
+    if (type === 'dni') this.verificationDniFile = file;
+    if (type === 'selfie') this.verificationSelfieFile = file;
+  }
+
+  async captureLiveSelfie(): Promise<void> {
+    try {
+      const { Camera, CameraDirection, CameraResultType, CameraSource } = await import('@capacitor/camera');
+      const permission = await Camera.requestPermissions({ permissions: ['camera'] });
+      if (permission.camera !== 'granted') {
+        this.notificationService.warning('Debes permitir el acceso a la cámara para tomar la selfie en vivo.');
+        return;
+      }
+      const photo = await Camera.getPhoto({
+        source: CameraSource.Camera,
+        direction: CameraDirection.Front,
+        resultType: CameraResultType.Uri,
+        quality: 82,
+        allowEditing: false,
+        saveToGallery: false,
+        correctOrientation: true,
+      });
+      if (!photo.webPath) throw new Error('Camera did not return an image.');
+      const response = await fetch(photo.webPath);
+      const blob = await response.blob();
+      this.verificationSelfieFile = new File([blob], `selfie-${Date.now()}.${photo.format || 'jpeg'}`, { type: blob.type || 'image/jpeg' });
+      this.verificationSelfieReady.set(true);
+      this.notificationService.success('Selfie capturada correctamente.');
+    } catch (error) {
+      console.warn('Live selfie capture failed.', error);
+      this.notificationService.error('No se pudo tomar la selfie. Revisa el permiso de cámara e inténtalo nuevamente.');
+    }
+  }
+
+  submitCollaboratorVerification(): void {
+    if (!this.verificationProfileFile || !this.verificationDniFile || !this.verificationSelfieFile) {
+      this.notificationService.warning('Selecciona la foto de perfil, el DNI y toma la selfie con la cámara.');
+      return;
+    }
+    const data = new FormData();
+    data.set('ProfilePhoto', this.verificationProfileFile);
+    data.set('IdentityDocument', this.verificationDniFile);
+    data.set('LiveSelfie', this.verificationSelfieFile);
+    this.isSubmittingVerification.set(true);
+    this.communityApi.submitVerification(data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (verification) => { this.verificationStatus.set(verification.status); this.isSubmittingVerification.set(false); this.notificationService.success('Validación enviada a Administración.'); },
+      error: (error) => { this.isSubmittingVerification.set(false); this.notificationService.error(getErrorMessage(error, 'No se pudo enviar la validación.')); },
+    });
   }
 
   saveAvailability(): void {

@@ -41,12 +41,41 @@ public class SupabaseFileStorageService : IFileStorageService
         string objectPath,
         CancellationToken cancellationToken = default)
     {
+        var normalizedPath = await UploadToBucketAsync(content, fileName, contentType, contentLength, objectPath, _storageSettings.Supabase.Bucket, cancellationToken);
+        return BuildPublicUrl(normalizedPath);
+    }
+
+    public Task<string> UploadPrivateImageAsync(Stream content, string fileName, string contentType, long contentLength, string objectPath, CancellationToken cancellationToken = default)
+    {
+        return UploadToBucketAsync(content, fileName, contentType, contentLength, objectPath, _storageSettings.Supabase.PrivateBucket, cancellationToken);
+    }
+
+    public async Task<StoredFileContent> DownloadPrivateImageAsync(string objectPath, CancellationToken cancellationToken = default)
+    {
+        ValidateSettings();
+        var normalizedPath = NormalizeObjectPath(objectPath);
+        var bucket = _storageSettings.Supabase.PrivateBucket.Trim();
+        using var request = CreateAuthorizedRequest(HttpMethod.Get, $"/storage/v1/object/{bucket}/{normalizedPath}");
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AppException("No se pudo leer la evidencia privada.");
+        }
+
+        return new StoredFileContent(
+            await response.Content.ReadAsByteArrayAsync(cancellationToken),
+            response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
+    }
+
+    private async Task<string> UploadToBucketAsync(Stream content, string fileName, string contentType, long contentLength, string objectPath, string bucketName, CancellationToken cancellationToken)
+    {
         ValidateSettings();
         ValidateImageUpload(fileName, contentType, contentLength);
         ValidateImageSignature(content, contentType);
+        if (string.IsNullOrWhiteSpace(bucketName)) throw new InvalidOperationException("Storage bucket is not configured.");
 
         var normalizedPath = NormalizeObjectPath(objectPath);
-        var bucket = _storageSettings.Supabase.Bucket.Trim();
+        var bucket = bucketName.Trim();
         var requestUri = $"/storage/v1/object/{bucket}/{normalizedPath}";
 
         using var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
@@ -74,7 +103,15 @@ public class SupabaseFileStorageService : IFileStorageService
             throw new AppException("The image could not be uploaded.");
         }
 
-        return BuildPublicUrl(normalizedPath);
+        return normalizedPath;
+    }
+
+    private HttpRequestMessage CreateAuthorizedRequest(HttpMethod method, string uri)
+    {
+        var request = new HttpRequestMessage(method, uri);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _storageSettings.Supabase.ServiceKey.Trim());
+        request.Headers.Add("apikey", _storageSettings.Supabase.ServiceKey.Trim());
+        return request;
     }
 
     public async Task DeleteByPublicUrlAsync(string publicUrl, CancellationToken cancellationToken = default)
@@ -125,6 +162,10 @@ public class SupabaseFileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(_storageSettings.Supabase.Bucket))
         {
             throw new InvalidOperationException("Storage:Supabase:Bucket is not configured.");
+        }
+        if (string.IsNullOrWhiteSpace(_storageSettings.Supabase.PrivateBucket))
+        {
+            throw new InvalidOperationException("Storage:Supabase:PrivateBucket is not configured.");
         }
     }
 

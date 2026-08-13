@@ -11,10 +11,20 @@ namespace IquitosDelivery.Api.Controllers;
 public class AdminCollaboratorVerificationsController : ControllerBase
 {
     private readonly ICollaboratorVerificationService _verificationService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public AdminCollaboratorVerificationsController(ICollaboratorVerificationService verificationService)
+    public AdminCollaboratorVerificationsController(ICollaboratorVerificationService verificationService, IFileStorageService fileStorageService)
     {
         _verificationService = verificationService;
+        _fileStorageService = fileStorageService;
+    }
+
+    [HttpGet("{id:guid}/evidence/{type}")]
+    public async Task<IActionResult> GetEvidence(Guid id, string type, CancellationToken cancellationToken)
+    {
+        var path = await _verificationService.GetPrivateEvidencePathAsync(id, type, cancellationToken);
+        var file = await _fileStorageService.DownloadPrivateImageAsync(path, cancellationToken);
+        return File(file.Content, file.ContentType);
     }
 
     [HttpGet]

@@ -17,6 +17,7 @@ import {
   UpdateCommunityCollaboratorRequest,
   UpsertCommunityRouteRequest,
 } from '../models/community.models';
+import { CollaboratorVerification } from '../models/admin-finance.models';
 
 const COMMUNITY_AVAILABILITY_STATUS_MAP: Record<string, number> = {
   Disconnected: 0,
@@ -37,6 +38,15 @@ export class CommunityApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiBaseUrl}/api/community`;
   private readonly adminBaseUrl = `${environment.apiBaseUrl}/api/admin/community`;
+  private readonly verificationUrl = `${environment.apiBaseUrl}/api/collaborator/verification`;
+
+  getMyVerification(): Observable<CollaboratorVerification> {
+    return this.http.get<CollaboratorVerification>(`${this.verificationUrl}/me`);
+  }
+
+  submitVerification(formData: FormData): Observable<CollaboratorVerification> {
+    return this.http.post<CollaboratorVerification>(`${this.verificationUrl}/submit`, formData);
+  }
 
   getMyCollaborator(): Observable<CommunityCollaboratorResponse> {
     return this.http.get<CommunityCollaboratorResponse>(`${this.baseUrl}/collaborator/me`);

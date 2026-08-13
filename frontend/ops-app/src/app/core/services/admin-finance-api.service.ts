@@ -74,4 +74,8 @@ export class AdminFinanceApiService {
   ): Observable<CollaboratorVerification> {
     return this.http.post<CollaboratorVerification>(`${this.verificationsUrl}/${verificationId}/reject`, request);
   }
+
+  getCollaboratorEvidence(verificationId: string, type: 'dni' | 'selfie'): Observable<Blob> {
+    return this.http.get(`${this.verificationsUrl}/${verificationId}/evidence/${type}`, { responseType: 'blob' });
+  }
 }

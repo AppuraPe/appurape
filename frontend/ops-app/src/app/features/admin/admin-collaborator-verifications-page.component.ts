@@ -82,6 +82,22 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
                     <span>Solicitud: <strong class="text-slate-900">{{ verification.submittedAtUtc | date: 'short' }}</strong></span>
                   </div>
 
+                  <div class="mt-4 grid gap-3 md:grid-cols-3">
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                      <p class="p-2 text-xs font-bold text-slate-600">Foto de perfil</p>
+                      @if (verification.profilePhotoUrl) { <img class="h-44 w-full object-cover" [src]="verification.profilePhotoUrl" alt="Foto de perfil" /> }
+                    </div>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                      <div class="flex items-center justify-between p-2"><p class="text-xs font-bold text-slate-600">DNI privado</p><button class="text-xs font-bold text-primary-700" type="button" (click)="loadEvidence(verification.id, 'dni')">Ver</button></div>
+                      @if (evidenceUrl(verification.id, 'dni')) { <img class="h-44 w-full object-contain" [src]="evidenceUrl(verification.id, 'dni')" alt="Documento de identidad" /> }
+                    </div>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                      <div class="flex items-center justify-between p-2"><p class="text-xs font-bold text-slate-600">Selfie en vivo</p><button class="text-xs font-bold text-primary-700" type="button" (click)="loadEvidence(verification.id, 'selfie')">Ver</button></div>
+                      @if (evidenceUrl(verification.id, 'selfie')) { <img class="h-44 w-full object-cover" [src]="evidenceUrl(verification.id, 'selfie')" alt="Selfie en vivo" /> }
+                      @if (verification.liveSelfieCapturedAtUtc) { <p class="p-2 text-[11px] text-slate-500">Capturada {{ verification.liveSelfieCapturedAtUtc | date:'short' }}</p> }
+                    </div>
+                  </div>
+
                   <div class="mt-4 flex flex-wrap justify-end gap-2">
                     <app-button type="button" variant="success" size="sm" [loading]="processingId() === verification.id" (click)="approve(verification)">
                       <lucide-angular class="h-4 w-4" [img]="approveIcon" aria-hidden="true"></lucide-angular>
@@ -115,6 +131,7 @@ export class AdminCollaboratorVerificationsPageComponent {
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
   readonly processingId = signal('');
+  readonly evidenceUrls = signal<Record<string, string>>({});
 
   constructor() {
     this.load();
@@ -171,6 +188,18 @@ export class AdminCollaboratorVerificationsPageComponent {
         this.processingId.set('');
         this.notificationService.error(getErrorMessage(error, 'No se pudo rechazar la verificacion.'));
       },
+    });
+  }
+
+  evidenceUrl(id: string, type: 'dni' | 'selfie'): string {
+    return this.evidenceUrls()[`${id}:${type}`] ?? '';
+  }
+
+  loadEvidence(id: string, type: 'dni' | 'selfie'): void {
+    if (this.evidenceUrl(id, type)) return;
+    this.financeApi.getCollaboratorEvidence(id, type).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => this.evidenceUrls.update((urls) => ({ ...urls, [`${id}:${type}`]: URL.createObjectURL(blob) })),
+      error: (error) => this.notificationService.error(getErrorMessage(error, 'No se pudo abrir la evidencia privada.')),
     });
   }
 
