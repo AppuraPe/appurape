@@ -191,9 +191,19 @@ app.MapControllers();
 app.MapGet("/health", async (AppDbContext dbContext, CancellationToken cancellationToken) =>
 {
     var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
-    return canConnect
-        ? Results.Ok(new { status = "ok", database = "connected" })
-        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    if (!canConnect)
+    {
+        return Results.Json(
+            new { status = "unhealthy", database = "disconnected", migrations = "unknown" },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var hasPendingMigrations = (await dbContext.Database.GetPendingMigrationsAsync(cancellationToken)).Any();
+    return hasPendingMigrations
+        ? Results.Json(
+            new { status = "unhealthy", database = "connected", migrations = "pending" },
+            statusCode: StatusCodes.Status503ServiceUnavailable)
+        : Results.Ok(new { status = "ok", database = "connected", migrations = "current" });
 });
 
 try
