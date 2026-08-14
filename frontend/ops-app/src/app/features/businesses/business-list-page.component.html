@@ -14,6 +14,8 @@
     <div class="sticky top-0 z-40 w-full bg-slate-50/95 backdrop-blur">
       <app-mobile-explore-header
         [form]="searchForm"
+        [showNotifications]="isAuthenticated()"
+        [unreadCount]="unreadNotificationCount()"
         (openFilters)="openFilterSheet()"
       />
 

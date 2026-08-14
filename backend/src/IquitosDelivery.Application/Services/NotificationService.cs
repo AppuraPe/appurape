@@ -1,8 +1,10 @@
 using IquitosDelivery.Application.DTOs.Notifications;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
+using IquitosDelivery.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace IquitosDelivery.Application.Services;
 
@@ -52,24 +54,42 @@ public class NotificationService : INotificationService
 
         try
         {
-            if (!_pushNotificationSender.IsConfigured)
-            {
-                _logger.LogInformation(
-                    "Skipping push notification for {UserCount} users because Firebase push is disabled or not configured.",
-                    targetUserIds.Length);
-                return;
-            }
-
             var normalizedTitle = request.Title.Trim();
             var normalizedBody = request.Body.Trim();
 
             if (string.IsNullOrWhiteSpace(normalizedTitle) || string.IsNullOrWhiteSpace(normalizedBody))
             {
-                _logger.LogWarning("Skipping push notification because title or body is empty.");
+                _logger.LogWarning("Skipping notification because title or body is empty.");
                 return;
             }
 
             var payload = MergeEventData(request.Data);
+            var eventType = payload.GetValueOrDefault("event") ?? payload.GetValueOrDefault("type");
+            var targetRoute = payload.GetValueOrDefault("targetRoute");
+
+            foreach (var userId in targetUserIds)
+            {
+                _dbContext.Add(new UserNotification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Title = normalizedTitle,
+                    Body = normalizedBody,
+                    EventType = Truncate(eventType, 80),
+                    TargetRoute = Truncate(targetRoute, 500),
+                    DataJson = JsonSerializer.Serialize(payload)
+                });
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (!_pushNotificationSender.IsConfigured)
+            {
+                _logger.LogInformation(
+                    "Notification history persisted for {UserCount} users; push delivery skipped because Firebase is disabled or not configured.",
+                    targetUserIds.Length);
+                return;
+            }
             var activeTokens = await _dbContext.UserDeviceTokens
                 .Where(x => targetUserIds.Contains(x.UserId) && x.IsActive)
                 .OrderByDescending(x => x.LastSeenAtUtc)
@@ -236,6 +256,92 @@ public class NotificationService : INotificationService
         };
     }
 
+    public async Task<NotificationInboxResponse> GetInboxAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+
+        var query = _dbContext.UserNotifications
+            .AsNoTracking()
+            .Where(x => x.UserId == userId);
+        var unreadCount = await query.CountAsync(x => x.ReadAtUtc == null, cancellationToken);
+        var rows = await query
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize + 1)
+            .Select(x => new NotificationInboxItemResponse
+            {
+                Id = x.Id,
+                Title = x.Title,
+                Body = x.Body,
+                EventType = x.EventType,
+                TargetRoute = x.TargetRoute,
+                CreatedAtUtc = x.CreatedAtUtc,
+                ReadAtUtc = x.ReadAtUtc
+            })
+            .ToListAsync(cancellationToken);
+
+        return new NotificationInboxResponse
+        {
+            Items = rows.Take(pageSize).ToArray(),
+            Page = page,
+            PageSize = pageSize,
+            HasMore = rows.Count > pageSize,
+            UnreadCount = unreadCount
+        };
+    }
+
+    public async Task<NotificationUnreadCountResponse> GetUnreadCountAsync(CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        return new NotificationUnreadCountResponse
+        {
+            UnreadCount = await _dbContext.UserNotifications
+                .CountAsync(x => x.UserId == userId && x.ReadAtUtc == null, cancellationToken)
+        };
+    }
+
+    public async Task MarkAsReadAsync(Guid notificationId, CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        var notification = await _dbContext.UserNotifications
+            .FirstOrDefaultAsync(x => x.Id == notificationId && x.UserId == userId, cancellationToken)
+            ?? throw new NotFoundException("Notificación no encontrada.");
+
+        if (notification.ReadAtUtc.HasValue)
+        {
+            return;
+        }
+
+        notification.ReadAtUtc = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task MarkAllAsReadAsync(CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        var unread = await _dbContext.UserNotifications
+            .Where(x => x.UserId == userId && x.ReadAtUtc == null)
+            .ToListAsync(cancellationToken);
+        if (unread.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var notification in unread)
+        {
+            notification.ReadAtUtc = now;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private Guid GetCurrentUserId()
     {
         return _currentUserService.UserId ?? throw new UnauthorizedException("Authentication is required.");
@@ -278,5 +384,16 @@ public class NotificationService : INotificationService
         }
 
         return new Dictionary<string, string>(defaults, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? Truncate(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value.Trim();
+        return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
     }
 }

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   Bike,
+  Bell,
   ClipboardList,
   CircleDollarSign,
   CreditCard,
@@ -19,6 +20,7 @@ import {
 import { AuthService } from '../core/services/auth.service';
 import { MyBusinessApiService } from '../core/services/my-business-api.service';
 import { PlatformSettingsApiService } from '../core/services/platform-settings-api.service';
+import { NotificationInboxApiService } from '../core/services/notification-inbox-api.service';
 import { MobilePageShellComponent } from '../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../shared/components/status-badge.component';
 
@@ -57,12 +59,24 @@ interface NavItem {
             </span>
           </a>
 
-          <a
-            class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-black text-primary-700 shadow-sm transition active:scale-[0.98]"
-            [routerLink]="mobileAccountRoute()"
-          >
-            Cuenta
-          </a>
+          <div class="flex shrink-0 items-center gap-2">
+            <a
+              class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition active:scale-[0.98]"
+              routerLink="/notifications"
+              aria-label="Notificaciones"
+            >
+              <lucide-angular class="h-5 w-5" [img]="bellIcon" aria-hidden="true" />
+              @if (unreadNotificationCount() > 0) {
+                <span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-slate-50 bg-primary-600 px-1 text-[9px] font-black leading-none text-white">{{ unreadNotificationCount() > 99 ? '99+' : unreadNotificationCount() }}</span>
+              }
+            </a>
+            <a
+              class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-black text-primary-700 shadow-sm transition active:scale-[0.98]"
+              [routerLink]="mobileAccountRoute()"
+            >
+              Cuenta
+            </a>
+          </div>
         </div>
       </header>
 
@@ -105,6 +119,11 @@ interface NavItem {
             </div>
             <app-status-badge [status]="currentUser()?.role" prefix="Rol" />
           </div>
+
+          <a routerLink="/notifications" class="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700 no-underline shadow-sm transition hover:text-primary-700">
+            <span class="inline-flex items-center gap-2"><lucide-angular class="h-4 w-4" [img]="bellIcon" aria-hidden="true" /> Notificaciones</span>
+            @if (unreadNotificationCount() > 0) { <span class="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-black text-primary-700">{{ unreadNotificationCount() }}</span> }
+          </a>
 
           <div class="px-1 text-[0.76rem] font-black uppercase tracking-[0.08em] text-slate-500">{{ navHeading() }}</div>
           <nav class="grid gap-2" aria-label="Navegación operativa de escritorio">
@@ -168,6 +187,7 @@ export class OpsLayoutComponent {
   private readonly router = inject(Router);
   private readonly platformSettingsApi = inject(PlatformSettingsApiService);
   private readonly myBusinessApi = inject(MyBusinessApiService);
+  private readonly notificationInbox = inject(NotificationInboxApiService);
 
   readonly currentUser = computed(() => this.authService.currentUser());
   readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
@@ -175,6 +195,8 @@ export class OpsLayoutComponent {
   readonly brandingLogoFailed = signal(false);
   readonly headerImageFailed = signal(false);
   readonly currentBusiness = this.myBusinessApi.currentBusiness;
+  readonly unreadNotificationCount = this.notificationInbox.unreadCount;
+  readonly bellIcon = Bell;
   readonly headerDisplayName = computed(() => {
     if (this.authService.getCurrentRole() === 'Restaurant') {
       return this.currentBusiness()?.name || this.currentUser()?.fullName || 'Negocio';
@@ -339,6 +361,14 @@ export class OpsLayoutComponent {
     effect(() => {
       this.headerImageUrl();
       this.headerImageFailed.set(false);
+    });
+
+    effect(() => {
+      if (this.authService.isAuthenticated()) {
+        this.notificationInbox.refreshUnreadCount();
+      } else {
+        this.notificationInbox.clearLocalState();
+      }
     });
 
     if (this.authService.getCurrentRole() === 'Restaurant') {

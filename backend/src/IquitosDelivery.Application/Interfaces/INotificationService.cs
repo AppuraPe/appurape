@@ -19,4 +19,12 @@ public interface INotificationService
         CancellationToken cancellationToken = default);
 
     Task<DeviceTokenStatusResponse> GetCurrentUserTokenStatusAsync(CancellationToken cancellationToken = default);
+
+    Task<NotificationInboxResponse> GetInboxAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+
+    Task<NotificationUnreadCountResponse> GetUnreadCountAsync(CancellationToken cancellationToken = default);
+
+    Task MarkAsReadAsync(Guid notificationId, CancellationToken cancellationToken = default);
+
+    Task MarkAllAsReadAsync(CancellationToken cancellationToken = default);
 }

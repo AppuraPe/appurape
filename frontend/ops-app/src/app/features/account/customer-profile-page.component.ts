@@ -2,6 +2,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import {
+  Bell,
   ChevronRight,
   CircleUserRound,
   Headphones,
@@ -76,6 +77,12 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
               <lucide-angular class="h-5 w-5" [img]="communityIcon" aria-hidden="true" />
             </span>
             <span class="min-w-0 flex-1 truncate">Favores</span>
+          </a>
+          <a class="box-border flex h-16 w-full min-w-0 max-w-full items-center gap-2 rounded-[15px] border border-slate-200 bg-white px-2.5 py-3 text-[13px] font-semibold text-slate-700 no-underline shadow-sm" routerLink="/account/notifications">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-primary-50 text-primary-700">
+              <lucide-angular class="h-5 w-5" [img]="notificationsIcon" aria-hidden="true" />
+            </span>
+            <span class="min-w-0 flex-1 truncate">Notificaciones</span>
           </a>
           @if (supportHref()) {
             <a class="box-border flex h-16 w-full min-w-0 max-w-full items-center gap-2 rounded-[15px] border border-slate-200 bg-white px-2.5 py-3 text-[13px] font-semibold text-slate-700 no-underline shadow-sm" [href]="supportHref()!">
@@ -205,6 +212,7 @@ export class CustomerProfilePageComponent {
   });
 
   readonly ordersIcon = PackageCheck;
+  readonly notificationsIcon = Bell;
   readonly addressIcon = MapPin;
   readonly communityIcon = HeartHandshake;
   readonly supportIcon = Headphones;

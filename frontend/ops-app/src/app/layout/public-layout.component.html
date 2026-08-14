@@ -23,14 +23,16 @@
         </div>
 
         @if (shouldShowNotificationBell()) {
-          <button
-            type="button"
-            class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#0d2238] shadow-sm lg:hidden"
+          <a
+            [routerLink]="notificationRoute()"
+            class="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#0d2238] shadow-sm"
             aria-label="Notificaciones"
           >
             <lucide-angular class="h-5 w-5" [img]="bellIcon" aria-hidden="true"></lucide-angular>
-            <span class="absolute mt-[-1.1rem] ml-[1.1rem] h-2.5 w-2.5 rounded-full bg-primary-600"></span>
-          </button>
+            @if (unreadNotificationCount() > 0) {
+              <span class="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-primary-600 px-1 text-[10px] font-black leading-none text-white">{{ unreadNotificationCount() > 99 ? '99+' : unreadNotificationCount() }}</span>
+            }
+          </a>
         }
 
         <button
@@ -122,6 +124,15 @@
                         (click)="closeUserDropdown(); closeNavbar()"
                       >
                         Mi perfil
+                      </a>
+                      <a
+                        [routerLink]="notificationRoute()"
+                        role="menuitem"
+                        class="inline-flex min-h-11 items-center justify-between gap-3 rounded-[13px] px-4 py-2 font-ui text-sm font-semibold text-loreto-carbon transition hover:bg-surface-soft hover:text-primary-700"
+                        (click)="closeUserDropdown(); closeNavbar()"
+                      >
+                        <span>Notificaciones</span>
+                        @if (unreadNotificationCount() > 0) { <span class="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-black text-primary-700">{{ unreadNotificationCount() }}</span> }
                       </a>
                       @if (isCustomerRole()) {
                       <a

@@ -19,6 +19,7 @@ import { BusinessesApiService } from '../../core/services/businesses-api.service
 import { ZonesApiService } from '../../core/services/zones-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { NotificationInboxApiService } from '../../core/services/notification-inbox-api.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
 import { BusinessesFiltersCardComponent } from './businesses-filters-card.component';
 import { BusinessesBusinessCardComponent } from './businesses-business-card.component';
@@ -80,6 +81,7 @@ export class BusinessListPageComponent {
   private readonly zonesApi = inject(ZonesApiService);
   private readonly authService = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
+  private readonly notificationInbox = inject(NotificationInboxApiService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private latestRequestId = 0;
@@ -113,6 +115,7 @@ export class BusinessListPageComponent {
   });
 
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
+  readonly unreadNotificationCount = this.notificationInbox.unreadCount;
   readonly hasStructuredFilters = computed(
     () =>
       hasText(this.appliedZoneId()) ||

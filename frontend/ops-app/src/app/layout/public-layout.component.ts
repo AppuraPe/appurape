@@ -1,5 +1,5 @@
 import { NgIf, NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Bell, CircleUserRound, Heart, House, LucideAngularModule, PackageCheck, User, UserPlus } from 'lucide-angular';
@@ -8,6 +8,7 @@ import { AuthService } from '../core/services/auth.service';
 import { AppNavigationService } from '../core/services/app-navigation.service';
 import { CheckoutDrawerUiService } from '../core/services/checkout-drawer-ui.service';
 import { PlatformSettingsApiService } from '../core/services/platform-settings-api.service';
+import { NotificationInboxApiService } from '../core/services/notification-inbox-api.service';
 
 @Component({
   selector: 'app-public-layout',
@@ -21,6 +22,7 @@ export class PublicLayoutComponent {
   private readonly navigation = inject(AppNavigationService);
   private readonly hostElement = inject(ElementRef<HTMLElement>);
   private readonly platformSettingsApi = inject(PlatformSettingsApiService);
+  private readonly notificationInbox = inject(NotificationInboxApiService);
   readonly checkoutDrawerUi = inject(CheckoutDrawerUiService);
 
   readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
@@ -32,7 +34,7 @@ export class PublicLayoutComponent {
     return role === 'Restaurant' || role === 'Driver' || role === 'Admin';
   });
   readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
-  readonly hasNotificationInbox = false;
+  readonly unreadNotificationCount = this.notificationInbox.unreadCount;
   readonly displayName = computed(
     () => this.authService.currentUser()?.fullName || this.authService.currentUser()?.email || 'Usuario',
   );
@@ -90,7 +92,8 @@ export class PublicLayoutComponent {
     return path === '/businesses' || path === '/restaurants' || path.startsWith('/businesses/') || path.startsWith('/restaurants/');
   });
   readonly shouldHideMobileBottomNav = computed(() => this.normalizedPath() === '/register');
-  readonly shouldShowNotificationBell = computed(() => this.isAuthenticated() && this.hasNotificationInbox);
+  readonly shouldShowNotificationBell = computed(() => this.isAuthenticated());
+  readonly notificationRoute = computed(() => this.isOperationsRole() ? '/notifications' : '/account/notifications');
   readonly bellIcon = Bell;
   readonly homeIcon = House;
   readonly heartIcon = Heart;
@@ -101,6 +104,13 @@ export class PublicLayoutComponent {
 
   constructor() {
     void this.platformSettingsApi.ensureLoaded();
+    effect(() => {
+      if (this.isAuthenticated()) {
+        this.notificationInbox.refreshUnreadCount();
+      } else {
+        this.notificationInbox.clearLocalState();
+      }
+    });
 
     this.router.events
       .pipe(
@@ -116,6 +126,9 @@ export class PublicLayoutComponent {
         }
 
         this.currentPath.set(event.urlAfterRedirects);
+        if (this.isAuthenticated()) {
+          this.notificationInbox.refreshUnreadCount();
+        }
         this.closeNavbar();
         this.closeUserDropdown();
       });

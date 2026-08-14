@@ -86,4 +86,34 @@ public class NotificationsController : ControllerBase
         var response = await _notificationService.GetCurrentUserTokenStatusAsync(cancellationToken);
         return Ok(response);
     }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(Application.DTOs.Notifications.NotificationInboxResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Application.DTOs.Notifications.NotificationInboxResponse>> GetInbox(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default) =>
+        Ok(await _notificationService.GetInboxAsync(page, pageSize, cancellationToken));
+
+    [HttpGet("unread-count")]
+    [ProducesResponseType(typeof(Application.DTOs.Notifications.NotificationUnreadCountResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Application.DTOs.Notifications.NotificationUnreadCountResponse>> GetUnreadCount(
+        CancellationToken cancellationToken) =>
+        Ok(await _notificationService.GetUnreadCountAsync(cancellationToken));
+
+    [HttpPatch("{notificationId:guid}/read")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> MarkAsRead(Guid notificationId, CancellationToken cancellationToken)
+    {
+        await _notificationService.MarkAsReadAsync(notificationId, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPatch("read-all")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> MarkAllAsRead(CancellationToken cancellationToken)
+    {
+        await _notificationService.MarkAllAsReadAsync(cancellationToken);
+        return NoContent();
+    }
 }

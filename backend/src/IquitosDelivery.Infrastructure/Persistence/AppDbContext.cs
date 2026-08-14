@@ -79,6 +79,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
 
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+
     public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
 
     public DbSet<UserLegalAcceptance> UserLegalAcceptances => Set<UserLegalAcceptance>();
@@ -152,6 +154,8 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<FinancialAuditEvent> IAppDbContext.FinancialAuditEvents => FinancialAuditEvents;
 
     IQueryable<UserDeviceToken> IAppDbContext.UserDeviceTokens => UserDeviceTokens;
+
+    IQueryable<UserNotification> IAppDbContext.UserNotifications => UserNotifications;
 
     IQueryable<LegalDocument> IAppDbContext.LegalDocuments => LegalDocuments;
 

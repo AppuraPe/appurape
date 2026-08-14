@@ -149,6 +149,12 @@ export const routes: Routes = [
         data: { roles: ['Customer'] },
         loadComponent: () => import('./features/account/customer-addresses-page.component').then((m) => m.CustomerAddressesPageComponent),
       },
+      {
+        path: 'account/notifications',
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['Customer'] },
+        loadComponent: () => import('./features/notifications/notification-inbox-page.component').then((m) => m.NotificationInboxPageComponent),
+      },
     ],
   },
   {
@@ -196,6 +202,10 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/ops-layout.component').then((m) => m.OpsLayoutComponent),
     canActivate: [authGuard],
     children: [
+      {
+        path: 'notifications',
+        loadComponent: () => import('./features/notifications/notification-inbox-page.component').then((m) => m.NotificationInboxPageComponent),
+      },
       {
         path: 'account-settings',
         loadComponent: () => import('./features/legal/account-privacy-page.component').then((m) => m.AccountPrivacyPageComponent),

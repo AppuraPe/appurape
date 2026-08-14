@@ -138,6 +138,53 @@ public class NotificationServiceTests
 
         var token = await dbContext.UserDeviceTokens.AsNoTracking().SingleAsync();
         Assert.True(token.IsActive);
+        var history = await dbContext.UserNotifications.AsNoTracking().SingleAsync();
+        Assert.Equal(userId, history.UserId);
+        Assert.Equal("Evento", history.Title);
+        Assert.Equal("order", history.EventType);
+        Assert.Null(history.ReadAtUtc);
+    }
+
+    [Fact]
+    public async Task Inbox_OnlyReturnsCurrentUsersNotifications_AndSupportsReadState()
+    {
+        await using var dbContext = CreateDbContext();
+        var currentUserId = await SeedUserAsync(dbContext, UserRole.Customer, "inbox@appurape.test");
+        var otherUserId = await SeedUserAsync(dbContext, UserRole.Customer, "other-inbox@appurape.test");
+        dbContext.Add(new UserNotification
+        {
+            Id = Guid.NewGuid(), UserId = currentUserId, Title = "Tu pedido está listo", Body = "Puedes recogerlo.", TargetRoute = "/orders/1"
+        });
+        dbContext.Add(new UserNotification
+        {
+            Id = Guid.NewGuid(), UserId = otherUserId, Title = "Privada", Body = "No debe aparecer."
+        });
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, new TestCurrentUserService(currentUserId), new FakePushNotificationSender(true));
+
+        var inbox = await service.GetInboxAsync(1, 20);
+        Assert.Single(inbox.Items);
+        Assert.Equal(1, inbox.UnreadCount);
+
+        await service.MarkAsReadAsync(inbox.Items[0].Id);
+        Assert.Equal(0, (await service.GetUnreadCountAsync()).UnreadCount);
+    }
+
+    [Fact]
+    public async Task MarkAllAsRead_DoesNotModifyAnotherUsersNotifications()
+    {
+        await using var dbContext = CreateDbContext();
+        var currentUserId = await SeedUserAsync(dbContext, UserRole.Driver, "driver-inbox@appurape.test");
+        var otherUserId = await SeedUserAsync(dbContext, UserRole.Restaurant, "business-inbox@appurape.test");
+        dbContext.Add(new UserNotification { Id = Guid.NewGuid(), UserId = currentUserId, Title = "Asignado", Body = "Tienes una entrega." });
+        dbContext.Add(new UserNotification { Id = Guid.NewGuid(), UserId = otherUserId, Title = "Pedido", Body = "Tienes un pedido." });
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, new TestCurrentUserService(currentUserId), new FakePushNotificationSender(true));
+
+        await service.MarkAllAsReadAsync();
+
+        Assert.NotNull((await dbContext.UserNotifications.SingleAsync(x => x.UserId == currentUserId)).ReadAtUtc);
+        Assert.Null((await dbContext.UserNotifications.SingleAsync(x => x.UserId == otherUserId)).ReadAtUtc);
     }
 
     private static NotificationService CreateService(

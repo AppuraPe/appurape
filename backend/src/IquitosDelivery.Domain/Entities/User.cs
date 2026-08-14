@@ -33,6 +33,8 @@ public class User : BaseEntity
 
     public ICollection<UserDeviceToken> DeviceTokens { get; set; } = new List<UserDeviceToken>();
 
+    public ICollection<UserNotification> Notifications { get; set; } = new List<UserNotification>();
+
     public ICollection<UserLegalAcceptance> LegalAcceptances { get; set; } = new List<UserLegalAcceptance>();
 
     public ICollection<AccountDeletionRequest> AccountDeletionRequests { get; set; } = new List<AccountDeletionRequest>();

@@ -68,6 +68,8 @@ public interface IAppDbContext
 
     IQueryable<UserDeviceToken> UserDeviceTokens { get; }
 
+    IQueryable<UserNotification> UserNotifications { get; }
+
     IQueryable<LegalDocument> LegalDocuments { get; }
 
     IQueryable<UserLegalAcceptance> UserLegalAcceptances { get; }
