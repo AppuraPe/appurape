@@ -20,6 +20,7 @@ import { AuthApiService } from './auth-api.service';
 import { PushNotificationService } from '../notifications/push-notification.service';
 import { AuthSessionStore } from '@app/shared/core/auth/auth-session.store';
 import { getDefaultRouteForRole, isOpsRole as isOpsRoleHelper } from '@app/shared/core/auth/role.utils';
+import { isJwtExpired } from '../auth/jwt.utils';
 
 const TOKEN_KEY = 'iquitosDelivery.app.token';
 const USER_KEY = 'iquitosDelivery.app.user';
@@ -134,14 +135,23 @@ export class AuthService extends AuthSessionStore {
       return;
     }
 
+    if (isJwtExpired(token)) {
+      this.clearSession();
+      return;
+    }
+
     await firstValueFrom(
       this.authApi.getCurrentUser().pipe(
         tap((user) => {
           this.setCurrentUser(user);
           this.syncPushNotifications();
         }),
-        catchError(() => {
-          this.clearSession();
+        catchError((error: { status?: number }) => {
+          // A cold Render instance or a temporary connection loss must not be
+          // treated as an expired session. The interceptor handles real 401s.
+          if (error.status === 401) {
+            this.clearSession();
+          }
           return of(null);
         }),
       ),
@@ -176,6 +186,14 @@ export class AuthService extends AuthSessionStore {
   }
 
   hasValidSession(): boolean {
+    const token = this.tokenState();
+    if (!token || isJwtExpired(token)) {
+      if (token) {
+        this.expireSession();
+      }
+      return false;
+    }
+
     return this.isAuthenticated();
   }
 

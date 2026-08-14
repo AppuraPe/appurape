@@ -21,6 +21,8 @@ services:
         value: AppuraPe.Api
       - key: Jwt__Audience
         value: AppuraPe.Client
+      - key: Jwt__AccessTokenLifetimeMinutes
+        value: "43200"
       - key: Email__Provider
         value: Logging
       - key: Storage__Provider
