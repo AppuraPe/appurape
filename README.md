@@ -171,6 +171,7 @@ Variables que Render pedira o que debes revisar:
 - `Jwt__AccessTokenLifetimeMinutes` (recommended: `43200`, equivalent to 30 days)
 - `OrderConfirmation__Key` (secreto aleatorio de al menos 32 bytes para los códigos de entrega)
 - `FinanceV2__Enabled=false` durante la migración y conciliación histórica; cambiar a `true` solo después de completar QA y tener dos administradores distintos para aprobar liquidaciones
+- `SeedUsers__SecondaryAdminPassword` crea de forma idempotente a `subadmin@appurape.local` (Kin Huaya). Debe ser un secreto distinto al del Admin principal y tener al menos 12 caracteres; si no está configurado, la cuenta secundaria no se crea.
 - `Email__Provider=Logging`
 - `Storage__Supabase__ServiceKey`
 

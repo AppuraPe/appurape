@@ -21,6 +21,8 @@ services:
         sync: false
       - key: Jwt__Key
         sync: false
+      - key: SeedUsers__SecondaryAdminPassword
+        sync: false
       - key: OrderConfirmation__Key
         generateValue: true
       - key: Jwt__Issuer

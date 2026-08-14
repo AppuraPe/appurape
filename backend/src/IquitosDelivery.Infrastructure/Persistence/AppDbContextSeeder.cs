@@ -12,6 +12,7 @@ namespace IquitosDelivery.Infrastructure.Persistence;
 public static class AppDbContextSeeder
 {
     private const string AdminEmail = "admin@iquitosdelivery.local";
+    private const string SecondaryAdminEmail = "subadmin@appurape.local";
     private const string DefaultLocalSeedPassword = "ChangeMe.LocalOnly.123!";
     private const string DevelopmentQaCustomerEmail = "client.customer.1778016513@appurape.dev";
     private const string DevelopmentQaBusinessEmail = "client.rest.1778016513@appurape.dev";
@@ -42,6 +43,7 @@ public static class AppDbContextSeeder
         await SeedCommissionRulesAsync(dbContext, cancellationToken);
         await SeedLegalDraftsAsync(dbContext, cancellationToken);
         await SeedAdminAsync(dbContext, passwordHasher, configuration, cancellationToken);
+        await SeedSecondaryAdminAsync(dbContext, passwordHasher, configuration, cancellationToken);
     }
 
     private static async Task SeedLegalDraftsAsync(AppDbContext dbContext, CancellationToken cancellationToken)
@@ -160,6 +162,65 @@ Este consentimiento es independiente y debe aceptarse antes de enviar las eviden
             Role = UserRole.Admin,
             Status = UserStatus.Active
         });
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedSecondaryAdminAsync(
+        AppDbContext dbContext,
+        IPasswordHasher passwordHasher,
+        IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        var secondaryPassword = configuration["SeedUsers:SecondaryAdminPassword"]?.Trim();
+        if (string.IsNullOrWhiteSpace(secondaryPassword))
+        {
+            return;
+        }
+
+        if (secondaryPassword.Length < 12)
+        {
+            throw new InvalidOperationException("SeedUsers:SecondaryAdminPassword must contain at least 12 characters.");
+        }
+
+        var primaryPassword = ResolveSeedPassword(configuration, "SeedUsers:AdminPassword");
+        if (string.Equals(secondaryPassword, primaryPassword, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The primary and secondary Admin accounts must not share a password.");
+        }
+
+        var normalizedEmail = SecondaryAdminEmail.ToLowerInvariant();
+        var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
+        if (user is not null && user.Role != UserRole.Admin)
+        {
+            throw new InvalidOperationException($"The configured secondary Admin email already belongs to a {user.Role} account.");
+        }
+
+        if (user is null)
+        {
+            dbContext.Users.Add(new User
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Kin",
+                LastName = "Huaya",
+                Phone = "000000001",
+                Email = normalizedEmail,
+                PasswordHash = passwordHasher.Hash(secondaryPassword),
+                Role = UserRole.Admin,
+                Status = UserStatus.Active
+            });
+        }
+        else
+        {
+            user.FirstName = "Kin";
+            user.LastName = "Huaya";
+            user.Phone = "000000001";
+            user.Status = UserStatus.Active;
+            if (ShouldResetExistingSeedPasswords(configuration))
+            {
+                user.PasswordHash = passwordHasher.Hash(secondaryPassword);
+            }
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
