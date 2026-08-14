@@ -1,10 +1,10 @@
 import { CurrencyPipe } from '@angular/common';
 import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule, Trash2 } from 'lucide-angular';
-import { distinctUntilChanged, map, merge } from 'rxjs';
+import { distinctUntilChanged, map, merge, startWith } from 'rxjs';
 import { BusinessDetailResponse } from '../../core/models/businesses.models';
 import { CustomerAddressResponse } from '../../core/models/customer-addresses.models';
 import { CreateOrderRequest, DeliveryMode, PaymentMethod, ValidateOrderResponse } from '../../core/models/orders.models';
@@ -56,8 +56,18 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
   private currentClientRequestId = '';
   private currentAttemptFingerprint = '';
   private isHydratingAddress = false;
-
   readonly manualAddressValue = 'manual';
+
+  readonly checkoutForm = this.formBuilder.nonNullable.group({
+    savedCustomerAddressId: [this.manualAddressValue],
+    deliveryAddress: ['', [Validators.required, Validators.maxLength(300)]],
+    deliveryReference: ['', [Validators.required, Validators.maxLength(300)]],
+    notes: ['', [Validators.maxLength(1000)]],
+    paymentMethod: ['Cash' as PaymentMethod, [Validators.required]],
+    deliveryMode: ['VerifiedDriverDelivery' as DeliveryMode, [Validators.required]],
+    offeredDeliveryAmount: [4, [Validators.min(0)]],
+  });
+
   readonly paymentMethods: PaymentMethod[] = ['Cash', 'Yape', 'Plin', 'Card'];
   readonly deliveryModes: DeliveryMode[] = ['PickupOrDirect', 'BusinessDelivery', 'VerifiedDriverDelivery'];
   readonly cartItems = this.businessCart.cartItems;
@@ -79,8 +89,24 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
   readonly currentRole = computed(() => this.authService.currentRole());
   readonly canUseCustomerCheckout = computed(() => this.isAuthenticated() && this.currentRole() === 'Customer');
   readonly submitDisabled = computed(() => this.isSubmittingOrder() || !this.cartItems().length || !this.activeBusiness());
-  readonly selectedPaymentMethod = computed(() => this.checkoutForm.controls.paymentMethod.value);
-  readonly selectedDeliveryMode = computed(() => this.checkoutForm.controls.deliveryMode.value);
+  readonly selectedPaymentMethod = toSignal(
+    this.checkoutForm.controls.paymentMethod.valueChanges.pipe(
+      startWith(this.checkoutForm.controls.paymentMethod.value),
+    ),
+    { requireSync: true },
+  );
+  readonly selectedDeliveryMode = toSignal(
+    this.checkoutForm.controls.deliveryMode.valueChanges.pipe(
+      startWith(this.checkoutForm.controls.deliveryMode.value),
+    ),
+    { requireSync: true },
+  );
+  readonly offeredDeliveryAmount = toSignal(
+    this.checkoutForm.controls.offeredDeliveryAmount.valueChanges.pipe(
+      startWith(this.checkoutForm.controls.offeredDeliveryAmount.value),
+    ),
+    { requireSync: true },
+  );
   readonly verifiedDriverMinimum = computed(() => this.subtotal() < 20 ? 4 : 5);
   readonly estimatedDeliveryAmount = computed(() => {
     const mode = this.selectedDeliveryMode();
@@ -92,7 +118,7 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
       return this.activeBusiness()?.ownDeliveryFee ?? 0;
     }
 
-    return Math.max(this.verifiedDriverMinimum(), Number(this.checkoutForm.controls.offeredDeliveryAmount.value || 0));
+    return Math.max(this.verifiedDriverMinimum(), Number(this.offeredDeliveryAmount() || 0));
   });
   readonly estimatedServiceFee = computed(() => this.cartItems().length ? 1 : 0);
   readonly estimatedTotal = computed(() => this.subtotal() + this.estimatedDeliveryAmount() + this.estimatedServiceFee());
@@ -118,16 +144,6 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
     return this.canUseCustomerCheckout() ? 'Crear pedido' : 'Usar cuenta de cliente';
   });
   readonly trashIcon = Trash2;
-
-  readonly checkoutForm = this.formBuilder.nonNullable.group({
-    savedCustomerAddressId: [this.manualAddressValue],
-    deliveryAddress: ['', [Validators.required, Validators.maxLength(300)]],
-    deliveryReference: ['', [Validators.required, Validators.maxLength(300)]],
-    notes: ['', [Validators.maxLength(1000)]],
-    paymentMethod: ['Cash' as PaymentMethod, [Validators.required]],
-    deliveryMode: ['VerifiedDriverDelivery' as DeliveryMode, [Validators.required]],
-    offeredDeliveryAmount: [4, [Validators.min(0)]],
-  });
 
   @ViewChild('checkoutDrawerTemplate', { static: true })
   private checkoutDrawerTemplate?: TemplateRef<unknown>;
@@ -312,6 +328,19 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
         return 'Paga directamente al negocio. El pedido quedará pendiente hasta que el negocio confirme el pago.';
       default:
         return 'Próximamente';
+    }
+  }
+
+  paymentMethodLabel(method: PaymentMethod): string {
+    switch (method) {
+      case 'Cash':
+        return 'Efectivo';
+      case 'Yape':
+        return 'Yape';
+      case 'Plin':
+        return 'Plin';
+      case 'Card':
+        return 'Tarjeta';
     }
   }
 
@@ -713,7 +742,7 @@ export class BusinessCheckoutDrawerComponent implements AfterViewInit, OnDestroy
       paymentMethod: 'Cash',
       deliveryMode: 'VerifiedDriverDelivery',
       offeredDeliveryAmount: this.verifiedDriverMinimum(),
-    }, { emitEvent: false });
+    });
     this.selectedCustomerAddressId.set(defaultAddress?.id ?? null);
     this.addressMode.set(defaultAddress ? 'saved' : 'manual');
     this.isHydratingAddress = false;
