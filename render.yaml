@@ -11,6 +11,10 @@ services:
         value: Production
       - key: DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE
         value: "false"
+      # FinanceV2 must stay disabled until the migration has completed, legacy
+      # movements are reconciled, and two distinct Admin accounts are ready.
+      - key: FinanceV2__Enabled
+        value: "false"
       - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: Jwt__Key

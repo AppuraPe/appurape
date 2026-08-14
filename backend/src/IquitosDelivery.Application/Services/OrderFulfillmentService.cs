@@ -21,19 +21,27 @@ public class OrderFulfillmentService : IOrderFulfillmentService
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notifications;
     private readonly byte[] _quoteKey;
+    private readonly byte[] _pickupKey;
+    private readonly IFinanceSecurityService? _financeSecurityService;
+    private readonly bool _financeV2Enabled;
 
     public OrderFulfillmentService(
         IAppDbContext dbContext,
         ICurrentUserService currentUser,
         INotificationService notifications,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IFinanceSecurityService? financeSecurityService = null)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _notifications = notifications;
+        _financeSecurityService = financeSecurityService;
         var secret = configuration["Jwt:Key"] ?? configuration["Jwt__Key"];
         if (string.IsNullOrWhiteSpace(secret)) throw new InvalidOperationException("JWT key is required for signed fulfillment quotes.");
         _quoteKey = SHA256.HashData(Encoding.UTF8.GetBytes(secret));
+        var pickupSecret = configuration["OrderConfirmation:Key"] ?? configuration["OrderConfirmation__Key"] ?? secret;
+        _pickupKey = SHA256.HashData(Encoding.UTF8.GetBytes(pickupSecret));
+        _financeV2Enabled = bool.TryParse(configuration["FinanceV2:Enabled"], out var enabled) && enabled;
     }
 
     public async Task<OrderFulfillmentOptionsResponse> GetOptionsAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -101,6 +109,12 @@ public class OrderFulfillmentService : IOrderFulfillmentService
         order.Total = breakdown.Total;
         order.PricingSnapshotJson = FinancialCalculator.SerializeCommercialSnapshot(breakdown, rules);
         payment.Amount = breakdown.Total;
+        if (_financeSecurityService is not null)
+        {
+            await _financeSecurityService.ReplacePendingOrderObligationsAsync(order, order.Restaurant.OwnerUserId, cancellationToken);
+        }
+        if (!_financeV2Enabled)
+        {
         var cashDebt = await _dbContext.FinancialMovements
             .FirstOrDefaultAsync(x => x.OrderId == order.Id && x.Type == FinancialMovementType.CashOrderDebt && x.Status == FinancialMovementStatus.Pending, cancellationToken);
         if (cashDebt is not null)
@@ -120,8 +134,11 @@ public class OrderFulfillmentService : IOrderFulfillmentService
                 CurrencyCode = "PEN",
                 OccurredAtUtc = DateTime.UtcNow,
                 Reference = $"ORDER-{order.Id:N}",
-                Description = "Deuda actualizada al agregar delivery verificado al pedido."
+                Description = "Deuda actualizada al agregar delivery verificado al pedido.",
+                IsImmutable = true,
+                ReconciliationStatus = FinancialReconciliationStatus.LegacyReconciliationPending
             });
+        }
         }
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -216,9 +233,10 @@ public class OrderFulfillmentService : IOrderFulfillmentService
             PricingSnapshotJson = FinancialCalculator.SerializeCommunitySnapshot(recalculated, rules),
             DeadlineUtc = quote.DeadlineUtc,
             Status = CommunityRequestStatus.Published,
-            ConfirmationCode = deliveryCode,
+            ConfirmationCode = _financeV2Enabled ? null : deliveryCode,
             ConfirmationCodeExpiresAtUtc = quote.DeadlineUtc,
-            PickupCode = pickupCode,
+            PickupCode = _financeV2Enabled ? null : pickupCode,
+            PickupCodeVersion = _financeV2Enabled ? 1 : 0,
             PickupCodeExpiresAtUtc = DateTime.UtcNow.Add(PickupCodeLifetime)
         };
 
@@ -227,6 +245,9 @@ public class OrderFulfillmentService : IOrderFulfillmentService
         order.AssignedCourierType = null;
         order.DriverId = null;
         _dbContext.Add(communityRequest);
+        if (_financeSecurityService is not null) await _financeSecurityService.CreateFavorObligationAsync(communityRequest, cancellationToken);
+        if (!_financeV2Enabled)
+        {
         _dbContext.Add(new FinancialMovement
         {
             Id = Guid.NewGuid(),
@@ -237,7 +258,9 @@ public class OrderFulfillmentService : IOrderFulfillmentService
             CurrencyCode = "PEN",
             Description = "Ganancia reservada para quien recoja la compra AppuraPe.",
             Reference = $"FAVOR-{communityRequest.Id.ToString()[..8].ToUpperInvariant()}",
-            OccurredAtUtc = DateTime.UtcNow
+            OccurredAtUtc = DateTime.UtcNow,
+            IsImmutable = true,
+            ReconciliationStatus = FinancialReconciliationStatus.LegacyReconciliationPending
         });
         _dbContext.Add(new FinancialMovement
         {
@@ -249,8 +272,11 @@ public class OrderFulfillmentService : IOrderFulfillmentService
             CurrencyCode = "PEN",
             Description = "Comisión del recojo de una compra AppuraPe.",
             Reference = $"FAVOR-{communityRequest.Id.ToString()[..8].ToUpperInvariant()}",
-            OccurredAtUtc = DateTime.UtcNow
+            OccurredAtUtc = DateTime.UtcNow,
+            IsImmutable = true,
+            ReconciliationStatus = FinancialReconciliationStatus.LegacyReconciliationPending
         });
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
         await NotifyAvailableCollaboratorsAsync(order, communityRequest, cancellationToken);
 
@@ -276,8 +302,27 @@ public class OrderFulfillmentService : IOrderFulfillmentService
             throw new AppException("El pedido debe estar listo para recojo.");
         if (communityRequest.PickupCodeExpiresAtUtc < DateTime.UtcNow)
             throw new AppException("El código de recojo venció.");
-        if (!string.Equals(communityRequest.PickupCode, request.PickupCode.Trim(), StringComparison.Ordinal))
-            throw new AppException("El código de recojo no es válido.");
+        if (!_financeV2Enabled)
+        {
+            if (!string.Equals(communityRequest.PickupCode, request.PickupCode?.Trim(), StringComparison.Ordinal))
+                throw new AppException("El código de recojo no es válido.");
+        }
+        else
+        {
+        if (communityRequest.PickupCodeLockedAtUtc.HasValue || communityRequest.PickupCodeFailedAttempts >= 5)
+            throw new AppException("El código de recojo está bloqueado.");
+        var expected = DerivePickupCode(communityRequest.Id, Math.Max(1, communityRequest.PickupCodeVersion));
+        var supplied = request.PickupCode.Trim();
+        var valid = supplied.Length == 6 && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(expected), Encoding.ASCII.GetBytes(supplied));
+        if (!valid)
+        {
+            communityRequest.PickupCodeFailedAttempts++;
+            if (communityRequest.PickupCodeFailedAttempts >= 5) communityRequest.PickupCodeLockedAtUtc = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            throw new AppException(communityRequest.PickupCodeFailedAttempts >= 5 ? "El código de recojo fue bloqueado." : $"Código incorrecto. Quedan {5 - communityRequest.PickupCodeFailedAttempts} intentos.");
+        }
+        communityRequest.PickupCodeFailedAttempts = 0;
+        }
 
         var now = DateTime.UtcNow;
         communityRequest.PickupConfirmedAtUtc = now;
@@ -293,6 +338,13 @@ public class OrderFulfillmentService : IOrderFulfillmentService
             Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "collaborator_order_picked_up")
         }, cancellationToken);
         return Map(communityRequest);
+    }
+
+    private string DerivePickupCode(Guid requestId, int version)
+    {
+        using var hmac = new HMACSHA256(_pickupKey);
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes($"community-pickup:{requestId:N}:{version}"));
+        return (BitConverter.ToUInt32(hash, 0) % 1_000_000).ToString("D6");
     }
 
     private async Task<Order> GetCustomerOrderAsync(Guid orderId, CancellationToken cancellationToken)

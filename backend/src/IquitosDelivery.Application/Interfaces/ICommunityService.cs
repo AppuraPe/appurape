@@ -32,6 +32,8 @@ public interface ICommunityService
 
     Task<CommunityRequestDetailResponse> ConfirmRequestAsync(Guid requestId, CancellationToken cancellationToken = default);
 
+    Task<CommunityRequestDetailResponse> RegenerateConfirmationCodeAsync(Guid requestId, CancellationToken cancellationToken = default);
+
     Task<CommunityRequestDetailResponse> CancelRequestAsync(Guid requestId, CancelCommunityRequestRequest request, CancellationToken cancellationToken = default);
 
     Task<CommunityRequestDetailResponse> RateCollaboratorAsync(Guid requestId, RateCommunityCollaboratorRequest request, CancellationToken cancellationToken = default);

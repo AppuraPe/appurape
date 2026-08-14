@@ -135,6 +135,7 @@ type PaymentAction = 'confirm' | 'reject';
 
               @if (payment.paymentProofUrl) {
                 <app-notice tone="info" title="Comprobante" message="Este pago tiene un comprobante asociado." />
+                <app-button type="button" variant="secondary" size="sm" (click)="viewPaymentProof(payment.paymentProofUrl)">Ver comprobante privado</app-button>
               }
             </app-surface-card>
 
@@ -213,6 +214,9 @@ type PaymentAction = 'confirm' | 'reject';
                 ? 'El pedido quedará con pago confirmado y el negocio podrá continuar el flujo operativo.'
                 : 'El pedido quedará con pago rechazado y el negocio no podrá avanzar.' }}
             </p>
+            @if (payment()?.paymentStatus === 'UnderReview') {
+              <label class="mt-4 grid gap-2 text-sm font-bold text-slate-700">Motivo auditado<textarea class="min-h-20 rounded-2xl border border-slate-200 bg-white p-3 font-normal" maxlength="500" [value]="reviewResolutionReason()" (input)="reviewResolutionReason.set($any($event.target).value)" placeholder="Explica qué evidencia revisaste y por qué tomas esta decisión"></textarea></label>
+            }
 
             <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <app-button type="button" variant="ghost" size="md" (click)="closeConfirmation()" [disabled]="isSubmitting()">
@@ -223,7 +227,7 @@ type PaymentAction = 'confirm' | 'reject';
                 [variant]="action === 'confirm' ? 'primary' : 'danger'"
                 size="md"
                 (click)="submitAction(action)"
-                [disabled]="isSubmitting()"
+                [disabled]="isSubmitting() || (payment()?.paymentStatus === 'UnderReview' && reviewResolutionReason().trim().length < 10)"
               >
                 {{ isSubmitting() ? 'Procesando...' : action === 'confirm' ? 'Confirmar pago' : 'Rechazar pago' }}
               </app-button>
@@ -255,9 +259,10 @@ export class AdminPaymentDetailPageComponent {
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal('');
   readonly confirmationAction = signal<PaymentAction | null>(null);
-  readonly canReviewPayment = computed(() => this.payment()?.paymentStatus === 'PendingConfirmation');
+  readonly canReviewPayment = computed(() => ['PendingConfirmation', 'UnderReview'].includes(this.payment()?.paymentStatus ?? ''));
   readonly deliveryCodeReason = signal('');
   readonly isRegeneratingCode = signal(false);
+  readonly reviewResolutionReason = signal('');
 
   private readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
 
@@ -306,15 +311,19 @@ export class AdminPaymentDetailPageComponent {
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    const request$ = action === 'confirm'
-      ? this.adminPaymentsApi.confirmPayment(this.orderId)
-      : this.adminPaymentsApi.rejectPayment(this.orderId);
+    const current = this.payment();
+    const request$ = current?.paymentStatus === 'UnderReview'
+      ? this.adminPaymentsApi.resolveReview(this.orderId, action === 'confirm', this.reviewResolutionReason().trim())
+      : action === 'confirm'
+        ? this.adminPaymentsApi.confirmPayment(this.orderId)
+        : this.adminPaymentsApi.rejectPayment(this.orderId);
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (payment) => {
         this.payment.set(payment);
         this.isSubmitting.set(false);
         this.confirmationAction.set(null);
+        this.reviewResolutionReason.set('');
         this.notificationService[action === 'confirm' ? 'success' : 'warning'](
           action === 'confirm' ? 'Pago confirmado correctamente.' : 'Pago rechazado.',
         );
@@ -331,6 +340,17 @@ export class AdminPaymentDetailPageComponent {
 
         this.notificationService.error('No se pudo actualizar el pago. Intenta nuevamente.');
       },
+    });
+  }
+
+  viewPaymentProof(path: string): void {
+    this.adminPaymentsApi.downloadPaymentProof(path).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (error) => this.notificationService.error(getErrorMessage(error, 'No se pudo abrir el comprobante privado.')),
     });
   }
 

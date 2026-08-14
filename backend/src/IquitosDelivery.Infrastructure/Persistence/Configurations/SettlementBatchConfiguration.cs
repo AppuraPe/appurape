@@ -22,6 +22,10 @@ public class SettlementBatchConfiguration : IEntityTypeConfiguration<SettlementB
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.ConfirmedAtUtc);
         builder.Property(x => x.Notes).HasMaxLength(1000);
+        builder.Property(x => x.PaymentOperationNumber).HasMaxLength(120);
+        builder.Property(x => x.PaymentEvidenceObjectPath).HasMaxLength(500);
+        builder.Property(x => x.PaymentEvidenceSha256).HasMaxLength(64);
+        builder.Property(x => x.Version).IsRowVersion();
 
         builder.HasIndex(x => x.TargetType);
         builder.HasIndex(x => x.Status);

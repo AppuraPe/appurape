@@ -22,6 +22,7 @@ import {
   BusinessOrderStatus,
 } from '../../core/models/business.model';
 import { BusinessOrdersApiService } from '../../core/services/business-orders-api.service';
+import { PaymentEvidenceResponse } from '../../core/models/orders.models';
 import { NotificationService } from '../../core/services/notification.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { toOrderStatusValue } from '../../core/utils/order-status.utils';
@@ -351,6 +352,25 @@ type PaymentActionMode = 'confirm' | 'reject';
                   </div>
                 </div>
 
+                @if (paymentEvidence(); as evidence) {
+                  <div class="grid gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm">
+                    <div class="flex min-w-0 items-center justify-between gap-3">
+                      <p class="min-w-0 font-extrabold text-emerald-950">Comprobante enviado por el cliente</p>
+                      <app-button type="button" variant="secondary" size="sm" (click)="viewPaymentEvidence(evidence.id)">
+                        Ver captura
+                      </app-button>
+                    </div>
+                    <dl class="grid grid-cols-2 gap-2 text-slate-700">
+                      <div class="min-w-0"><dt class="text-xs text-slate-500">Operación</dt><dd class="truncate font-bold">{{ evidence.operationNumber }}</dd></div>
+                      <div><dt class="text-xs text-slate-500">Monto declarado</dt><dd class="font-bold">{{ evidence.declaredAmount | currency: 'PEN' : 'S/ ' : '1.2-2' }}</dd></div>
+                      <div class="col-span-2"><dt class="text-xs text-slate-500">Fecha declarada</dt><dd class="font-bold">{{ evidence.paidAtUtc | date: 'dd/MM/yyyy, HH:mm' }}</dd></div>
+                    </dl>
+                    <p class="text-xs leading-5 text-emerald-900">Comprueba el ingreso en tu propia cuenta Yape/Plin. La captura no confirma el pago por sí sola.</p>
+                  </div>
+                } @else {
+                  <app-notice tone="danger" title="Falta el comprobante" message="No confirmes el pago hasta que el cliente envíe su número de operación y captura." />
+                }
+
                 <app-notice
                   tone="warning"
                   [title]="paymentSheetMode() === 'confirm' ? 'Confirma antes de registrar el pago' : 'Confirma antes de rechazar el pago'"
@@ -359,19 +379,12 @@ type PaymentActionMode = 'confirm' | 'reject';
                     : 'Esta acción dejará el pago como rechazado para este pedido.'"
                 />
 
+                <app-button type="button" variant="ghost" size="sm" [disabled]="paymentSheetSubmitting()" (click)="openPaymentReview(payment.paymentId)">
+                  Enviar a revisión de AppuraPe
+                </app-button>
+
                 <form class="grid gap-4" [formGroup]="paymentActionForm" (ngSubmit)="submitPaymentAction()">
-                  @if (paymentSheetMode() === 'confirm') {
-                    <label class="grid gap-2">
-                      <span class="text-sm font-semibold text-slate-900">Referencia manual opcional</span>
-                      <input
-                        type="text"
-                        formControlName="manualReference"
-                        maxlength="120"
-                        placeholder="Operación, comprobante o referencia interna"
-                        class="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/15"
-                      />
-                    </label>
-                  } @else {
+                  @if (paymentSheetMode() === 'reject') {
                     <label class="grid gap-2">
                       <span class="text-sm font-semibold text-slate-900">Motivo del rechazo</span>
                       <textarea
@@ -388,7 +401,7 @@ type PaymentActionMode = 'confirm' | 'reject';
                     <app-button type="button" variant="ghost" size="md" (click)="closePaymentSheet()" [disabled]="paymentSheetSubmitting()">
                       Cancelar
                     </app-button>
-                    <app-button type="submit" size="md" [disabled]="paymentSheetSubmitting() || paymentSheetLoading()">
+                    <app-button type="submit" size="md" [disabled]="paymentSheetSubmitting() || paymentSheetLoading() || (paymentSheetMode() === 'confirm' && !paymentEvidence())">
                       {{ paymentSheetSubmitting() ? 'Procesando...' : paymentSheetMode() === 'confirm' ? 'Confirmar pago' : 'Rechazar pago' }}
                     </app-button>
                   </div>
@@ -429,6 +442,7 @@ export class BusinessOrdersPageComponent {
   readonly paymentSheetLoading = signal(false);
   readonly paymentSheetSubmitting = signal(false);
   readonly paymentSheetError = signal('');
+  readonly paymentEvidence = signal<PaymentEvidenceResponse | null>(null);
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],
@@ -675,6 +689,7 @@ export class BusinessOrdersPageComponent {
     this.paymentSheetLoading.set(true);
     this.paymentSheetSubmitting.set(false);
     this.paymentSheetError.set('');
+    this.paymentEvidence.set(null);
     this.paymentActionForm.reset(
       {
         manualReference: '',
@@ -696,7 +711,16 @@ export class BusinessOrdersPageComponent {
             },
             { emitEvent: false },
           );
-          this.paymentSheetLoading.set(false);
+          this.businessOrdersApi.getPaymentEvidence(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: (evidence) => {
+              this.paymentEvidence.set(evidence);
+              this.paymentSheetLoading.set(false);
+            },
+            error: () => {
+              this.paymentEvidence.set(null);
+              this.paymentSheetLoading.set(false);
+            },
+          });
         },
         error: (error) => {
           this.paymentSheetError.set(getErrorMessage(error, `No se pudo consultar el pago del pedido ${this.shortId(order.id)}.`));
@@ -714,6 +738,7 @@ export class BusinessOrdersPageComponent {
     this.paymentSheetMode.set(null);
     this.paymentSheetLoading.set(false);
     this.paymentSheetError.set('');
+    this.paymentEvidence.set(null);
     this.paymentActionForm.reset(
       {
         manualReference: '',
@@ -728,6 +753,11 @@ export class BusinessOrdersPageComponent {
     const mode = this.paymentSheetMode();
 
     if (!order || !mode || this.paymentSheetLoading()) {
+      return;
+    }
+
+    if (mode === 'confirm' && !this.paymentEvidence()) {
+      this.paymentSheetError.set('El cliente debe enviar un comprobante antes de confirmar el pago.');
       return;
     }
 
@@ -768,6 +798,35 @@ export class BusinessOrdersPageComponent {
         this.paymentSheetError.set(getErrorMessage(error, `No se pudo ${mode === 'confirm' ? 'confirmar' : 'rechazar'} el pago.`));
         this.paymentSheetSubmitting.set(false);
       },
+    });
+  }
+
+  openPaymentReview(paymentId: string): void {
+    const reason = prompt('Describe por qué el pago necesita revisión de AppuraPe:')?.trim();
+    if (!reason) return;
+    this.paymentSheetSubmitting.set(true);
+    this.businessOrdersApi.openPaymentReview(paymentId, reason).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.paymentSheetSubmitting.set(false);
+        this.notificationService.warning('Pago enviado a revisión administrativa.');
+        this.closePaymentSheet();
+        this.loadOrders();
+      },
+      error: (error) => {
+        this.paymentSheetSubmitting.set(false);
+        this.paymentSheetError.set(getErrorMessage(error, 'No se pudo abrir la revisión.'));
+      },
+    });
+  }
+
+  viewPaymentEvidence(evidenceId: string): void {
+    this.businessOrdersApi.downloadPaymentEvidence(evidenceId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (error) => this.paymentSheetError.set(getErrorMessage(error, 'No se pudo abrir el comprobante privado.')),
     });
   }
 

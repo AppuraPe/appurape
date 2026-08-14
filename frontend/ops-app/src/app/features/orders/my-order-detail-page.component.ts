@@ -14,7 +14,7 @@ import {
   Ticket,
   Truck,
 } from 'lucide-angular';
-import { CustomerOrderDetailResponse, OrderCollaboratorPickupQuoteResponse, OrderDeliveryConfirmationResponse, OrderFulfillmentOptionsResponse } from '../../core/models/orders.models';
+import { CustomerOrderDetailResponse, OrderCollaboratorPickupQuoteResponse, OrderDeliveryConfirmationResponse, OrderFulfillmentOptionsResponse, RefundResponse } from '../../core/models/orders.models';
 import { CustomerAddressResponse } from '../../core/models/customer-addresses.models';
 import { CustomerAddressesApiService } from '../../core/services/customer-addresses-api.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -121,6 +121,15 @@ export class MyOrderDetailPageComponent {
   readonly errorMessage = signal('');
   readonly ratingMessage = signal('');
   readonly isSubmittingRating = signal(false);
+  readonly isSubmittingPaymentEvidence = signal(false);
+  readonly paymentEvidenceFile = signal<File | null>(null);
+  readonly paymentEvidenceError = signal('');
+  readonly refund = signal<RefundResponse | null>(null);
+  readonly refundSubmitting = signal(false);
+  readonly paymentEvidenceForm = this.formBuilder.nonNullable.group({
+    operationNumber: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(80)]],
+    paidAtLocal: [new Date().toISOString().slice(0, 16), Validators.required],
+  });
   readonly fulfillmentOptions = signal<OrderFulfillmentOptionsResponse | null>(null);
   readonly pickupQuote = signal<OrderCollaboratorPickupQuoteResponse | null>(null);
   readonly addresses = signal<CustomerAddressResponse[]>([]);
@@ -238,28 +247,7 @@ export class MyOrderDetailPageComponent {
       return;
     }
 
-    this.ordersApi
-      .getMyOrder(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (order) => {
-          this.order.set(order);
-          this.loadFulfillmentOptions(order.id);
-          this.loadAddresses();
-          if (['ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay'].includes(order.status)) this.loadDeliveryConfirmation(order.id);
-          this.ratingForm.patchValue({
-            rating: order.driverRating ?? 5,
-            comment: order.driverFeedback ?? '',
-          });
-          this.isLoading.set(false);
-        },
-        error: (error) => {
-          const message = getApiErrorMessage(error, 'Revisa si el pedido existe o pertenece a tu cuenta.');
-          this.errorMessage.set(message);
-          this.notificationService.error(message);
-          this.isLoading.set(false);
-        },
-      });
+    this.loadOrder(id);
   }
 
   openPickupPanel(): void {
@@ -365,9 +353,69 @@ export class MyOrderDetailPageComponent {
     const order = this.order();
     if (!order || order.status !== 'Pending' || !window.confirm('¿Cancelar este pedido? Esta acción restaurará el stock.')) return;
     this.ordersApi.cancelOrder(order.id, 'Cancelado por el cliente').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (updated) => { this.order.set(updated); this.notificationService.success('Pedido cancelado.'); },
+      next: (updated) => {
+        this.order.set(updated);
+        if (updated.paymentStatus === 'RefundPending') this.loadRefund(updated.id);
+        this.notificationService.success(updated.paymentStatus === 'RefundPending' ? 'Pedido cancelado. El negocio debe devolver el pago con comprobante.' : 'Pedido cancelado.');
+      },
       error: (error) => this.notificationService.error(getApiErrorMessage(error, 'No se pudo cancelar el pedido.')),
     });
+  }
+
+  viewRefundEvidence(evidenceId: string): void {
+    this.ordersApi.downloadRefundEvidence(evidenceId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (error) => this.notificationService.error(getApiErrorMessage(error, 'No se pudo abrir el comprobante privado.')),
+    });
+  }
+
+  confirmRefund(): void {
+    const refund = this.refund();
+    if (!refund || !confirm('Confirma únicamente si el dinero ya llegó a tu cuenta.')) return;
+    this.refundSubmitting.set(true);
+    this.ordersApi.confirmRefund(refund.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => { this.refund.set(result); this.refundSubmitting.set(false); this.loadOrder(result.orderId); this.notificationService.success('Devolución confirmada.'); },
+      error: (error) => { this.refundSubmitting.set(false); this.notificationService.error(getApiErrorMessage(error, 'No se pudo confirmar la devolución.')); },
+    });
+  }
+
+  disputeRefund(): void {
+    const refund = this.refund();
+    const reason = prompt('Indica por qué no reconoces la devolución:')?.trim();
+    if (!refund || !reason) return;
+    this.refundSubmitting.set(true);
+    this.ordersApi.disputeRefund(refund.id, reason).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => { this.refund.set(result); this.refundSubmitting.set(false); this.notificationService.warning('El caso pasó a revisión de AppuraPe.'); },
+      error: (error) => { this.refundSubmitting.set(false); this.notificationService.error(getApiErrorMessage(error, 'No se pudo abrir la disputa.')); },
+    });
+  }
+
+  private loadOrder(id: string): void {
+    this.ordersApi.getMyOrder(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (order) => {
+        this.order.set(order);
+        this.loadFulfillmentOptions(order.id);
+        this.loadAddresses();
+        if (order.paymentStatus === 'RefundPending' || order.paymentStatus === 'Refunded') this.loadRefund(order.id);
+        if (['ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay'].includes(order.status)) this.loadDeliveryConfirmation(order.id);
+        this.ratingForm.patchValue({ rating: order.driverRating ?? 5, comment: order.driverFeedback ?? '' });
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        const message = getApiErrorMessage(error, 'Revisa si el pedido existe o pertenece a tu cuenta.');
+        this.errorMessage.set(message);
+        this.notificationService.error(message);
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  private loadRefund(orderId: string): void {
+    this.ordersApi.getRefund(orderId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: (result) => this.refund.set(result), error: () => this.refund.set(null) });
   }
 
   regenerateDeliveryCode(): void {
@@ -493,6 +541,9 @@ export class MyOrderDetailPageComponent {
     const labels: Record<string, string> = {
       Pending: 'Pendiente',
       PendingConfirmation: 'Pendiente de confirmación',
+      PendingEvidence: 'Falta comprobante',
+      UnderReview: 'En revisión',
+      RefundPending: 'Devolución pendiente',
       Paid: 'Pagado',
       Rejected: 'Rechazado',
       Failed: 'Fallido',
@@ -502,9 +553,53 @@ export class MyOrderDetailPageComponent {
     return labels[status] ?? status;
   }
 
+  refundStatusLabel(status: string): string {
+    return ({
+      Requested: 'Solicitado',
+      AwaitingBusinessRefund: 'Esperando devolución del negocio',
+      AwaitingCustomerConfirmation: 'Esperando tu confirmación',
+      Completed: 'Completado',
+      Disputed: 'En disputa',
+      Rejected: 'Rechazado',
+      Failed: 'Fallido',
+    } as Record<string, string>)[status] ?? status;
+  }
+
   showManualPaymentNotice(): boolean {
     const order = this.order();
     return !!order && ['Yape', 'Plin'].includes(order.paymentMethod) && order.paymentStatus === 'PendingConfirmation';
+  }
+
+  onPaymentEvidenceFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.paymentEvidenceFile.set(input.files?.[0] ?? null);
+    this.paymentEvidenceError.set('');
+  }
+
+  submitPaymentEvidence(): void {
+    const order = this.order();
+    const file = this.paymentEvidenceFile();
+    if (!order || this.paymentEvidenceForm.invalid || !file) {
+      this.paymentEvidenceForm.markAllAsTouched();
+      this.paymentEvidenceError.set(file ? 'Revisa el número y la fecha del pago.' : 'Adjunta una captura del comprobante.');
+      return;
+    }
+    this.isSubmittingPaymentEvidence.set(true);
+    this.paymentEvidenceError.set('');
+    const value = this.paymentEvidenceForm.getRawValue();
+    this.ordersApi.submitPaymentEvidence(order.id, value.operationNumber, new Date(value.paidAtLocal).toISOString(), order.total, file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Comprobante enviado. El negocio verificará el abono real.');
+          this.isSubmittingPaymentEvidence.set(false);
+          this.loadOrder(order.id);
+        },
+        error: (error) => {
+          this.paymentEvidenceError.set(getApiErrorMessage(error, 'No pudimos enviar el comprobante.'));
+          this.isSubmittingPaymentEvidence.set(false);
+        },
+      });
   }
 
   trackingStateIcon(key: string) {

@@ -22,6 +22,8 @@ public interface IFileStorageService
 
     Task<StoredFileContent> DownloadPrivateImageAsync(string objectPath, CancellationToken cancellationToken = default);
 
+    Task<string> CreatePrivateDownloadUrlAsync(string objectPath, TimeSpan lifetime, CancellationToken cancellationToken = default);
+
     Task DeletePrivateAsync(string objectPath, CancellationToken cancellationToken = default);
 }
 

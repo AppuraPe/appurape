@@ -45,6 +45,32 @@
       </div>
     </app-surface-card>
 
+    @if (refund(); as refundCase) {
+      <app-surface-card variant="page" extraClass="grid gap-3 border-amber-200 bg-amber-50/60 p-4">
+        <app-internal-page-section-header eyebrow="Devolución" title="Seguimiento del reembolso" [subtitle]="refundCase.reason" />
+        <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <app-status-badge [status]="refundCase.status" [label]="refundStatusLabel(refundCase.status)" />
+          <strong>{{ refundCase.amount | currency: refundCase.currencyCode : 'S/ ' : '1.2-2' }}</strong>
+        </div>
+        @if (refundCase.status === 'AwaitingBusinessRefund') {
+          <app-notice tone="info" message="El negocio debe realizar la devolución y adjuntar su comprobante privado." />
+        }
+        @if (refundCase.status === 'AwaitingCustomerConfirmation') {
+          <app-notice tone="warning" message="Verifica tu cuenta antes de confirmar. Si el dinero no llegó o el comprobante no corresponde, abre una disputa." />
+          @if (refundCase.evidenceId) {
+            <app-button type="button" variant="secondary" size="sm" (click)="viewRefundEvidence(refundCase.evidenceId)">Ver comprobante privado</app-button>
+          }
+          <div class="grid gap-2 min-[390px]:grid-cols-2">
+            <app-button type="button" size="sm" [disabled]="refundSubmitting()" (click)="confirmRefund()" block>Confirmar que recibí el dinero</app-button>
+            <app-button type="button" variant="danger" size="sm" [disabled]="refundSubmitting()" (click)="disputeRefund()" block>No lo recibí</app-button>
+          </div>
+        }
+        @if (refundCase.status === 'Disputed') {
+          <app-notice tone="danger" message="AppuraPe revisará la evidencia y el historial. El reembolso no se considera completado." />
+        }
+      </app-surface-card>
+    }
+
     <app-surface-card variant="page" extraClass="p-5">
       <div class="flex flex-col gap-4">
         <div class="flex flex-wrap items-center gap-2">
@@ -73,6 +99,27 @@
 
         @if (showManualPaymentNotice()) {
           <app-notice tone="warning" message="El negocio aún debe confirmar tu pago." />
+        }
+
+        @if ((currentOrder.paymentStatus === 'PendingEvidence' || currentOrder.paymentStatus === 'Rejected') && (currentOrder.paymentMethod === 'Yape' || currentOrder.paymentMethod === 'Plin')) {
+          <form class="grid min-w-0 gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4" [formGroup]="paymentEvidenceForm" (ngSubmit)="submitPaymentEvidence()">
+            <app-internal-page-section-header eyebrow="Pago pendiente" title="Envía tu comprobante" subtitle="El negocio confirmará el abono en su cuenta. Una captura no aprueba el pago automáticamente." />
+            <label class="grid min-w-0 gap-1 text-sm font-bold text-slate-700">
+              Número de operación
+              <input class="min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm" formControlName="operationNumber" maxlength="80" autocomplete="off" />
+            </label>
+            <label class="grid min-w-0 gap-1 text-sm font-bold text-slate-700">
+              Fecha y hora aproximada
+              <input class="min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm" type="datetime-local" formControlName="paidAtLocal" />
+            </label>
+            <label class="grid min-w-0 gap-1 text-sm font-bold text-slate-700">
+              Captura privada
+              <input class="min-w-0 text-sm" type="file" accept="image/jpeg,image/png,image/webp" (change)="onPaymentEvidenceFileSelected($event)" />
+            </label>
+            <p class="text-xs text-slate-600">Monto que debe verse: {{ currentOrder.total | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
+            @if (paymentEvidenceError()) { <app-notice tone="danger" [message]="paymentEvidenceError()" /> }
+            <app-button type="submit" size="md" [disabled]="isSubmittingPaymentEvidence()" block>{{ isSubmittingPaymentEvidence() ? 'Enviando…' : 'Enviar comprobante' }}</app-button>
+          </form>
         }
 
         @if (currentOrder.paymentStatus === 'Rejected' && currentOrder.paymentFailureReason) {

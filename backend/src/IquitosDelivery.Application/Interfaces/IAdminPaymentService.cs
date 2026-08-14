@@ -11,4 +11,6 @@ public interface IAdminPaymentService
     Task<AdminPaymentDetailResponse> ConfirmPaymentAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     Task<AdminPaymentDetailResponse> RejectPaymentAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+    Task<AdminPaymentDetailResponse> ResolveReviewAsync(Guid orderId, bool confirm, string reason, CancellationToken cancellationToken = default);
 }

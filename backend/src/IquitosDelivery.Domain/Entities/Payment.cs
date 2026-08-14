@@ -34,4 +34,8 @@ public class Payment : BaseEntity
     public DateTime? RejectedAtUtc { get; set; }
 
     public string? FailureReason { get; set; }
+
+    public uint Version { get; set; }
+
+    public ICollection<PaymentEvidence> Evidence { get; set; } = new List<PaymentEvidence>();
 }

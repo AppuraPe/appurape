@@ -41,5 +41,31 @@ public class SettlementBatch : BaseEntity
 
     public string? Notes { get; set; }
 
+    public FinancialPartyType? DebtorType { get; set; }
+
+    public Guid? DebtorEntityId { get; set; }
+
+    public FinancialPartyType? CreditorType { get; set; }
+
+    public Guid? CreditorEntityId { get; set; }
+
+    public Guid? CreatedByAdminId { get; set; }
+
+    public Guid? ApprovedByAdminId { get; set; }
+
+    public DateTime? ApprovedAtUtc { get; set; }
+
+    public Guid? PaymentReportedByAdminId { get; set; }
+
+    public DateTime? PaymentReportedAtUtc { get; set; }
+
+    public string? PaymentOperationNumber { get; set; }
+
+    public string? PaymentEvidenceObjectPath { get; set; }
+
+    public string? PaymentEvidenceSha256 { get; set; }
+
+    public uint Version { get; set; }
+
     public ICollection<SettlementItem> Items { get; set; } = new List<SettlementItem>();
 }

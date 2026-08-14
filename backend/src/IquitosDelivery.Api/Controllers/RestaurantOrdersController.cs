@@ -59,6 +59,7 @@ public class RestaurantOrdersController : ControllerBase
         [FromBody] ConfirmRestaurantOrderPaymentRequest request,
         CancellationToken cancellationToken)
     {
+        if (ControllerContext.HttpContext is not null && string.IsNullOrWhiteSpace(Request.Headers["Idempotency-Key"].FirstOrDefault())) return BadRequest(new { message = "Envía Idempotency-Key." });
         var response = await _orderService.ConfirmRestaurantOrderPaymentAsync(orderId, request, cancellationToken);
         return Ok(response);
     }
@@ -70,6 +71,7 @@ public class RestaurantOrdersController : ControllerBase
         [FromBody] RejectRestaurantOrderPaymentRequest request,
         CancellationToken cancellationToken)
     {
+        if (ControllerContext.HttpContext is not null && string.IsNullOrWhiteSpace(Request.Headers["Idempotency-Key"].FirstOrDefault())) return BadRequest(new { message = "Envía Idempotency-Key." });
         var response = await _orderService.RejectRestaurantOrderPaymentAsync(orderId, request, cancellationToken);
         return Ok(response);
     }

@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -7,9 +7,12 @@ import {
   CollaboratorVerification,
   CreateSettlementBatchRequest,
   FinancialMovement,
+  FinancialObligation,
+  LegacyMovement,
   RejectCollaboratorVerificationRequest,
   SettlementBatch,
 } from '../models/admin-finance.models';
+import { RefundResponse } from '../models/orders.models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminFinanceApiService {
@@ -49,15 +52,52 @@ export class AdminFinanceApiService {
   }
 
   createSettlement(request: CreateSettlementBatchRequest): Observable<SettlementBatch> {
-    return this.http.post<SettlementBatch>(this.settlementsUrl, request);
+    return this.http.post<SettlementBatch>(this.settlementsUrl, request, { headers: this.idempotencyHeaders() });
+  }
+
+  getFinancialObligations(): Observable<FinancialObligation[]> {
+    return this.http.get<FinancialObligation[]>(`${environment.apiBaseUrl}/api/admin/financial-obligations`);
+  }
+
+  getLegacyReconciliation(): Observable<LegacyMovement[]> {
+    return this.http.get<LegacyMovement[]>(`${environment.apiBaseUrl}/api/admin/finance/reconciliation`);
+  }
+
+  getDisputedRefunds(): Observable<RefundResponse[]> {
+    return this.http.get<RefundResponse[]>(`${environment.apiBaseUrl}/api/admin/refunds`);
+  }
+
+  resolveRefund(id: string, complete: boolean, reason: string): Observable<RefundResponse> {
+    return this.http.post<RefundResponse>(`${environment.apiBaseUrl}/api/admin/refunds/${id}/resolve`, { complete, reason }, { headers: this.idempotencyHeaders() });
+  }
+
+  reconcileLegacyMovement(id: string, decision: string, reason: string): Observable<LegacyMovement> {
+    return this.http.post<LegacyMovement>(`${environment.apiBaseUrl}/api/admin/finance/reconciliation/${id}`, { decision, reason }, { headers: this.idempotencyHeaders() });
+  }
+
+  approveSettlement(settlementId: string): Observable<SettlementBatch> {
+    return this.http.post<SettlementBatch>(`${this.settlementsUrl}/${settlementId}/approve`, {}, { headers: this.idempotencyHeaders() });
+  }
+
+  reportSettlementPayment(settlementId: string, operationNumber: string, amount: number, paidAtUtc: string, file: File): Observable<SettlementBatch> {
+    const form = new FormData();
+    form.append('operationNumber', operationNumber);
+    form.append('amount', String(amount));
+    form.append('paidAtUtc', paidAtUtc);
+    form.append('file', file);
+    return this.http.post<SettlementBatch>(`${this.settlementsUrl}/${settlementId}/report-payment`, form, { headers: this.idempotencyHeaders() });
+  }
+
+  downloadSettlementPaymentEvidence(settlementId: string): Observable<Blob> {
+    return this.http.get(`${this.settlementsUrl}/${settlementId}/payment-evidence`, { responseType: 'blob' });
   }
 
   markSettlementPaid(settlementId: string): Observable<SettlementBatch> {
-    return this.http.post<SettlementBatch>(`${this.settlementsUrl}/${settlementId}/mark-paid`, {});
+    return this.http.post<SettlementBatch>(`${this.settlementsUrl}/${settlementId}/mark-paid`, {}, { headers: this.idempotencyHeaders() });
   }
 
   cancelSettlement(settlementId: string): Observable<SettlementBatch> {
-    return this.http.post<SettlementBatch>(`${this.settlementsUrl}/${settlementId}/cancel`, {});
+    return this.http.post<SettlementBatch>(`${this.settlementsUrl}/${settlementId}/cancel`, {}, { headers: this.idempotencyHeaders() });
   }
 
   getPendingCollaboratorVerifications(): Observable<CollaboratorVerification[]> {
@@ -77,5 +117,9 @@ export class AdminFinanceApiService {
 
   getCollaboratorEvidence(verificationId: string, type: 'dni' | 'selfie'): Observable<Blob> {
     return this.http.get(`${this.verificationsUrl}/${verificationId}/evidence/${type}`, { responseType: 'blob' });
+  }
+
+  private idempotencyHeaders(): HttpHeaders {
+    return new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() });
   }
 }

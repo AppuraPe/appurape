@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
 using Microsoft.Extensions.Options;
@@ -65,6 +66,24 @@ public class SupabaseFileStorageService : IFileStorageService
         return new StoredFileContent(
             await response.Content.ReadAsByteArrayAsync(cancellationToken),
             response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream");
+    }
+
+    public async Task<string> CreatePrivateDownloadUrlAsync(string objectPath, TimeSpan lifetime, CancellationToken cancellationToken = default)
+    {
+        ValidateSettings();
+        var seconds = Math.Clamp((int)lifetime.TotalSeconds, 30, 300);
+        var bucket = _storageSettings.Supabase.PrivateBucket.Trim();
+        using var request = CreateAuthorizedRequest(HttpMethod.Post, $"/storage/v1/object/sign/{bucket}/{NormalizeObjectPath(objectPath)}");
+        request.Content = new StringContent(JsonSerializer.Serialize(new { expiresIn = seconds }), Encoding.UTF8, "application/json");
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode) throw new AppException("No se pudo autorizar la lectura de la evidencia privada.");
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        var root = document.RootElement;
+        var signedPath = root.TryGetProperty("signedURL", out var upper) ? upper.GetString()
+            : root.TryGetProperty("signedUrl", out var lower) ? lower.GetString() : null;
+        if (string.IsNullOrWhiteSpace(signedPath)) throw new AppException("Storage no devolvió una URL privada válida.");
+        if (Uri.TryCreate(signedPath, UriKind.Absolute, out var absolute)) return absolute.ToString();
+        return $"{_storageSettings.Supabase.Url.TrimEnd('/')}/storage/v1/{signedPath.TrimStart('/')}";
     }
 
     public async Task DeletePrivateAsync(string objectPath, CancellationToken cancellationToken = default)

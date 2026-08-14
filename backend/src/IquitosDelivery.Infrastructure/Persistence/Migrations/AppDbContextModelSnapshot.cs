@@ -402,6 +402,18 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("ConfirmationCodeExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("ConfirmationCodeFailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ConfirmationCodeLockedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ConfirmationCodeRegenerations")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ConfirmationCodeVersion")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -475,6 +487,15 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("PickupCodeExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PickupCodeFailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("PickupCodeLockedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PickupCodeVersion")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("PickupConfirmedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -786,6 +807,59 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.ToTable("driver_profiles", (string)null);
                 });
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.FinancialAuditEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId", "Action", "IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("\"IdempotencyKey\" IS NOT NULL");
+
+                    b.ToTable("financial_audit_events", (string)null);
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.FinancialMovement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -814,11 +888,17 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<bool>("IsImmutable")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("OccurredAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("ReconciliationStatus")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Reference")
                         .HasMaxLength(120)
@@ -865,6 +945,102 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                         .HasFilter("\"OrderId\" IS NOT NULL");
 
                     b.ToTable("financial_movements", (string)null);
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.FinancialObligation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("AvailableAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CommunityRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Concept")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreditorEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CreditorType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<Guid?>("DebtorEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DebtorType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid?>("RefundRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ReversalOfId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("SettledAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RefundRequestId");
+
+                    b.HasIndex("ReversalOfId");
+
+                    b.HasIndex("CommunityRequestId", "Concept")
+                        .IsUnique()
+                        .HasFilter("\"CommunityRequestId\" IS NOT NULL AND \"ReversalOfId\" IS NULL");
+
+                    b.HasIndex("OrderId", "Concept")
+                        .IsUnique()
+                        .HasFilter("\"OrderId\" IS NOT NULL AND \"ReversalOfId\" IS NULL");
+
+                    b.HasIndex("CreditorType", "CreditorEntityId", "Status");
+
+                    b.HasIndex("DebtorType", "DebtorEntityId", "Status");
+
+                    b.ToTable("financial_obligations", (string)null);
                 });
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.LegalDocument", b =>
@@ -1402,6 +1578,12 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ConfirmedByUserId");
@@ -1410,6 +1592,78 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("payments", (string)null);
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.PaymentEvidence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DeclaredAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<Guid?>("DuplicateOverrideByAdminId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DuplicateOverrideReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OperationNumber")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime>("PaidAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PrivateObjectPath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentSha256")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = TRUE");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = TRUE");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.HasIndex("Method", "OperationNumber")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = TRUE");
+
+                    b.ToTable("payment_evidence", (string)null);
                 });
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.PendingCustomerRegistration", b =>
@@ -1755,6 +2009,134 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.ToTable("platform_settings", (string)null);
                 });
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.RefundEvidence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OperationNumber")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("PrivateObjectPath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RefundRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RefundedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentSha256")
+                        .IsUnique();
+
+                    b.HasIndex("RefundRequestId")
+                        .IsUnique();
+
+                    b.ToTable("refund_evidence", (string)null);
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.RefundRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("BusinessReportedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<DateTime?>("CustomerConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DisputedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResolutionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid?>("ResolvedByAdminId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique();
+
+                    b.ToTable("refund_requests", (string)null);
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.Restaurant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1840,6 +2222,12 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedByAdminId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("BusinessId")
                         .HasColumnType("uuid");
 
@@ -1859,6 +2247,21 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedByAdminId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CreditorEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("CreditorType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("DebtorEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("DebtorType")
+                        .HasColumnType("integer");
+
                     b.Property<Guid?>("DriverId")
                         .HasColumnType("uuid");
 
@@ -1873,6 +2276,24 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("PaymentEvidenceObjectPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("PaymentEvidenceSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PaymentOperationNumber")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime?>("PaymentReportedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PaymentReportedByAdminId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("PeriodEndUtc")
                         .HasColumnType("timestamp with time zone");
@@ -1892,6 +2313,12 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1923,12 +2350,18 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("FinancialMovementId")
+                    b.Property<Guid?>("FinancialMovementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("FinancialObligationId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("GrossAmount")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<decimal>("NetAmount")
                         .HasPrecision(10, 2)
@@ -1946,10 +2379,15 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FinancialMovementId");
+                    b.HasIndex("FinancialMovementId")
+                        .IsUnique()
+                        .HasFilter("\"FinancialMovementId\" IS NOT NULL AND \"IsActive\" = TRUE");
 
-                    b.HasIndex("SettlementBatchId", "FinancialMovementId")
-                        .IsUnique();
+                    b.HasIndex("FinancialObligationId")
+                        .IsUnique()
+                        .HasFilter("\"FinancialObligationId\" IS NOT NULL AND \"IsActive\" = TRUE");
+
+                    b.HasIndex("SettlementBatchId");
 
                     b.ToTable("settlement_items", (string)null);
                 });
@@ -2359,6 +2797,37 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.FinancialObligation", b =>
+                {
+                    b.HasOne("IquitosDelivery.Domain.Entities.CommunityRequest", "CommunityRequest")
+                        .WithMany()
+                        .HasForeignKey("CommunityRequestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IquitosDelivery.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IquitosDelivery.Domain.Entities.RefundRequest", "RefundRequest")
+                        .WithMany()
+                        .HasForeignKey("RefundRequestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IquitosDelivery.Domain.Entities.FinancialObligation", "ReversalOf")
+                        .WithMany()
+                        .HasForeignKey("ReversalOfId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CommunityRequest");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("RefundRequest");
+
+                    b.Navigation("ReversalOf");
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.MenuCategory", b =>
                 {
                     b.HasOne("IquitosDelivery.Domain.Entities.Restaurant", "Restaurant")
@@ -2490,6 +2959,25 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.PaymentEvidence", b =>
+                {
+                    b.HasOne("IquitosDelivery.Domain.Entities.Payment", "Payment")
+                        .WithMany("Evidence")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IquitosDelivery.Domain.Entities.User", "SubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("SubmittedByUser");
+                });
+
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.PendingRestaurantRegistration", b =>
                 {
                     b.HasOne("IquitosDelivery.Domain.Entities.BusinessType", "BusinessType")
@@ -2498,6 +2986,36 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BusinessType");
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.RefundEvidence", b =>
+                {
+                    b.HasOne("IquitosDelivery.Domain.Entities.RefundRequest", "RefundRequest")
+                        .WithMany("Evidence")
+                        .HasForeignKey("RefundRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RefundRequest");
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.RefundRequest", b =>
+                {
+                    b.HasOne("IquitosDelivery.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IquitosDelivery.Domain.Entities.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.Restaurant", b =>
@@ -2562,8 +3080,12 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.HasOne("IquitosDelivery.Domain.Entities.FinancialMovement", "FinancialMovement")
                         .WithMany()
                         .HasForeignKey("FinancialMovementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IquitosDelivery.Domain.Entities.FinancialObligation", "FinancialObligation")
+                        .WithMany()
+                        .HasForeignKey("FinancialObligationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("IquitosDelivery.Domain.Entities.SettlementBatch", "SettlementBatch")
                         .WithMany("Items")
@@ -2572,6 +3094,8 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("FinancialMovement");
+
+                    b.Navigation("FinancialObligation");
 
                     b.Navigation("SettlementBatch");
                 });
@@ -2665,6 +3189,16 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.Payment", b =>
+                {
+                    b.Navigation("Evidence");
+                });
+
+            modelBuilder.Entity("IquitosDelivery.Domain.Entities.RefundRequest", b =>
+                {
+                    b.Navigation("Evidence");
                 });
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.Restaurant", b =>

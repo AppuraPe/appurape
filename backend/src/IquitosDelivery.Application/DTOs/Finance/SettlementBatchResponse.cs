@@ -36,5 +36,23 @@ public class SettlementBatchResponse
 
     public string? Notes { get; set; }
 
+    public string? DebtorType { get; set; }
+
+    public Guid? DebtorEntityId { get; set; }
+
+    public string? CreditorType { get; set; }
+
+    public Guid? CreditorEntityId { get; set; }
+
+    public Guid? CreatedByAdminId { get; set; }
+
+    public Guid? ApprovedByAdminId { get; set; }
+
+    public DateTime? ApprovedAtUtc { get; set; }
+
+    public DateTime? PaymentReportedAtUtc { get; set; }
+
+    public string? PaymentOperationNumber { get; set; }
+
     public List<SettlementItemResponse> Items { get; set; } = new();
 }

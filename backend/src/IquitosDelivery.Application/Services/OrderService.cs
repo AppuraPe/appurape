@@ -7,6 +7,7 @@ using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Domain.Entities;
 using IquitosDelivery.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Data;
 using System.Security.Cryptography;
 
@@ -67,6 +68,8 @@ public class OrderService : IOrderService
     private readonly IValidator<RejectRestaurantOrderPaymentRequest> _rejectRestaurantOrderPaymentValidator;
     private readonly IValidator<UpdateOrderStatusRequest> _updateOrderStatusValidator;
     private readonly IOrderDeliveryConfirmationService? _deliveryConfirmationService;
+    private readonly IFinanceSecurityService? _financeSecurityService;
+    private readonly bool _financeV2Enabled;
 
     public OrderService(
         IAppDbContext dbContext,
@@ -77,7 +80,9 @@ public class OrderService : IOrderService
         IValidator<RateDriverRequest> rateDriverValidator,
         IValidator<RejectRestaurantOrderPaymentRequest> rejectRestaurantOrderPaymentValidator,
         IValidator<UpdateOrderStatusRequest> updateOrderStatusValidator,
-        IOrderDeliveryConfirmationService? deliveryConfirmationService = null)
+        IOrderDeliveryConfirmationService? deliveryConfirmationService = null,
+        IFinanceSecurityService? financeSecurityService = null,
+        IConfiguration? configuration = null)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
@@ -88,6 +93,8 @@ public class OrderService : IOrderService
         _rejectRestaurantOrderPaymentValidator = rejectRestaurantOrderPaymentValidator;
         _updateOrderStatusValidator = updateOrderStatusValidator;
         _deliveryConfirmationService = deliveryConfirmationService;
+        _financeSecurityService = financeSecurityService;
+        _financeV2Enabled = bool.TryParse(configuration?["FinanceV2:Enabled"], out var financeV2Enabled) && financeV2Enabled;
     }
 
     public async Task<ValidateOrderResponse> ValidateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
@@ -203,10 +210,14 @@ public class OrderService : IOrderService
             order.PlatformRevenueAmount = financialBreakdown.PlatformRevenueAmount;
             order.Total = financialBreakdown.Total;
             order.PricingSnapshotJson = FinancialCalculator.SerializeCommercialSnapshot(financialBreakdown, commissionRules);
-            order.Payment = BuildInitialPayment(order);
+            order.Payment = BuildInitialPayment(order, _financeV2Enabled);
 
             _dbContext.Add(order);
-            CreateOrderFinancialMovements(order, validationContext.Restaurant.OwnerUserId);
+            if (!_financeV2Enabled) CreateOrderFinancialMovements(order, validationContext.Restaurant.OwnerUserId);
+            if (_financeSecurityService is not null)
+            {
+                await _financeSecurityService.CreateOrderObligationsAsync(order, validationContext.Restaurant.OwnerUserId, cancellationToken);
+            }
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
@@ -737,6 +748,11 @@ public class OrderService : IOrderService
         var (_, payment) = await GetRestaurantOrderPaymentEntityAsync(orderId, cancellationToken);
         EnsureManualBusinessPayment(payment);
 
+        if (_financeV2Enabled && !await _dbContext.PaymentEvidence.AnyAsync(x => x.PaymentId == payment.Id && x.IsActive, cancellationToken))
+        {
+            throw new AppException("El cliente todavía no adjuntó número de operación y comprobante.");
+        }
+
         if (payment.Status == PaymentStatus.Paid)
         {
             return MapRestaurantOrderPayment(payment);
@@ -926,7 +942,10 @@ public class OrderService : IOrderService
                     .FirstOrDefaultAsync(x => x.OrderId == order.Id && x.Status == CommunityRequestStatus.Accepted, cancellationToken);
                 if (linkedPickup is not null)
                 {
-                    linkedPickup.PickupCode = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                    linkedPickup.PickupCode = null;
+                    linkedPickup.PickupCodeVersion = Math.Max(1, linkedPickup.PickupCodeVersion + 1);
+                    linkedPickup.PickupCodeFailedAttempts = 0;
+                    linkedPickup.PickupCodeLockedAtUtc = null;
                     linkedPickup.PickupCodeExpiresAtUtc = DateTime.UtcNow.AddHours(12);
                 }
             }
@@ -1030,8 +1049,20 @@ public class OrderService : IOrderService
 
             order.Status = OrderStatus.Cancelled;
             RestoreTrackedStock(order);
-            UpdatePaymentForCancelledOrder(order.Payment, request.Reason);
+            var wasPaid = order.Payment?.Status == PaymentStatus.Paid;
+            UpdatePaymentForCancelledOrder(order.Payment, request.Reason, _financeV2Enabled);
+            if (_financeV2Enabled && wasPaid && order.Payment is not null)
+            {
+                _dbContext.Add(new RefundRequest
+                {
+                    Id = Guid.NewGuid(), OrderId = order.Id, PaymentId = order.Payment.Id,
+                    Status = RefundStatus.AwaitingBusinessRefund, Amount = order.Payment.Amount,
+                    CurrencyCode = order.Payment.Currency, Reason = NormalizeCancellationReason(request.Reason),
+                    RequestedByUserId = _currentUserService.UserId ?? Guid.Empty, RequestedAtUtc = DateTime.UtcNow
+                });
+            }
             await CancelPendingFinancialMovementsAsync(order.Id, cancellationToken);
+            if (_financeSecurityService is not null) await _financeSecurityService.CancelOrderObligationsAsync(order.Id, cancellationToken);
             var linkedPickup = await _dbContext.CommunityRequests
                 .FirstOrDefaultAsync(x => x.OrderId == order.Id && x.Status != CommunityRequestStatus.Cancelled && x.Status != CommunityRequestStatus.Confirmed, cancellationToken);
             if (linkedPickup is not null && !linkedPickup.PickupConfirmedAtUtc.HasValue)
@@ -1122,7 +1153,7 @@ public class OrderService : IOrderService
         }
     }
 
-    private static void UpdatePaymentForCancelledOrder(Payment? payment, string? reason)
+    private static void UpdatePaymentForCancelledOrder(Payment? payment, string? reason, bool financeV2Enabled)
     {
         if (payment is null)
         {
@@ -1140,7 +1171,7 @@ public class OrderService : IOrderService
 
         if (payment.Status == PaymentStatus.Paid)
         {
-            payment.Status = PaymentStatus.Refunded;
+            payment.Status = financeV2Enabled ? PaymentStatus.RefundPending : PaymentStatus.Refunded;
             payment.FailureReason = cancellationReason;
         }
     }
@@ -1317,12 +1348,12 @@ public class OrderService : IOrderService
             return;
         }
 
-        if (payment?.Status == PaymentStatus.PendingConfirmation || payment is null)
+        if (payment?.Status is PaymentStatus.PendingEvidence or PaymentStatus.PendingConfirmation || payment is null)
         {
             throw new AppException("El pago aún no ha sido confirmado.");
         }
 
-        if (payment.Status is PaymentStatus.Rejected or PaymentStatus.Failed or PaymentStatus.Refunded)
+        if (payment.Status is PaymentStatus.Rejected or PaymentStatus.Failed or PaymentStatus.Refunded or PaymentStatus.RefundPending or PaymentStatus.UnderReview)
         {
             throw new AppException("El pedido no puede continuar porque el pago no está disponible.");
         }
@@ -1383,6 +1414,7 @@ public class OrderService : IOrderService
             movement.Status = FinancialMovementStatus.Available;
             movement.AvailableAtUtc = availableAtUtc;
         }
+        if (_financeSecurityService is not null) await _financeSecurityService.MarkOrderObligationsAvailableAsync(orderId, cancellationToken);
     }
 
     private async Task NotifyCustomerAboutBusinessDispatchAsync(Order order, string restaurantName, CancellationToken cancellationToken)
@@ -1725,12 +1757,12 @@ public class OrderService : IOrderService
         return false;
     }
 
-    private static Payment BuildInitialPayment(Order order)
+    private static Payment BuildInitialPayment(Order order, bool financeV2Enabled)
     {
         var paymentStatus = order.PaymentMethod switch
         {
             PaymentMethod.Cash => PaymentStatus.Pending,
-            PaymentMethod.Yape or PaymentMethod.Plin => PaymentStatus.PendingConfirmation,
+            PaymentMethod.Yape or PaymentMethod.Plin => financeV2Enabled ? PaymentStatus.PendingEvidence : PaymentStatus.PendingConfirmation,
             _ => throw new AppException("El método de pago no está soportado.")
         };
 
@@ -1808,7 +1840,9 @@ public class OrderService : IOrderService
             Amount = amount,
             OccurredAtUtc = occurredAtUtc,
             Reference = orderReference,
-            Description = description
+            Description = description,
+            IsImmutable = true,
+            ReconciliationStatus = FinancialReconciliationStatus.LegacyReconciliationPending
         });
     }
 

@@ -20,7 +20,9 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddHostedService<AccountDeletionWorker>();
+builder.Services.AddHostedService<RefundEscalationWorker>();
 builder.Services.AddControllers();
+builder.Services.AddScoped<IRequestAuditContext, HttpRequestAuditContext>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(options =>
 {

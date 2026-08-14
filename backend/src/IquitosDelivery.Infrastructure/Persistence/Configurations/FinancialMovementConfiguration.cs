@@ -21,6 +21,8 @@ public class FinancialMovementConfiguration : IEntityTypeConfiguration<Financial
         builder.Property(x => x.SettledAtUtc);
         builder.Property(x => x.Reference).HasMaxLength(120);
         builder.Property(x => x.Description).HasMaxLength(1000);
+        builder.Property(x => x.ReconciliationStatus).IsRequired();
+        builder.Property(x => x.IsImmutable).IsRequired();
 
         builder.HasIndex(x => x.OrderId);
         builder.HasIndex(x => x.CommunityRequestId);

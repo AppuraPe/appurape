@@ -170,8 +170,11 @@ Variables que Render pedira o que debes revisar:
 - `Jwt__Key`
 - `Jwt__AccessTokenLifetimeMinutes` (recommended: `43200`, equivalent to 30 days)
 - `OrderConfirmation__Key` (secreto aleatorio de al menos 32 bytes para los códigos de entrega)
+- `FinanceV2__Enabled=false` durante la migración y conciliación histórica; cambiar a `true` solo después de completar QA y tener dos administradores distintos para aprobar liquidaciones
 - `Email__Provider=Logging`
 - `Storage__Supabase__ServiceKey`
+
+FinanceV2 usa `appurape-private` para comprobantes de Yape/Plin, reembolsos y liquidaciones. El bucket debe permanecer privado. El orden seguro de despliegue es: migración con la bandera desactivada, conciliación histórica, despliegue del frontend, QA en staging y finalmente activación de `FinanceV2__Enabled=true`.
  
 Si quieres publicar la SPA unificada en Render despues, la dejamos como `Static Site` apuntando a `frontend/ops-app`.
 

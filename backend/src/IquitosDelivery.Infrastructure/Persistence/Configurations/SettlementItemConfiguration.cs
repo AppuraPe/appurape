@@ -16,8 +16,10 @@ public class SettlementItemConfiguration : IEntityTypeConfiguration<SettlementIt
         builder.Property(x => x.CommissionAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.ServiceFeeAmount).HasPrecision(10, 2).IsRequired();
         builder.Property(x => x.NetAmount).HasPrecision(10, 2).IsRequired();
+        builder.Property(x => x.IsActive).IsRequired();
 
-        builder.HasIndex(x => new { x.SettlementBatchId, x.FinancialMovementId }).IsUnique();
+        builder.HasIndex(x => x.FinancialMovementId).IsUnique().HasFilter("\"FinancialMovementId\" IS NOT NULL AND \"IsActive\" = TRUE");
+        builder.HasIndex(x => x.FinancialObligationId).IsUnique().HasFilter("\"FinancialObligationId\" IS NOT NULL AND \"IsActive\" = TRUE");
 
         builder.HasOne(x => x.SettlementBatch)
             .WithMany(x => x.Items)
@@ -27,6 +29,11 @@ public class SettlementItemConfiguration : IEntityTypeConfiguration<SettlementIt
         builder.HasOne(x => x.FinancialMovement)
             .WithMany()
             .HasForeignKey(x => x.FinancialMovementId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.FinancialObligation)
+            .WithMany()
+            .HasForeignKey(x => x.FinancialObligationId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

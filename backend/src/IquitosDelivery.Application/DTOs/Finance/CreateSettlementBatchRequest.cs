@@ -18,5 +18,7 @@ public class CreateSettlementBatchRequest
 
     public List<Guid> FinancialMovementIds { get; set; } = new();
 
+    public List<Guid> FinancialObligationIds { get; set; } = new();
+
     public string? Notes { get; set; }
 }

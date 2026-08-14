@@ -4,7 +4,9 @@ public class SettlementItemResponse
 {
     public Guid Id { get; set; }
 
-    public Guid FinancialMovementId { get; set; }
+    public Guid? FinancialMovementId { get; set; }
+
+    public Guid? FinancialObligationId { get; set; }
 
     public string MovementType { get; set; } = string.Empty;
 

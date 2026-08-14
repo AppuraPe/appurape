@@ -22,5 +22,11 @@ public interface IAdminFinanceService
 
     Task<SettlementBatchResponse> MarkSettlementPaidAsync(Guid settlementId, CancellationToken cancellationToken = default);
 
+    Task<SettlementBatchResponse> ApproveSettlementAsync(Guid settlementId, CancellationToken cancellationToken = default);
+
+    Task<SettlementBatchResponse> ReportSettlementPaymentAsync(Guid settlementId, ReportSettlementPaymentRequest request, CancellationToken cancellationToken = default);
+
+    Task<string> GetSettlementPaymentEvidencePathAsync(Guid settlementId, CancellationToken cancellationToken = default);
+
     Task<SettlementBatchResponse> CancelSettlementAsync(Guid settlementId, CancellationToken cancellationToken = default);
 }

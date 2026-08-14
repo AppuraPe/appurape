@@ -38,4 +38,8 @@ public class FinancialMovement : BaseEntity
     public string? Reference { get; set; }
 
     public string? Description { get; set; }
+
+    public FinancialReconciliationStatus ReconciliationStatus { get; set; } = FinancialReconciliationStatus.Current;
+
+    public bool IsImmutable { get; set; }
 }

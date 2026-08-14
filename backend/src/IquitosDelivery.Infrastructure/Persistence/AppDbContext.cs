@@ -1,6 +1,7 @@
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Domain.Common;
 using IquitosDelivery.Domain.Entities;
+using IquitosDelivery.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace IquitosDelivery.Infrastructure.Persistence;
@@ -66,6 +67,16 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Payment> Payments => Set<Payment>();
 
+    public DbSet<PaymentEvidence> PaymentEvidence => Set<PaymentEvidence>();
+
+    public DbSet<FinancialObligation> FinancialObligations => Set<FinancialObligation>();
+
+    public DbSet<RefundRequest> RefundRequests => Set<RefundRequest>();
+
+    public DbSet<RefundEvidence> RefundEvidence => Set<RefundEvidence>();
+
+    public DbSet<FinancialAuditEvent> FinancialAuditEvents => Set<FinancialAuditEvent>();
+
     public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
 
     public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
@@ -130,6 +141,16 @@ public class AppDbContext : DbContext, IAppDbContext
 
     IQueryable<Payment> IAppDbContext.Payments => Payments;
 
+    IQueryable<PaymentEvidence> IAppDbContext.PaymentEvidence => PaymentEvidence;
+
+    IQueryable<FinancialObligation> IAppDbContext.FinancialObligations => FinancialObligations;
+
+    IQueryable<RefundRequest> IAppDbContext.RefundRequests => RefundRequests;
+
+    IQueryable<RefundEvidence> IAppDbContext.RefundEvidence => RefundEvidence;
+
+    IQueryable<FinancialAuditEvent> IAppDbContext.FinancialAuditEvents => FinancialAuditEvents;
+
     IQueryable<UserDeviceToken> IAppDbContext.UserDeviceTokens => UserDeviceTokens;
 
     IQueryable<LegalDocument> IAppDbContext.LegalDocuments => LegalDocuments;
@@ -156,12 +177,14 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public override int SaveChanges()
     {
+        ValidateImmutableFinancialMovements();
         ApplyTimestamps();
         return base.SaveChanges();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        ValidateImmutableFinancialMovements();
         ApplyTimestamps();
         return base.SaveChangesAsync(cancellationToken);
     }
@@ -189,6 +212,24 @@ public class AppDbContext : DbContext, IAppDbContext
                 entry.Property(nameof(BaseEntity.CreatedAtUtc)).IsModified = false;
                 entry.Entity.UpdatedAtUtc = utcNow;
             }
+        }
+    }
+
+    private void ValidateImmutableFinancialMovements()
+    {
+        if (ChangeTracker.Entries<FinancialAuditEvent>().Any(x => x.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Financial audit events are immutable.");
+
+        foreach (var entry in ChangeTracker.Entries<FinancialMovement>().Where(x => x.State is EntityState.Modified or EntityState.Deleted))
+        {
+            var immutable = entry.State == EntityState.Deleted
+                ? entry.Entity.IsImmutable
+                : entry.Property(x => x.IsImmutable).OriginalValue;
+            var reconciliation = entry.State == EntityState.Deleted
+                ? entry.Entity.ReconciliationStatus
+                : entry.Property(x => x.ReconciliationStatus).OriginalValue;
+            if (immutable && reconciliation != FinancialReconciliationStatus.LegacyReconciliationPending)
+                throw new InvalidOperationException("Financial movements are immutable; register a reversal movement instead of editing or deleting them.");
         }
     }
 }

@@ -20,19 +20,22 @@ public class DriverOrderService : IDriverOrderService
     private readonly INotificationService _notificationService;
     private readonly IValidator<UpdateDriverOrderStatusRequest> _updateDriverOrderStatusValidator;
     private readonly IOrderDeliveryConfirmationService? _deliveryConfirmationService;
+    private readonly IFinanceSecurityService? _financeSecurityService;
 
     public DriverOrderService(
         IAppDbContext dbContext,
         ICurrentUserService currentUserService,
         INotificationService notificationService,
         IValidator<UpdateDriverOrderStatusRequest> updateDriverOrderStatusValidator,
-        IOrderDeliveryConfirmationService? deliveryConfirmationService = null)
+        IOrderDeliveryConfirmationService? deliveryConfirmationService = null,
+        IFinanceSecurityService? financeSecurityService = null)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _notificationService = notificationService;
         _updateDriverOrderStatusValidator = updateDriverOrderStatusValidator;
         _deliveryConfirmationService = deliveryConfirmationService;
+        _financeSecurityService = financeSecurityService;
     }
 
     public async Task<IReadOnlyList<AvailableDriverOrderListItemResponse>> GetAvailableOrdersAsync(
@@ -236,6 +239,7 @@ public class DriverOrderService : IDriverOrderService
             order.Status = OrderStatus.Assigned;
             driver.IsAvailable = false;
             await AssignCourierFinancialMovementsAsync(order.Id, driver.UserId, cancellationToken);
+            if (_financeSecurityService is not null) await _financeSecurityService.AssignOrderCourierAsync(order.Id, driver.UserId, cancellationToken);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -397,6 +401,7 @@ public class DriverOrderService : IDriverOrderService
                 order.DeliveredAtUtc = deliveredAtUtc;
                 driver.IsAvailable = true;
                 await MarkOrderFinancialMovementsAvailableAsync(order.Id, cancellationToken);
+                if (_financeSecurityService is not null) await _financeSecurityService.MarkOrderObligationsAvailableAsync(order.Id, cancellationToken);
                 await RegisterCompletedDeliveryAsync(driver, cancellationToken);
                 CloseCashPaymentOnDelivery(payment, driver.UserId, deliveredAtUtc);
             }

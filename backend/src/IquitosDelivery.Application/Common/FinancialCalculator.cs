@@ -14,7 +14,7 @@ public static class FinancialCalculator
         decimal? businessOwnDeliveryFee,
         IReadOnlyCollection<CommissionRule> rules)
     {
-        var businessCommission = ApplyRule(GetRule(rules, FinancialRuleCodes.CommercialBusinessCommission), subtotal);
+        var businessCommission = Clamp(ApplyRule(GetRule(rules, FinancialRuleCodes.CommercialBusinessCommission), subtotal), 0m, subtotal);
         var deliveryMinimumAmount = ResolveDeliveryMinimum(subtotal, deliveryMode, businessHasOwnDelivery, businessOwnDeliveryFee, rules);
         var deliveryFee = ResolveDeliveryFee(deliveryMode, offeredDeliveryAmount, deliveryMinimumAmount);
         var deliveryPlatformCommission = Clamp(ApplyRule(GetRule(rules, FinancialRuleCodes.CommercialDeliveryPlatformCommission), deliveryFee), 0m, deliveryFee);
@@ -24,6 +24,7 @@ public static class FinancialCalculator
         var courierEarning = Math.Max(0m, deliveryFee - deliveryPlatformCommission);
         var platformRevenue = businessCommission + deliveryPlatformCommission + serviceFee - discount;
         var total = subtotal + deliveryFee + serviceFee - discount;
+        EnsureInvariant(total, businessNetAmount + courierEarning + platformRevenue, "commercial order");
 
         return new CommercialFinancialBreakdown(
             subtotal,
@@ -48,6 +49,7 @@ public static class FinancialCalculator
         var favorPlatformCommission = ApplyRule(GetRule(rules, FinancialRuleCodes.CommunityFavorPlatformCommission), compensationAmount);
         var collaboratorEarning = Math.Max(0m, compensationAmount);
         var totalClientAmount = compensationAmount + estimatedPurchaseAmount + favorPlatformCommission;
+        EnsureInvariant(totalClientAmount, collaboratorEarning + estimatedPurchaseAmount + favorPlatformCommission, "community request");
 
         return new CommunityFinancialBreakdown(
             compensationAmount,
@@ -137,6 +139,12 @@ public static class FinancialCalculator
     private static decimal Clamp(decimal amount, decimal min, decimal max)
     {
         return Math.Min(max, Math.Max(min, amount));
+    }
+
+    private static void EnsureInvariant(decimal collected, decimal distributed, string context)
+    {
+        if (Math.Abs(RoundMoney(collected) - RoundMoney(distributed)) > 0.01m)
+            throw new InvalidOperationException($"Financial invariant failed for {context}: collected and distributed amounts differ.");
     }
 
     private static decimal ResolveDeliveryMinimum(

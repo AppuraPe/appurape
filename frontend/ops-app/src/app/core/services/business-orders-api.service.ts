@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -12,6 +12,7 @@ import {
   OrderCollaboratorPickupResponse,
   UpdateBusinessOrderStatusRequest,
 } from '../models/business.model';
+import { PaymentEvidenceResponse, RefundResponse } from '../models/orders.models';
 
 @Injectable({ providedIn: 'root' })
 export class BusinessOrdersApiService {
@@ -38,11 +39,36 @@ export class BusinessOrdersApiService {
   }
 
   confirmOrderPayment(orderId: string, request: ConfirmBusinessOrderPaymentRequest): Observable<BusinessOrderPaymentResponse> {
-    return this.http.post<BusinessOrderPaymentResponse>(`${this.restaurantOrdersBaseUrl}/${orderId}/payment/confirm`, request);
+    return this.http.post<BusinessOrderPaymentResponse>(`${this.restaurantOrdersBaseUrl}/${orderId}/payment/confirm`, request, { headers: this.idempotencyHeaders() });
   }
 
   rejectOrderPayment(orderId: string, request: RejectBusinessOrderPaymentRequest): Observable<BusinessOrderPaymentResponse> {
-    return this.http.post<BusinessOrderPaymentResponse>(`${this.restaurantOrdersBaseUrl}/${orderId}/payment/reject`, request);
+    return this.http.post<BusinessOrderPaymentResponse>(`${this.restaurantOrdersBaseUrl}/${orderId}/payment/reject`, request, { headers: this.idempotencyHeaders() });
+  }
+
+  openPaymentReview(paymentId: string, reason: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/api/payments/${paymentId}/open-review`, { reason }, { headers: this.idempotencyHeaders() });
+  }
+
+  getPaymentEvidence(orderId: string): Observable<PaymentEvidenceResponse> {
+    return this.http.get<PaymentEvidenceResponse>(`${this.baseUrl}/${orderId}/payment-evidence`);
+  }
+
+  downloadPaymentEvidence(evidenceId: string): Observable<Blob> {
+    return this.http.get(`${environment.apiBaseUrl}/api/payment-evidence/${evidenceId}/file`, { responseType: 'blob' });
+  }
+
+  getRefund(orderId: string): Observable<RefundResponse> {
+    return this.http.get<RefundResponse>(`${environment.apiBaseUrl}/api/orders/${orderId}/refund`);
+  }
+
+  submitRefundEvidence(refundId: string, operationNumber: string, amount: number, refundedAtUtc: string, file: File): Observable<RefundResponse> {
+    const form = new FormData();
+    form.append('operationNumber', operationNumber);
+    form.append('amount', amount.toFixed(2));
+    form.append('refundedAtUtc', refundedAtUtc);
+    form.append('file', file, file.name);
+    return this.http.post<RefundResponse>(`${environment.apiBaseUrl}/api/refunds/${refundId}/business-evidence`, form, { headers: this.idempotencyHeaders() });
   }
 
   confirmCollaboratorPickup(orderId: string, pickupCode: string): Observable<OrderCollaboratorPickupResponse> {
@@ -69,5 +95,9 @@ export class BusinessOrdersApiService {
     }
 
     return params;
+  }
+
+  private idempotencyHeaders(): HttpHeaders {
+    return new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() });
   }
 }

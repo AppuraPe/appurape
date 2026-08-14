@@ -66,6 +66,31 @@ export interface CustomerOrderDetailResponse {
   items: OrderItemDetailResponse[];
 }
 
+export interface PaymentEvidenceResponse {
+  id: string;
+  paymentId: string;
+  method: string;
+  operationNumber: string;
+  declaredAmount: number;
+  paidAtUtc: string;
+  createdAtUtc: string;
+}
+
+export interface RefundResponse {
+  id: string;
+  orderId: string;
+  status: string;
+  amount: number;
+  currencyCode: string;
+  reason: string;
+  requestedAtUtc: string;
+  businessReportedAtUtc?: string | null;
+  customerConfirmedAtUtc?: string | null;
+  completedAtUtc?: string | null;
+  resolutionReason?: string | null;
+  evidenceId?: string | null;
+}
+
 export type CreateOrderResponse = CustomerOrderDetailResponse;
 
 export type PaymentMethod = 'Cash' | 'Card' | 'Yape' | 'Plin';

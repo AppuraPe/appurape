@@ -138,6 +138,10 @@ public class CommunityController : ControllerBase
         return Ok(await _communityService.ConfirmRequestAsync(requestId, cancellationToken));
     }
 
+    [HttpPost("requests/{requestId:guid}/confirmation-code/regenerate")]
+    public async Task<ActionResult<CommunityRequestDetailResponse>> RegenerateConfirmationCode(Guid requestId, CancellationToken cancellationToken) =>
+        Ok(await _communityService.RegenerateConfirmationCodeAsync(requestId, cancellationToken));
+
     [HttpPatch("requests/{requestId:guid}/cancel")]
     public async Task<ActionResult<CommunityRequestDetailResponse>> CancelRequest(
         Guid requestId,

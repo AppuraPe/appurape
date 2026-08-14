@@ -37,6 +37,7 @@ public class AdminPaymentsController : ControllerBase
     [ProducesResponseType(typeof(AdminPaymentDetailResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AdminPaymentDetailResponse>> ConfirmPayment(Guid orderId, CancellationToken cancellationToken)
     {
+        if (ControllerContext.HttpContext is not null && string.IsNullOrWhiteSpace(Request.Headers["Idempotency-Key"].FirstOrDefault())) return BadRequest(new { message = "Envía Idempotency-Key." });
         var response = await _adminPaymentService.ConfirmPaymentAsync(orderId, cancellationToken);
         return Ok(response);
     }
@@ -45,7 +46,17 @@ public class AdminPaymentsController : ControllerBase
     [ProducesResponseType(typeof(AdminPaymentDetailResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AdminPaymentDetailResponse>> RejectPayment(Guid orderId, CancellationToken cancellationToken)
     {
+        if (ControllerContext.HttpContext is not null && string.IsNullOrWhiteSpace(Request.Headers["Idempotency-Key"].FirstOrDefault())) return BadRequest(new { message = "Envía Idempotency-Key." });
         var response = await _adminPaymentService.RejectPaymentAsync(orderId, cancellationToken);
         return Ok(response);
     }
+
+    [HttpPost("{orderId:guid}/resolve-review")]
+    public async Task<ActionResult<AdminPaymentDetailResponse>> ResolveReview(Guid orderId, [FromBody] ResolvePaymentReviewForm request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(Request.Headers["Idempotency-Key"].FirstOrDefault())) return BadRequest(new { message = "Envía Idempotency-Key." });
+        return Ok(await _adminPaymentService.ResolveReviewAsync(orderId, request.Confirm, request.Reason, cancellationToken));
+    }
 }
+
+public sealed record ResolvePaymentReviewForm(bool Confirm, string Reason);

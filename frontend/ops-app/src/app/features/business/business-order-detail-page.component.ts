@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from 'lucide-angular';
 import { BusinessOrderDetailResponse, BusinessOrderStatus } from '../../core/models/business.model';
+import { RefundResponse } from '../../core/models/orders.models';
 import { BusinessOrdersApiService } from '../../core/services/business-orders-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
@@ -152,6 +153,22 @@ interface BusinessOrderAction {
             </app-surface-card>
           </div>
         </section>
+
+        @if (refund(); as refundCase) {
+          <app-surface-card variant="default" extraClass="grid gap-3 border-amber-200 bg-amber-50/60 p-4">
+            <app-internal-page-section-header eyebrow="Reembolso" title="Devuelve el pago con evidencia" subtitle="El estado solo cambiará a reembolsado cuando el cliente confirme que recibió el dinero." />
+            <div class="flex flex-wrap items-center justify-between gap-3 text-sm"><app-status-badge [status]="refundCase.status" [label]="refundStatusLabel(refundCase.status)" /><strong>{{ refundCase.amount | currency: refundCase.currencyCode : 'S/ ' : '1.2-2' }}</strong></div>
+            @if (refundCase.status === 'AwaitingBusinessRefund') {
+              <label class="grid gap-1 text-sm font-bold text-slate-700">Número de operación<input class="min-h-11 min-w-0 rounded-xl border border-slate-300 bg-white px-3" [value]="refundOperation()" (input)="refundOperation.set($any($event.target).value)" /></label>
+              <label class="grid gap-1 text-sm font-bold text-slate-700">Comprobante privado<input class="w-full min-w-0 text-sm" type="file" accept="image/jpeg,image/png,image/webp" (change)="onRefundFileSelected($event)" /></label>
+              <app-button type="button" size="sm" [disabled]="refundSubmitting() || !refundFile() || !refundOperation().trim()" (click)="submitRefundEvidence()" block>{{ refundSubmitting() ? 'Enviando…' : 'Registrar devolución' }}</app-button>
+            } @else if (refundCase.status === 'AwaitingCustomerConfirmation') {
+              <app-notice tone="info" message="Comprobante enviado. El cliente debe verificar su cuenta y confirmar o disputar la devolución." />
+            } @else if (refundCase.status === 'Disputed') {
+              <app-notice tone="danger" message="El cliente no reconoció la devolución. El caso requiere revisión administrativa." />
+            }
+          </app-surface-card>
+        }
 
         @if (order.deliveryMode === 'CommunityCollaboratorDelivery' && order.assignedCourierType === 'Collaborator' && (order.status === 'Assigned' || order.status === 'ReadyForPickup')) {
           <app-surface-card variant="default" extraClass="grid gap-3 p-4">
@@ -304,6 +321,10 @@ export class BusinessOrderDetailPageComponent {
   readonly pickupCode = signal('');
   readonly isConfirmingPickup = signal(false);
   readonly deliveryCode = signal('');
+  readonly refund = signal<RefundResponse | null>(null);
+  readonly refundOperation = signal('');
+  readonly refundFile = signal<File | null>(null);
+  readonly refundSubmitting = signal(false);
 
   readonly orderId = this.route.snapshot.paramMap.get('orderId') ?? '';
   readonly availableActions = computed(() => this.getActions(this.order()));
@@ -328,6 +349,7 @@ export class BusinessOrderDetailPageComponent {
       .subscribe({
         next: (order) => {
           this.order.set(order);
+          if (order.paymentStatus === 'RefundPending' || order.paymentStatus === 'Refunded') this.loadRefund();
           this.isLoading.set(false);
         },
         error: (error) => {
@@ -370,9 +392,35 @@ export class BusinessOrderDetailPageComponent {
         return 'Fallido';
       case 'Refunded':
         return 'Reembolsado';
+      case 'RefundPending':
+        return 'Devolución pendiente';
       default:
         return 'Estado por revisar';
     }
+  }
+
+  refundStatusLabel(status: string): string {
+    return ({ AwaitingBusinessRefund: 'Debes devolver el pago', AwaitingCustomerConfirmation: 'Esperando al cliente', Completed: 'Completado', Disputed: 'En disputa', Rejected: 'Rechazado', Failed: 'Fallido' } as Record<string, string>)[status] ?? status;
+  }
+
+  onRefundFileSelected(event: Event): void {
+    this.refundFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+  }
+
+  submitRefundEvidence(): void {
+    const refund = this.refund();
+    const file = this.refundFile();
+    if (!refund || !file || !this.refundOperation().trim()) return;
+    this.refundSubmitting.set(true);
+    this.businessOrdersApi.submitRefundEvidence(refund.id, this.refundOperation().trim(), refund.amount, new Date().toISOString(), file)
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (result) => { this.refund.set(result); this.refundSubmitting.set(false); this.refundFile.set(null); this.notificationService.success('Devolución reportada. Esperando confirmación del cliente.'); },
+        error: (error) => { this.refundSubmitting.set(false); this.notificationService.error(getErrorMessage(error, 'No se pudo registrar el comprobante de devolución.')); },
+      });
+  }
+
+  private loadRefund(): void {
+    this.businessOrdersApi.getRefund(this.orderId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: (result) => this.refund.set(result), error: () => this.refund.set(null) });
   }
 
   paymentBadgeClass(status: string): string {

@@ -132,7 +132,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             <app-notice
               tone="info"
               title="Comparte este código con tu colaborador"
-              [message]="'Cuando complete la tarea, necesitará este código para cerrar la entrega: ' + currentRequest.confirmationCode"
+              [message]="'Entrega este código únicamente después de recibir el favor y pagar el importe mostrado. Código: ' + currentRequest.confirmationCode"
             />
           }
 

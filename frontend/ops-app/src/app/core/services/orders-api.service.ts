@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   CreateOrderRequest,
@@ -13,6 +13,8 @@ import {
   OrderDriverDeliveryResponse,
   OrderDeliveryConfirmationResponse,
   ValidateOrderResponse,
+  PaymentEvidenceResponse,
+  RefundResponse,
 } from '../models/orders.models';
 import { buildApiUrl } from '../utils/api-utils';
 
@@ -67,5 +69,36 @@ export class OrdersApiService {
 
   rateDriver(id: string, request: RateDriverRequest): Observable<CustomerOrderDetailResponse> {
     return this.http.patch<CustomerOrderDetailResponse>(`${this.baseUrl}/my/${id}/driver-rating`, request);
+  }
+
+  submitPaymentEvidence(id: string, operationNumber: string, paidAtUtc: string, amount: number, file: File): Observable<PaymentEvidenceResponse> {
+    const form = new FormData();
+    form.append('operationNumber', operationNumber);
+    form.append('declaredAmount', amount.toFixed(2));
+    form.append('paidAtUtc', paidAtUtc);
+    form.append('file', file, file.name);
+    return this.http.post<PaymentEvidenceResponse>(`${this.baseUrl}/${id}/payment-evidence`, form, {
+      headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }),
+    });
+  }
+
+  getRefund(id: string): Observable<RefundResponse> {
+    return this.http.get<RefundResponse>(`${this.baseUrl}/${id}/refund`);
+  }
+
+  downloadRefundEvidence(evidenceId: string): Observable<Blob> {
+    return this.http.get(buildApiUrl(`/api/refund-evidence/${evidenceId}/file`), { responseType: 'blob' });
+  }
+
+  confirmRefund(refundId: string): Observable<RefundResponse> {
+    return this.http.post<RefundResponse>(buildApiUrl(`/api/refunds/${refundId}/customer-confirm`), {}, { headers: this.idempotencyHeaders() });
+  }
+
+  disputeRefund(refundId: string, reason: string): Observable<RefundResponse> {
+    return this.http.post<RefundResponse>(buildApiUrl(`/api/refunds/${refundId}/customer-dispute`), { reason }, { headers: this.idempotencyHeaders() });
+  }
+
+  private idempotencyHeaders(): HttpHeaders {
+    return new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() });
   }
 }

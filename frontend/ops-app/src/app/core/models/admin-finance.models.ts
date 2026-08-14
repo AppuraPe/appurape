@@ -29,7 +29,8 @@ export interface FinancialMovement {
 
 export interface SettlementItem {
   id: string;
-  financialMovementId: string;
+  financialMovementId?: string | null;
+  financialObligationId?: string | null;
   movementType: string;
   grossAmount: number;
   commissionAmount: number;
@@ -55,6 +56,15 @@ export interface SettlementBatch {
   createdAtUtc: string;
   confirmedAtUtc?: string | null;
   notes?: string | null;
+  debtorType?: string | null;
+  debtorEntityId?: string | null;
+  creditorType?: string | null;
+  creditorEntityId?: string | null;
+  createdByAdminId?: string | null;
+  approvedByAdminId?: string | null;
+  approvedAtUtc?: string | null;
+  paymentReportedAtUtc?: string | null;
+  paymentOperationNumber?: string | null;
   items: SettlementItem[];
 }
 
@@ -66,7 +76,37 @@ export interface CreateSettlementBatchRequest {
   periodStartUtc: string;
   periodEndUtc: string;
   financialMovementIds: string[];
+  financialObligationIds: string[];
   notes?: string | null;
+}
+
+export interface FinancialObligation {
+  id: string;
+  orderId?: string | null;
+  communityRequestId?: string | null;
+  debtorType: string;
+  debtorEntityId?: string | null;
+  creditorType: string;
+  creditorEntityId?: string | null;
+  concept: string;
+  status: string;
+  amount: number;
+  currencyCode: string;
+  reference: string;
+  availableAtUtc?: string | null;
+  dueAtUtc?: string | null;
+}
+
+export interface LegacyMovement {
+  id: string;
+  orderId?: string | null;
+  communityRequestId?: string | null;
+  type: string;
+  status: string;
+  amount: number;
+  currencyCode: string;
+  reference?: string | null;
+  reconciliationStatus: string;
 }
 
 export interface CollaboratorVerification {

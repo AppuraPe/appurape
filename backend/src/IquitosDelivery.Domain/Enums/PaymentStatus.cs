@@ -7,5 +7,9 @@ public enum PaymentStatus
     Paid = 2,
     Rejected = 3,
     Failed = 4,
-    Refunded = 5
+    Refunded = 5,
+    PendingEvidence = 6,
+    UnderReview = 7,
+    RefundPending = 8,
+    CashCollectionDeclared = 9
 }

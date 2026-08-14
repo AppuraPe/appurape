@@ -37,8 +37,15 @@ public class CommunityRequestConfiguration : IEntityTypeConfiguration<CommunityR
         builder.Property(x => x.MatchScore).HasPrecision(5, 2).IsRequired();
         builder.Property(x => x.ConfirmationCode).HasMaxLength(20);
         builder.Property(x => x.ConfirmationCodeExpiresAtUtc);
+        builder.Property(x => x.ConfirmationCodeVersion).IsRequired();
+        builder.Property(x => x.ConfirmationCodeFailedAttempts).IsRequired();
+        builder.Property(x => x.ConfirmationCodeRegenerations).IsRequired();
+        builder.Property(x => x.ConfirmationCodeLockedAtUtc);
         builder.Property(x => x.PickupCode).HasMaxLength(20);
         builder.Property(x => x.PickupCodeExpiresAtUtc);
+        builder.Property(x => x.PickupCodeVersion).IsRequired();
+        builder.Property(x => x.PickupCodeFailedAttempts).IsRequired();
+        builder.Property(x => x.PickupCodeLockedAtUtc);
         builder.Property(x => x.PickupConfirmedAtUtc);
         builder.Property(x => x.ProofImageUrl).HasMaxLength(500);
         builder.Property(x => x.CollaboratorFeedback).HasMaxLength(1000);

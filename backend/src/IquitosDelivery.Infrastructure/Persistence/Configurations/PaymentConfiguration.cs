@@ -25,6 +25,7 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(x => x.PaidAtUtc);
         builder.Property(x => x.ConfirmedAtUtc);
         builder.Property(x => x.RejectedAtUtc);
+        builder.Property(x => x.Version).IsRowVersion();
 
         builder.HasIndex(x => x.OrderId).IsUnique();
         builder.HasIndex(x => x.ConfirmedByUserId);

@@ -7,6 +7,9 @@ using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Domain.Entities;
 using IquitosDelivery.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace IquitosDelivery.Application.Services;
 
@@ -21,6 +24,9 @@ public class CommunityService : ICommunityService
     private readonly IValidator<CompleteCommunityRequestRequest> _completeRequestValidator;
     private readonly IValidator<RateCommunityCollaboratorRequest> _rateValidator;
     private readonly IOrderDeliveryConfirmationService? _deliveryConfirmationService;
+    private readonly IFinanceSecurityService? _financeSecurityService;
+    private readonly byte[]? _communityConfirmationKey;
+    private readonly bool _financeV2Enabled;
 
     public CommunityService(
         IAppDbContext dbContext,
@@ -31,7 +37,9 @@ public class CommunityService : ICommunityService
         IValidator<UpsertCommunityRouteRequest> upsertRouteValidator,
         IValidator<CompleteCommunityRequestRequest> completeRequestValidator,
         IValidator<RateCommunityCollaboratorRequest> rateValidator,
-        IOrderDeliveryConfirmationService? deliveryConfirmationService = null)
+        IOrderDeliveryConfirmationService? deliveryConfirmationService = null,
+        IFinanceSecurityService? financeSecurityService = null,
+        IConfiguration? configuration = null)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
@@ -42,6 +50,11 @@ public class CommunityService : ICommunityService
         _completeRequestValidator = completeRequestValidator;
         _rateValidator = rateValidator;
         _deliveryConfirmationService = deliveryConfirmationService;
+        _financeSecurityService = financeSecurityService;
+        var configuredSecret = configuration?["OrderConfirmation:Key"] ?? configuration?["OrderConfirmation__Key"] ?? configuration?["Jwt:Key"];
+        if (!string.IsNullOrWhiteSpace(configuredSecret) && Encoding.UTF8.GetByteCount(configuredSecret) >= 32)
+            _communityConfirmationKey = SHA256.HashData(Encoding.UTF8.GetBytes(configuredSecret));
+        _financeV2Enabled = bool.TryParse(configuration?["FinanceV2:Enabled"], out var enabled) && enabled;
     }
 
     public async Task<CommunityCollaboratorResponse> GetMyCollaboratorProfileAsync(CancellationToken cancellationToken = default)
@@ -241,12 +254,14 @@ public class CommunityService : ICommunityService
             DeadlineUtc = request.DeadlineUtc,
             Status = CommunityRequestStatus.Published,
             MatchScore = 0m,
-            ConfirmationCode = GenerateConfirmationCode(),
-            ConfirmationCodeExpiresAtUtc = DateTime.UtcNow.AddHours(12)
+            ConfirmationCode = null,
+            ConfirmationCodeVersion = 1,
+            ConfirmationCodeExpiresAtUtc = request.DeadlineUtc < DateTime.UtcNow.AddHours(24) ? request.DeadlineUtc : DateTime.UtcNow.AddHours(24)
         };
 
         _dbContext.Add(communityRequest);
-        CreateCommunityFinancialMovements(communityRequest);
+        if (!_financeV2Enabled) CreateCommunityFinancialMovements(communityRequest);
+        if (_financeSecurityService is not null) await _financeSecurityService.CreateFavorObligationAsync(communityRequest, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
         await NotifyPublishedRequestAsync(communityRequest, cancellationToken);
 
@@ -414,7 +429,10 @@ public class CommunityService : ICommunityService
         communityRequest.MatchScore = selectedApplication.MatchScore;
         if (communityRequest.OrderId.HasValue)
         {
-            communityRequest.PickupCode = GenerateConfirmationCode();
+            communityRequest.PickupCode = null;
+            communityRequest.PickupCodeVersion = Math.Max(1, communityRequest.PickupCodeVersion + 1);
+            communityRequest.PickupCodeFailedAttempts = 0;
+            communityRequest.PickupCodeLockedAtUtc = null;
             communityRequest.PickupCodeExpiresAtUtc = DateTime.UtcNow.AddHours(12);
         }
 
@@ -433,6 +451,7 @@ public class CommunityService : ICommunityService
         selectedApplication.Collaborator.IsAvailable = false;
         selectedApplication.Collaborator.AvailabilityStatus = CommunityAvailabilityStatus.Busy;
         await AssignCollaboratorFinancialMovementsAsync(communityRequest.Id, selectedApplication.Collaborator.UserId, cancellationToken);
+        if (_financeSecurityService is not null) await _financeSecurityService.AssignFavorCollaboratorAsync(communityRequest.Id, selectedApplication.Collaborator.UserId, cancellationToken);
 
         await RefreshCollaboratorMetricsAsync(selectedApplication.Collaborator, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -472,7 +491,7 @@ public class CommunityService : ICommunityService
 
     public async Task<CommunityRequestDetailResponse> CompleteRequestAsync(Guid requestId, CompleteCommunityRequestRequest request, string? proofImageUrl, CancellationToken cancellationToken = default)
     {
-        await _completeRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
+        if (_financeV2Enabled) await _completeRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var collaborator = await GetOrCreateCollaboratorAsync(cancellationToken);
         var communityRequest = await GetAssignedRequestAsync(requestId, collaborator.Id, cancellationToken);
@@ -485,25 +504,21 @@ public class CommunityService : ICommunityService
         }
 
         Order? linkedOrder = null;
-        if (communityRequest.OrderId.HasValue)
+        if (_financeV2Enabled && communityRequest.OrderId.HasValue)
         {
             linkedOrder = await _dbContext.Orders.FirstAsync(x => x.Id == communityRequest.OrderId.Value, cancellationToken);
             if (_deliveryConfirmationService is null) throw new AppException("La confirmación de entrega no está configurada.");
             await _deliveryConfirmationService.ValidateAsync(linkedOrder, request.ConfirmationCode, collaborator.UserId, cancellationToken);
         }
-        else
+        else if (_financeV2Enabled)
         {
-            if (string.IsNullOrWhiteSpace(communityRequest.ConfirmationCode) ||
-                !string.Equals(communityRequest.ConfirmationCode, request.ConfirmationCode.Trim(), StringComparison.Ordinal))
-                throw new AppException("El código de confirmación no es válido.");
-            if (communityRequest.ConfirmationCodeExpiresAtUtc.HasValue && communityRequest.ConfirmationCodeExpiresAtUtc.Value < DateTime.UtcNow)
-                throw new AppException("El código de confirmación venció.");
+            await ValidateCommunityConfirmationCodeAsync(communityRequest, request.ConfirmationCode, cancellationToken);
         }
 
         communityRequest.Status = CommunityRequestStatus.Delivered;
         communityRequest.DeliveredAtUtc = DateTime.UtcNow;
         communityRequest.ProofImageUrl = string.IsNullOrWhiteSpace(proofImageUrl) ? communityRequest.ProofImageUrl : proofImageUrl;
-        communityRequest.FavorPaymentStatus = PaymentStatus.Paid;
+        communityRequest.FavorPaymentStatus = PaymentStatus.CashCollectionDeclared;
         communityRequest.FavorPaidAtUtc = communityRequest.DeliveredAtUtc;
 
         collaborator.IsAvailable = true;
@@ -525,6 +540,7 @@ public class CommunityService : ICommunityService
 
         await RefreshCollaboratorMetricsAsync(collaborator, cancellationToken);
         await MarkCommunityFinancialMovementsAvailableAsync(communityRequest.Id, cancellationToken);
+        if (_financeSecurityService is not null) await _financeSecurityService.MarkFavorObligationsAvailableAsync(communityRequest.Id, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
         await NotifyRequesterAboutDeliveredRequestAsync(communityRequest, cancellationToken);
 
@@ -566,6 +582,24 @@ public class CommunityService : ICommunityService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await NotifyCollaboratorAboutConfirmationAsync(request, cancellationToken);
+        return await GetRequestByIdAsync(requestId, cancellationToken);
+    }
+
+    public async Task<CommunityRequestDetailResponse> RegenerateConfirmationCodeAsync(Guid requestId, CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentActiveUserAsync(cancellationToken);
+        var request = await _dbContext.CommunityRequests.FirstOrDefaultAsync(x => x.Id == requestId && x.CreatedByUserId == user.Id, cancellationToken)
+            ?? throw new NotFoundException("Favor no encontrado.");
+        if (request.OrderId.HasValue) throw new AppException("La entrega de esta compra usa el código general del pedido.");
+        if (request.Status is CommunityRequestStatus.Delivered or CommunityRequestStatus.Confirmed or CommunityRequestStatus.Cancelled)
+            throw new AppException("Este favor ya no necesita código.");
+        if (request.ConfirmationCodeRegenerations >= 1) throw new AppException("Ya utilizaste la regeneración disponible.");
+        request.ConfirmationCodeVersion = Math.Max(1, request.ConfirmationCodeVersion + 1);
+        request.ConfirmationCodeRegenerations++;
+        request.ConfirmationCodeFailedAttempts = 0;
+        request.ConfirmationCodeLockedAtUtc = null;
+        request.ConfirmationCodeExpiresAtUtc = request.DeadlineUtc < DateTime.UtcNow.AddHours(24) ? request.DeadlineUtc : DateTime.UtcNow.AddHours(24);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetRequestByIdAsync(requestId, cancellationToken);
     }
 
@@ -883,7 +917,7 @@ public class CommunityService : ICommunityService
         };
     }
 
-    private static CommunityRequestDetailResponse MapRequestDetail(CommunityRequest request, Guid currentUserId)
+    private CommunityRequestDetailResponse MapRequestDetail(CommunityRequest request, Guid currentUserId)
     {
         var isOwner = request.CreatedByUserId == currentUserId;
         var isAssignedCollaborator = request.AssignedCollaborator?.UserId == currentUserId;
@@ -921,8 +955,9 @@ public class CommunityService : ICommunityService
             AssignedCollaboratorName = request.AssignedCollaborator is null ? null : $"{request.AssignedCollaborator.User.FirstName} {request.AssignedCollaborator.User.LastName}".Trim(),
             AssignedRouteId = request.AssignedRouteId,
             MatchScore = request.MatchScore,
-            ConfirmationCode = isOwner ? request.ConfirmationCode : null,
-            PickupCode = isAssignedCollaborator ? request.PickupCode : null,
+            ConfirmationCode = isOwner && !request.OrderId.HasValue ? DeriveCommunityCode(request.Id, Math.Max(1, request.ConfirmationCodeVersion)) : null,
+            PickupCode = isAssignedCollaborator && request.PickupCodeExpiresAtUtc > DateTime.UtcNow
+                ? DerivePickupCode(request.Id, Math.Max(1, request.PickupCodeVersion)) : null,
             PickupConfirmedAtUtc = request.PickupConfirmedAtUtc,
             ProofImageUrl = request.ProofImageUrl,
             CollaboratorRating = request.CollaboratorRating,
@@ -988,7 +1023,7 @@ public class CommunityService : ICommunityService
         var requestReference = $"COMMUNITY-{request.Id:N}";
 
         AddCommunityMovement(request, null, FinancialMovementType.CourierEarning, request.CollaboratorEarningAmount, "Collaborator earning reserved for the community request.", occurredAtUtc, requestReference);
-        AddCommunityMovement(request, null, FinancialMovementType.FavorPlatformCommission, request.FavorPlatformCommissionAmount, "Platform commission retained from the favor reward.", occurredAtUtc, requestReference);
+        AddCommunityMovement(request, null, FinancialMovementType.CashFavorDebt, request.FavorPlatformCommissionAmount, "Comisión AppuraPe cobrada en efectivo por el colaborador.", occurredAtUtc, requestReference);
     }
 
     private static decimal ResolveRuleAmount(IReadOnlyCollection<CommissionRule> rules, string code, decimal fallback)
@@ -1021,7 +1056,9 @@ public class CommunityService : ICommunityService
             Amount = amount,
             OccurredAtUtc = occurredAtUtc,
             Reference = requestReference,
-            Description = description
+            Description = description,
+            IsImmutable = true,
+            ReconciliationStatus = FinancialReconciliationStatus.LegacyReconciliationPending
         });
     }
 
@@ -1090,9 +1127,37 @@ public class CommunityService : ICommunityService
         }
     }
 
-    private static string GenerateConfirmationCode()
+    private async Task ValidateCommunityConfirmationCodeAsync(CommunityRequest request, string suppliedCode, CancellationToken cancellationToken)
     {
-        return Random.Shared.Next(100000, 999999).ToString();
+        if (_communityConfirmationKey is null) throw new AppException("La confirmación segura de favores no está configurada.");
+        if (request.ConfirmationCodeLockedAtUtc.HasValue || request.ConfirmationCodeFailedAttempts >= 5)
+            throw new AppException("El código está bloqueado. El cliente debe regenerarlo.");
+        if (!request.ConfirmationCodeExpiresAtUtc.HasValue || request.ConfirmationCodeExpiresAtUtc <= DateTime.UtcNow)
+            throw new AppException("El código venció. El cliente debe regenerarlo.");
+        var expected = DeriveCommunityCode(request.Id, Math.Max(1, request.ConfirmationCodeVersion));
+        var supplied = (suppliedCode ?? string.Empty).Trim();
+        var valid = supplied.Length == 6 && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(expected), Encoding.ASCII.GetBytes(supplied));
+        if (valid) { request.ConfirmationCodeFailedAttempts = 0; request.ConfirmationCodeLockedAtUtc = null; return; }
+        request.ConfirmationCodeFailedAttempts++;
+        if (request.ConfirmationCodeFailedAttempts >= 5) request.ConfirmationCodeLockedAtUtc = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        throw new AppException(request.ConfirmationCodeFailedAttempts >= 5 ? "El código fue bloqueado por demasiados intentos." : $"Código incorrecto. Quedan {5 - request.ConfirmationCodeFailedAttempts} intentos.");
+    }
+
+    private string DeriveCommunityCode(Guid requestId, int version)
+    {
+        if (_communityConfirmationKey is null) return string.Empty;
+        using var hmac = new HMACSHA256(_communityConfirmationKey);
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes($"community-delivery:{requestId:N}:{version}"));
+        return (BitConverter.ToUInt32(hash, 0) % 1_000_000).ToString("D6");
+    }
+
+    private string DerivePickupCode(Guid requestId, int version)
+    {
+        if (_communityConfirmationKey is null) return string.Empty;
+        using var hmac = new HMACSHA256(_communityConfirmationKey);
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes($"community-pickup:{requestId:N}:{version}"));
+        return (BitConverter.ToUInt32(hash, 0) % 1_000_000).ToString("D6");
     }
 
     private async Task NotifyPublishedRequestAsync(CommunityRequest request, CancellationToken cancellationToken)

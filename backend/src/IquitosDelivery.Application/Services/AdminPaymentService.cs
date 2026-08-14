@@ -6,6 +6,8 @@ using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Domain.Entities;
 using IquitosDelivery.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace IquitosDelivery.Application.Services;
 
@@ -14,12 +16,16 @@ public class AdminPaymentService : IAdminPaymentService
     private readonly IAppDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly INotificationService _notificationService;
+    private readonly bool _financeV2Enabled;
+    private readonly IRequestAuditContext? _auditContext;
 
-    public AdminPaymentService(IAppDbContext dbContext, ICurrentUserService currentUserService, INotificationService notificationService)
+    public AdminPaymentService(IAppDbContext dbContext, ICurrentUserService currentUserService, INotificationService notificationService, IConfiguration? configuration = null, IRequestAuditContext? auditContext = null)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _notificationService = notificationService;
+        _financeV2Enabled = bool.TryParse(configuration?["FinanceV2:Enabled"], out var enabled) && enabled;
+        _auditContext = auditContext;
     }
 
     public async Task<IReadOnlyList<AdminPaymentListItemResponse>> GetPendingPaymentsAsync(CancellationToken cancellationToken = default)
@@ -27,7 +33,7 @@ public class AdminPaymentService : IAdminPaymentService
         var pendingPayments = await _dbContext.Payments
             .AsNoTracking()
             .Where(x =>
-                x.Status == PaymentStatus.PendingConfirmation &&
+                (_financeV2Enabled ? x.Status == PaymentStatus.UnderReview : x.Status == PaymentStatus.PendingConfirmation) &&
                 (x.Method == PaymentMethod.Yape || x.Method == PaymentMethod.Plin))
             .OrderBy(x => x.Order.CreatedAtUtc)
             .Select(x => new
@@ -77,7 +83,7 @@ public class AdminPaymentService : IAdminPaymentService
                 DeliveryFee = x.Order.DeliveryFee,
                 Total = x.Order.Total,
                 PaymentReference = x.ManualReference ?? x.ExternalReference,
-                PaymentProofUrl = (string?)null,
+                PaymentProofUrl = x.Evidence.Where(e => e.IsActive).Select(e => "/api/payment-evidence/" + e.Id + "/file").FirstOrDefault(),
                 CreatedAtUtc = x.Order.CreatedAtUtc,
                 Items = x.Order.Items
                     .OrderBy(i => i.ProductName)
@@ -147,6 +153,40 @@ public class AdminPaymentService : IAdminPaymentService
         return await GetPaymentByOrderIdAsync(orderId, cancellationToken);
     }
 
+    public async Task<AdminPaymentDetailResponse> ResolveReviewAsync(Guid orderId, bool confirm, string reason, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length < 10)
+            throw new AppException("La resolución requiere un motivo de al menos 10 caracteres.");
+        if (!_currentUserService.UserId.HasValue || _currentUserService.Role != "Admin")
+            throw new ForbiddenException("Solo Admin puede resolver pagos en revisión.");
+        var payment = await _dbContext.Payments.FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken)
+            ?? throw new NotFoundException("Pago no encontrado.");
+        if (payment.Status != PaymentStatus.UnderReview) throw new AppException("El pago no está en revisión.");
+        if (!await _dbContext.PaymentEvidence.AnyAsync(x => x.PaymentId == payment.Id && x.IsActive, cancellationToken))
+            throw new AppException("No existe evidencia activa para resolver este pago.");
+        var key = _auditContext?.IdempotencyKey?.Trim();
+        if (!string.IsNullOrWhiteSpace(key) && await _dbContext.FinancialAuditEvents.AnyAsync(x => x.ActorUserId == _currentUserService.UserId && x.Action == "payment-review-resolve" && x.IdempotencyKey == key, cancellationToken))
+            return await GetPaymentByOrderIdAsync(orderId, cancellationToken);
+
+        payment.Status = confirm ? PaymentStatus.Paid : PaymentStatus.Rejected;
+        payment.ConfirmedByUserId = _currentUserService.UserId;
+        payment.ConfirmedAtUtc = confirm ? DateTime.UtcNow : null;
+        payment.PaidAtUtc = payment.ConfirmedAtUtc;
+        payment.RejectedAtUtc = confirm ? null : DateTime.UtcNow;
+        payment.FailureReason = confirm ? null : reason.Trim();
+        _dbContext.Add(new FinancialAuditEvent
+        {
+            Id = Guid.NewGuid(), ActorUserId = _currentUserService.UserId.Value, Action = "payment-review-resolve",
+            EntityType = "Payment", EntityId = payment.Id, IdempotencyKey = string.IsNullOrWhiteSpace(key) ? null : key,
+            DataJson = JsonSerializer.Serialize(new { confirm, reason = reason.Trim() }), IpAddress = _auditContext?.IpAddress,
+            UserAgent = _auditContext?.UserAgent
+        });
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (confirm) await NotifyAdminPaymentConfirmedAsync(orderId, cancellationToken);
+        else await NotifyAdminPaymentRejectedAsync(orderId, reason.Trim(), cancellationToken);
+        return await GetPaymentByOrderIdAsync(orderId, cancellationToken);
+    }
+
     private async Task<Payment> GetPendingManualPaymentAsync(Guid orderId, CancellationToken cancellationToken)
     {
         var payment = await _dbContext.Payments
@@ -172,9 +212,9 @@ public class AdminPaymentService : IAdminPaymentService
             throw new AppException("Este pago ya fue rechazado.");
         }
 
-        if (payment.Status != PaymentStatus.PendingConfirmation)
+        if (_financeV2Enabled && payment.Status != PaymentStatus.UnderReview)
         {
-            throw new AppException("Este pago no esta pendiente de confirmacion.");
+            throw new AppException("Admin solo puede resolver pagos que estén en revisión.");
         }
 
         return payment;

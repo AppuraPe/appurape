@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FluentValidation;
 using IquitosDelivery.Application.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 namespace IquitosDelivery.Api.Middlewares;
 
@@ -53,6 +54,16 @@ public class ExceptionHandlingMiddleware
         {
             _logger.LogWarning(exception, "Resource not found for request {Method} {Path}", context.Request.Method, context.Request.Path);
             await WriteErrorAsync(context, StatusCodes.Status404NotFound, exception.Message);
+        }
+        catch (ConflictException exception)
+        {
+            _logger.LogWarning(exception, "Concurrent or duplicate operation for request {Method} {Path}", context.Request.Method, context.Request.Path);
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, exception.Message);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            _logger.LogWarning(exception, "Concurrent update for request {Method} {Path}", context.Request.Method, context.Request.Path);
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, "La operación cambió mientras la procesabas. Actualiza e inténtalo nuevamente.");
         }
         catch (AppException exception)
         {

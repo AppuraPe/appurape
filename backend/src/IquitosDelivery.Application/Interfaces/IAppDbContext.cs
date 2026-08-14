@@ -56,6 +56,16 @@ public interface IAppDbContext
 
     IQueryable<Payment> Payments { get; }
 
+    IQueryable<PaymentEvidence> PaymentEvidence { get; }
+
+    IQueryable<FinancialObligation> FinancialObligations { get; }
+
+    IQueryable<RefundRequest> RefundRequests { get; }
+
+    IQueryable<RefundEvidence> RefundEvidence { get; }
+
+    IQueryable<FinancialAuditEvent> FinancialAuditEvents { get; }
+
     IQueryable<UserDeviceToken> UserDeviceTokens { get; }
 
     IQueryable<LegalDocument> LegalDocuments { get; }

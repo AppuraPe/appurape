@@ -71,9 +71,23 @@ public class CommunityRequest : BaseEntity
 
     public DateTime? ConfirmationCodeExpiresAtUtc { get; set; }
 
+    public int ConfirmationCodeVersion { get; set; }
+
+    public int ConfirmationCodeFailedAttempts { get; set; }
+
+    public int ConfirmationCodeRegenerations { get; set; }
+
+    public DateTime? ConfirmationCodeLockedAtUtc { get; set; }
+
     public string? PickupCode { get; set; }
 
     public DateTime? PickupCodeExpiresAtUtc { get; set; }
+
+    public int PickupCodeVersion { get; set; }
+
+    public int PickupCodeFailedAttempts { get; set; }
+
+    public DateTime? PickupCodeLockedAtUtc { get; set; }
 
     public DateTime? PickupConfirmedAtUtc { get; set; }
 
