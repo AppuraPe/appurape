@@ -305,6 +305,7 @@ public class OrderService : IOrderService
             cancellationToken);
 
         await NotifyCustomerAboutAdminCancellationAsync(order, cancellationToken);
+        await NotifyBusinessAboutAdminCancellationAsync(order, cancellationToken);
         return await GetCustomerOrderDetailByIdAsync(order.Id, customerId: null, cancellationToken);
     }
 
@@ -1340,6 +1341,26 @@ public class OrderService : IOrderService
                 Data = NotificationPayloadFactory.BusinessOrder(order.Id, $"/business/orders/{order.Id}", order.PaymentMethod == PaymentMethod.Cash ? "order_created_cash" : "order_created_payment_review")
             },
             cancellationToken);
+
+        if (order.PaymentMethod == PaymentMethod.Cash)
+        {
+            return;
+        }
+
+        var adminUserIds = await _dbContext.Users
+            .Where(x => x.Role == UserRole.Admin && x.Status == UserStatus.Active)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        await _notificationService.SendToUsersAsync(
+            adminUserIds,
+            new EventPushNotificationRequest
+            {
+                Title = "Pago pendiente de revisión",
+                Body = $"El pedido #{order.Id.ToString("N")[..8]} requiere validar su pago {order.PaymentMethod}.",
+                Data = NotificationPayloadFactory.AdminPayment(order.Id, $"/admin/payments/{order.Id}", "payment_review_pending")
+            },
+            cancellationToken);
     }
 
     private static void CloseCashPaymentOnBusinessDelivery(Payment? payment, Guid actorUserId, DateTime deliveredAtUtc)
@@ -1462,6 +1483,24 @@ public class OrderService : IOrderService
             cancellationToken);
     }
 
+    private async Task NotifyBusinessAboutAdminCancellationAsync(Order order, CancellationToken cancellationToken)
+    {
+        var businessOwnerUserId = await _dbContext.Restaurants
+            .Where(x => x.Id == order.RestaurantId)
+            .Select(x => x.OwnerUserId)
+            .FirstAsync(cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            businessOwnerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Pedido cancelado por soporte",
+                Body = $"Soporte canceló el pedido #{order.Id.ToString("N")[..8]}.",
+                Data = NotificationPayloadFactory.BusinessOrder(order.Id, $"/business/orders/{order.Id}", "order_cancelled_by_admin")
+            },
+            cancellationToken);
+    }
+
     private async Task NotifyRestaurantOrderStatusChangedAsync(
         Order order,
         Restaurant restaurant,
@@ -1482,6 +1521,25 @@ public class OrderService : IOrderService
                     Title = "Pedido aceptado",
                     Body = $"{restaurant.Name} aceptó tu pedido.",
                     Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_accepted")
+                },
+                cancellationToken);
+            return;
+        }
+
+        if (nextStatus == OrderStatus.Preparing)
+        {
+            var customerUserId = await _dbContext.Customers
+                .Where(x => x.Id == order.CustomerId)
+                .Select(x => x.UserId)
+                .FirstAsync(cancellationToken);
+
+            await _notificationService.SendToUserAsync(
+                customerUserId,
+                new EventPushNotificationRequest
+                {
+                    Title = "Pedido en preparación",
+                    Body = $"{restaurant.Name} ya está preparando tu pedido.",
+                    Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_preparing")
                 },
                 cancellationToken);
             return;
@@ -1535,7 +1593,14 @@ public class OrderService : IOrderService
             new EventPushNotificationRequest
             {
                 Title = "Pedido listo",
-                Body = $"{restaurant.Name} indicó que tu pedido está listo para recoger.",
+                Body = order.DeliveryMode switch
+                {
+                    DeliveryMode.PickupOrDirect => $"Tu pedido en {restaurant.Name} ya está listo para recoger.",
+                    DeliveryMode.BusinessDelivery => $"{restaurant.Name} terminó de preparar tu pedido y pronto lo despachará.",
+                    DeliveryMode.VerifiedDriverDelivery => $"Tu pedido en {restaurant.Name} está listo y espera un driver.",
+                    DeliveryMode.CommunityCollaboratorDelivery => $"Tu pedido en {restaurant.Name} está listo para el colaborador.",
+                    _ => $"Tu pedido en {restaurant.Name} ya está listo."
+                },
                 Data = NotificationPayloadFactory.Order(order.Id, $"/orders/{order.Id}", "order_ready_for_pickup")
             },
             cancellationToken);

@@ -17,6 +17,11 @@ public static class NotificationPayloadFactory
         return Create("driver_order", "orderId", orderId, targetRoute, eventName);
     }
 
+    public static IReadOnlyDictionary<string, string> AdminPayment(Guid orderId, string targetRoute, string eventName)
+    {
+        return Create("admin_payment", "orderId", orderId, targetRoute, eventName);
+    }
+
     public static IReadOnlyDictionary<string, string> CommunityRequest(Guid requestId, string targetRoute, string eventName)
     {
         return Create("community_request", "requestId", requestId, targetRoute, eventName);

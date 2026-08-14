@@ -245,6 +245,7 @@ public class DriverOrderService : IDriverOrderService
             }
 
             await NotifyBusinessAboutDriverAssignmentAsync(order.Id, cancellationToken);
+            await NotifyCustomerAboutDriverAssignmentAsync(order.Id, cancellationToken);
         }
         catch
         {
@@ -408,6 +409,7 @@ public class DriverOrderService : IDriverOrderService
             }
 
             await NotifyCustomerAboutDriverStatusAsync(order, request.Status, cancellationToken);
+            await NotifyBusinessAboutDriverStatusAsync(order, request.Status, cancellationToken);
         }
         catch
         {
@@ -634,6 +636,68 @@ public class DriverOrderService : IDriverOrderService
                 Title = "Pedido tomado por driver",
                 Body = $"Un driver ya tomó el pedido #{notificationTarget.Id.ToString("N")[..8]} de {notificationTarget.RestaurantName}.",
                 Data = NotificationPayloadFactory.BusinessOrder(notificationTarget.Id, $"/business/orders/{notificationTarget.Id}", "driver_assigned")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyCustomerAboutDriverAssignmentAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var target = await _dbContext.Orders
+            .Where(x => x.Id == orderId)
+            .Select(x => new
+            {
+                x.Id,
+                CustomerUserId = x.Customer.UserId
+            })
+            .FirstAsync(cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            target.CustomerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Driver asignado",
+                Body = "Un driver verificado ya tomó tu pedido.",
+                Data = NotificationPayloadFactory.Order(target.Id, $"/orders/{target.Id}", "driver_assigned")
+            },
+            cancellationToken);
+    }
+
+    private async Task NotifyBusinessAboutDriverStatusAsync(Order order, OrderStatus nextStatus, CancellationToken cancellationToken)
+    {
+        if (nextStatus is not (OrderStatus.PickedUp or OrderStatus.OnTheWay or OrderStatus.Delivered))
+        {
+            return;
+        }
+
+        var businessOwnerUserId = await _dbContext.Restaurants
+            .Where(x => x.Id == order.RestaurantId)
+            .Select(x => x.OwnerUserId)
+            .FirstAsync(cancellationToken);
+
+        var (title, body, eventName) = nextStatus switch
+        {
+            OrderStatus.PickedUp => (
+                "Pedido recogido por driver",
+                $"El driver recogió el pedido #{order.Id.ToString("N")[..8]}.",
+                "driver_order_picked_up"),
+            OrderStatus.OnTheWay => (
+                "Pedido en camino",
+                $"El pedido #{order.Id.ToString("N")[..8]} está en camino al cliente.",
+                "driver_order_on_the_way"),
+            OrderStatus.Delivered => (
+                "Entrega confirmada",
+                $"El pedido #{order.Id.ToString("N")[..8]} fue entregado correctamente.",
+                "driver_order_delivered"),
+            _ => throw new InvalidOperationException("Unsupported driver status for business push.")
+        };
+
+        await _notificationService.SendToUserAsync(
+            businessOwnerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = title,
+                Body = body,
+                Data = NotificationPayloadFactory.BusinessOrder(order.Id, $"/business/orders/{order.Id}", eventName)
             },
             cancellationToken);
     }

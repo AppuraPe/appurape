@@ -216,9 +216,13 @@ public class AdminPaymentService : IAdminPaymentService
 
     private async Task NotifyAdminPaymentRejectedAsync(Guid orderId, string? reason, CancellationToken cancellationToken)
     {
-        var customerUserId = await _dbContext.Orders
+        var target = await _dbContext.Orders
             .Where(x => x.Id == orderId)
-            .Select(x => x.Customer.UserId)
+            .Select(x => new
+            {
+                CustomerUserId = x.Customer.UserId,
+                BusinessOwnerUserId = x.Restaurant.OwnerUserId
+            })
             .FirstAsync(cancellationToken);
 
         var body = string.IsNullOrWhiteSpace(reason)
@@ -226,12 +230,22 @@ public class AdminPaymentService : IAdminPaymentService
             : $"Tu pago fue rechazado: {reason.Trim()}";
 
         await _notificationService.SendToUserAsync(
-            customerUserId,
+            target.CustomerUserId,
             new EventPushNotificationRequest
             {
                 Title = "Pago rechazado",
                 Body = body,
                 Data = NotificationPayloadFactory.Order(orderId, $"/orders/{orderId}", "payment_rejected")
+            },
+            cancellationToken);
+
+        await _notificationService.SendToUserAsync(
+            target.BusinessOwnerUserId,
+            new EventPushNotificationRequest
+            {
+                Title = "Pago rechazado por administración",
+                Body = $"El pago del pedido #{orderId.ToString("N")[..8]} fue rechazado.",
+                Data = NotificationPayloadFactory.BusinessOrder(orderId, $"/business/orders/{orderId}", "payment_rejected_admin")
             },
             cancellationToken);
     }

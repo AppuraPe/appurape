@@ -161,7 +161,7 @@ public class OrderPaymentTransitionTests
     }
 
     [Fact]
-    public async Task Driver_Delivered_NotifiesCustomer()
+    public async Task Driver_Delivered_NotifiesCustomerAndBusiness()
     {
         await using var dbContext = CreateDbContext();
         var fixture = await SeedAssignedDriverOrderAsync(dbContext, PaymentMethod.Cash, PaymentStatus.Pending, OrderStatus.OnTheWay);
@@ -170,6 +170,12 @@ public class OrderPaymentTransitionTests
             .Setup(x => x.SendToUserAsync(
                 It.IsAny<Guid>(),
                 It.Is<EventPushNotificationRequest>(request => request.Data != null && request.Data["event"] == "order_delivered"),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        notifications
+            .Setup(x => x.SendToUserAsync(
+                It.IsAny<Guid>(),
+                It.Is<EventPushNotificationRequest>(request => request.Data != null && request.Data["event"] == "driver_order_delivered"),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
