@@ -2,7 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule, MapPin, Phone, RefreshCw, Store } from 'lucide-angular';
+import { LucideAngularModule, MapPin, MessageSquare, Phone, RefreshCw, Store, Navigation } from 'lucide-angular';
 import { DriverOrderDetailResponse } from '../../core/models/driver.models';
 import { DriverOrdersApiService } from '../../core/services/driver-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
@@ -10,7 +10,6 @@ import { AppButtonComponent } from '../../shared/components/app-button.component
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { BottomSafeActionBarComponent } from '../../shared/components/bottom-safe-action-bar.component';
-import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
@@ -18,7 +17,7 @@ import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empt
 @Component({
   selector: 'app-driver-active-order-page',
   host: {
-    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden bg-slate-50 min-h-screen',
   },
   standalone: true,
   imports: [
@@ -31,40 +30,25 @@ import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empt
     BottomSafeActionBarComponent,
     StatusBadgeComponent,
     MobilePageShellComponent,
-    InternalPageSectionHeaderComponent,
     UnifiedEmptyStateComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(104px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-4xl content-start gap-3.5 overflow-x-hidden lg:gap-4'">
-      <header class="grid gap-3 px-0.5">
-        <div class="flex min-w-0 items-start justify-between gap-3">
-          <app-internal-page-section-header
-            eyebrow="Repartidor"
-            title="Entrega activa"
-            subtitle="Consulta el siguiente paso y continúa tu ruta."
-          />
-          <button type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-primary-700 shadow-sm active:scale-95" (click)="loadActiveOrder()" [disabled]="isLoading()" aria-label="Actualizar entrega">
-            <lucide-angular class="h-4 w-4" [class.animate-spin]="isLoading()" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
-          </button>
-        </div>
-
-        @if (errorMessage()) {
-          <app-notice class="mt-4" tone="danger" [message]="errorMessage()" />
-        }
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-[calc(104px+env(safe-area-inset-bottom,0px))]'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-4xl content-start gap-4 overflow-x-hidden pt-4 px-2'">
+      <header class="flex items-center justify-between px-1">
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">Entrega Activa</h1>
+        <button type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 active:scale-95 transition" (click)="loadActiveOrder()" [disabled]="isLoading()" aria-label="Actualizar entrega">
+          <lucide-angular class="h-4 w-4" [class.animate-spin]="isLoading()" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
+        </button>
       </header>
 
+      @if (errorMessage()) {
+        <app-notice tone="danger" [message]="errorMessage()" />
+      }
+
       @if (isLoading()) {
-        <div class="grid gap-2" aria-label="Cargando entrega activa" aria-busy="true">
+        <div class="grid gap-4" aria-label="Cargando entrega activa" aria-busy="true">
           @for (skeleton of [1, 2, 3]; track skeleton) {
-            <div class="h-[86px] animate-pulse rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div class="flex h-full items-center gap-3">
-                <div class="h-10 w-10 shrink-0 rounded-xl bg-slate-200"></div>
-                <div class="min-w-0 flex-1 space-y-2">
-                  <div class="h-3 w-2/3 rounded-full bg-slate-200"></div>
-                  <div class="h-2.5 w-1/2 rounded-full bg-slate-100"></div>
-                </div>
-              </div>
-            </div>
+            <div class="h-28 animate-pulse rounded-3xl bg-slate-200"></div>
           }
         </div>
       } @else if (errorMessage()) {
@@ -76,71 +60,114 @@ import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empt
           <app-button [routerLink]="'/driver/orders'">Ver pedidos disponibles</app-button>
         </app-unified-empty-state>
       } @else if (activeOrder(); as order) {
-        <app-surface-card variant="default" extraClass="grid w-full min-w-0 max-w-full gap-3.5 p-4">
+        
+        <!-- CARD PRINCIPAL DE ESTADO -->
+        <app-surface-card variant="default" extraClass="grid w-full min-w-0 max-w-full gap-4 p-5 rounded-3xl shadow-sm border-0 ring-1 ring-slate-200">
           <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div class="min-w-0">
-              <strong class="block truncate text-base font-extrabold tracking-[-0.02em] text-slate-950" [title]="order.restaurantName">{{ order.restaurantName }}</strong>
-              <p class="mt-1 text-xs text-slate-500">Pedido {{ shortOrderId(order.id) }}</p>
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pedido {{ shortOrderId(order.id) }}</p>
+              <strong class="block truncate text-xl font-black text-slate-900" [title]="order.restaurantName">{{ order.restaurantName }}</strong>
             </div>
-            <div class="shrink-0 text-right">
-              <p class="text-[10px] font-black uppercase tracking-[0.06em] text-emerald-700">Tu ganancia</p>
-              <p class="mt-0.5 whitespace-nowrap text-xl font-black tabular-nums text-emerald-700">{{ order.courierEarningAmount | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
+            <div class="shrink-0 text-right bg-emerald-50 px-3 py-1.5 rounded-xl">
+              <p class="text-[10px] font-black uppercase tracking-wider text-emerald-700">Tu ganancia</p>
+              <p class="mt-0.5 whitespace-nowrap text-2xl font-black tabular-nums text-emerald-700 leading-none">{{ order.courierEarningAmount | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
             </div>
           </div>
 
           <div class="flex min-w-0 flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
             <app-status-badge [status]="order.status" [label]="readableOrderStatus(order.status)" />
-            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ paymentMethodLabel(order.paymentMethod) }}</span>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ paymentMethodLabel(order.paymentMethod) }}</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-1.5" aria-label="Progreso de entrega">
+          <div class="grid grid-cols-3 gap-2" aria-label="Progreso de entrega">
             @for (step of deliverySteps; track step.status) {
-              <div class="min-w-0 rounded-xl px-2 py-2 text-center" [class]="isStepComplete(order.status, step.status) ? 'bg-primary-50 text-primary-700' : 'bg-slate-50 text-slate-400'">
-                <span class="mx-auto grid h-5 w-5 place-items-center rounded-full text-[10px] font-black" [class]="isStepComplete(order.status, step.status) ? 'bg-primary-700 text-white' : 'bg-slate-200 text-slate-500'">{{ step.index }}</span>
-                <p class="mt-1 truncate text-[10px] font-bold">{{ step.label }}</p>
+              <div class="min-w-0 rounded-2xl px-2 py-3 text-center transition" [class]="isStepComplete(order.status, step.status) ? 'bg-primary-50 text-primary-700' : 'bg-slate-50 text-slate-400'">
+                <span class="mx-auto grid h-6 w-6 place-items-center rounded-full text-xs font-black shadow-sm" [class]="isStepComplete(order.status, step.status) ? 'bg-primary-700 text-white' : 'bg-white text-slate-400'">{{ step.index }}</span>
+                <p class="mt-2 truncate text-xs font-bold">{{ step.label }}</p>
               </div>
             }
           </div>
 
-          <div class="rounded-xl bg-primary-50 px-3 py-2.5">
-            <p class="text-[10px] font-black uppercase tracking-[0.08em] text-primary-700">Siguiente paso</p>
-            <p class="mt-1 text-sm font-bold text-slate-950">{{ nextStepLabel(order.status) }}</p>
+          <div class="rounded-2xl bg-orange-50 px-4 py-3 border border-orange-100">
+            <p class="text-xs font-black uppercase tracking-wider text-orange-700">Siguiente paso</p>
+            <p class="mt-1 text-base font-bold text-slate-900">{{ nextStepLabel(order.status) }}</p>
           </div>
         </app-surface-card>
 
         <div class="grid gap-3 md:grid-cols-2">
-          <app-surface-card variant="default" extraClass="grid min-w-0 gap-2.5 p-3.5">
-            <div class="flex min-w-0 items-center gap-2">
-              <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="storeIcon" aria-hidden="true"></lucide-angular>
-              <p class="text-xs font-black uppercase tracking-[0.06em] text-slate-500">Recoger en</p>
+          
+          <!-- CARD RECOJO -->
+          <app-surface-card variant="default" extraClass="grid min-w-0 gap-3 p-5 rounded-3xl shadow-sm border-0 ring-1 ring-slate-200">
+            <div class="flex min-w-0 items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                 <div class="p-2 bg-orange-100 rounded-lg text-orange-600">
+                    <lucide-angular class="h-4 w-4 shrink-0" [img]="storeIcon" aria-hidden="true"></lucide-angular>
+                 </div>
+                 <p class="text-xs font-black uppercase tracking-wider text-slate-500">Recoger en</p>
+              </div>
             </div>
-            <p class="truncate text-sm font-bold text-slate-950" [title]="order.restaurantName">{{ order.restaurantName }}</p>
-            <p class="break-words text-xs leading-5 text-slate-600">{{ order.restaurantAddress }}</p>
+            
+            <div>
+               <p class="truncate text-base font-black text-slate-900" [title]="order.restaurantName">{{ order.restaurantName }}</p>
+               <p class="break-words text-sm mt-1 text-slate-600">{{ order.restaurantAddress }}</p>
+            </div>
+
+            <a class="mt-2 flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 no-underline active:bg-slate-200 transition" [href]="googleMapUrl(order.restaurantAddress)" target="_blank" rel="noopener">
+               <lucide-angular class="h-4 w-4" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+               Abrir en Maps
+            </a>
           </app-surface-card>
 
-          <app-surface-card variant="default" extraClass="grid min-w-0 gap-2.5 p-3.5">
+          <!-- CARD ENTREGA -->
+          <app-surface-card variant="default" extraClass="grid min-w-0 gap-3 p-5 rounded-3xl shadow-sm border-0 ring-1 ring-primary-100 bg-primary-50/30">
             <div class="flex min-w-0 items-center gap-2">
-              <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="mapIcon" aria-hidden="true"></lucide-angular>
-              <p class="text-xs font-black uppercase tracking-[0.06em] text-slate-500">Entregar a</p>
+               <div class="p-2 bg-primary-100 rounded-lg text-primary-700">
+                  <lucide-angular class="h-4 w-4 shrink-0" [img]="mapIcon" aria-hidden="true"></lucide-angular>
+               </div>
+               <p class="text-xs font-black uppercase tracking-wider text-primary-700">Entregar a</p>
             </div>
-            <p class="truncate text-sm font-bold text-slate-950" [title]="order.customerName">{{ order.customerName }}</p>
-            <p class="break-words text-xs leading-5 text-slate-600">{{ order.deliveryAddress }}</p>
-            @if (order.deliveryReference) {
-              <p class="break-words text-xs leading-5 text-slate-500">Referencia: {{ order.deliveryReference }}</p>
-            }
-            @if (order.customerPhone) {
-              <a class="inline-flex min-h-10 items-center gap-2 text-xs font-bold text-primary-700 no-underline" [href]="'tel:' + order.customerPhone">
-                <lucide-angular class="h-4 w-4" [img]="phoneIcon" aria-hidden="true"></lucide-angular>
-                Llamar al cliente
-              </a>
-            }
+            
+            <div>
+               <p class="truncate text-base font-black text-slate-900" [title]="order.customerName">{{ order.customerName }}</p>
+               <p class="break-words text-sm mt-1 text-slate-700">{{ order.deliveryAddress }}</p>
+               @if (order.deliveryReference) {
+                 <p class="mt-2 rounded-lg bg-white p-2 text-xs text-slate-500 ring-1 ring-slate-200">Ref: {{ order.deliveryReference }}</p>
+               }
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2 mt-2">
+               <a class="flex items-center justify-center gap-1.5 rounded-xl bg-primary-700 px-2 py-3 text-xs font-bold text-white no-underline active:bg-primary-800 transition shadow-sm" [href]="googleMapUrl(order.deliveryAddress)" target="_blank" rel="noopener">
+                  <lucide-angular class="h-4 w-4" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+                  Maps
+               </a>
+               @if (order.customerPhone) {
+                 <a class="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-2 py-3 text-xs font-bold text-white no-underline active:bg-emerald-700 transition shadow-sm" [href]="whatsappUrl(order.customerPhone, order.id)" target="_blank" rel="noopener">
+                   <lucide-angular class="h-4 w-4" [img]="messageIcon" aria-hidden="true"></lucide-angular>
+                   WhatsApp
+                 </a>
+                 <a class="flex items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-3 text-xs font-bold text-slate-700 ring-1 ring-slate-200 no-underline active:bg-slate-50 transition" [href]="'tel:' + order.customerPhone">
+                   <lucide-angular class="h-4 w-4 text-slate-600" [img]="phoneIcon" aria-hidden="true"></lucide-angular>
+                   Llamar
+                 </a>
+               }
+            </div>
           </app-surface-card>
         </div>
 
         <app-bottom-safe-action-bar mode="fixed">
-          <app-button size="md" [routerLink]="['/driver/orders', order.id]" block>
-            Continuar entrega
-          </app-button>
+          @if (order.status === 'Assigned') {
+            <app-button size="lg" (click)="advanceStatus(order, 'PickedUp')" [disabled]="isUpdatingStatus()" block>
+              {{ isUpdatingStatus() ? 'Actualizando...' : 'Confirmar Recojo en Negocio' }}
+            </app-button>
+          } @else if (order.status === 'PickedUp') {
+            <app-button size="lg" (click)="advanceStatus(order, 'OnTheWay')" [disabled]="isUpdatingStatus()" block>
+              {{ isUpdatingStatus() ? 'Actualizando...' : 'Iniciar Viaje al Cliente' }}
+            </app-button>
+          } @else {
+            <app-button size="lg" [routerLink]="['/driver/orders', order.id]" block>
+              Ingresar PIN de Entrega
+            </app-button>
+          }
         </app-bottom-safe-action-bar>
       }
     </app-mobile-page-shell>
@@ -154,6 +181,8 @@ export class DriverActiveOrderPageComponent {
   readonly storeIcon = Store;
   readonly phoneIcon = Phone;
   readonly refreshIcon = RefreshCw;
+  readonly navigationIcon = Navigation;
+  
   readonly deliverySteps = [
     { index: 1, label: 'Recogido', status: 'PickedUp' },
     { index: 2, label: 'En camino', status: 'OnTheWay' },
@@ -238,5 +267,39 @@ export class DriverActiveOrderPageComponent {
     };
 
     return labels[method] ?? 'Método registrado';
+  }
+
+  readonly messageIcon = MessageSquare;
+  readonly isUpdatingStatus = signal(false);
+
+  whatsappUrl(phone?: string, orderId?: string): string {
+    if (!phone) return '#';
+    const cleanPhone = phone.replace(/\D/g, '');
+    const fullPhone = cleanPhone.length === 9 ? `51${cleanPhone}` : cleanPhone;
+    const text = encodeURIComponent(`¡Hola! Te escribe tu repartidor de AppuraPe sobre tu pedido #${this.shortOrderId(orderId || '')}. Ya voy en camino con tu entrega 🛵.`);
+    return `https://wa.me/${fullPhone}?text=${text}`;
+  }
+
+  advanceStatus(order: DriverOrderDetailResponse, nextStatus: 'PickedUp' | 'OnTheWay'): void {
+    this.isUpdatingStatus.set(true);
+    const obs$ = nextStatus === 'PickedUp'
+      ? this.driverOrdersApi.markPickedUp(order.id)
+      : this.driverOrdersApi.markOnTheWay(order.id);
+
+    obs$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.isUpdatingStatus.set(false);
+        this.loadActiveOrder();
+      },
+      error: (error) => {
+        this.isUpdatingStatus.set(false);
+        this.errorMessage.set(getErrorMessage(error, 'No se pudo actualizar el estado de la entrega.'));
+      },
+    });
+  }
+
+  googleMapUrl(address: string): string {
+    if (!address) return '#';
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
   }
 }

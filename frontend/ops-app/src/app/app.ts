@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AppNavigationService } from './core/services/app-navigation.service';
+import { AuthService } from './core/services/auth.service';
 import { CheckoutDrawerUiService } from './core/services/checkout-drawer-ui.service';
 import { PlatformSettingsApiService } from './core/services/platform-settings-api.service';
 import { ToastContainerComponent } from './shared/toast/toast-container.component';
@@ -23,6 +24,7 @@ export class App {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformSettingsApi = inject(PlatformSettingsApiService);
   private readonly toast = inject(ToastService);
+  private readonly authService = inject(AuthService);
   private lastExitAttemptAt = 0;
 
   private static readonly EXIT_CONFIRMATION_WINDOW_MS = 2_000;
@@ -50,8 +52,9 @@ export class App {
         }
 
         const currentPath = this.currentPath();
+        const rootPath = this.rootPath();
 
-        if (currentPath === '/businesses') {
+        if (currentPath === rootPath || currentPath === '/businesses') {
           const now = Date.now();
 
           if (now - this.lastExitAttemptAt <= App.EXIT_CONFIRMATION_WINDOW_MS) {
@@ -73,7 +76,7 @@ export class App {
           return;
         }
 
-        if (currentPath !== '/businesses') {
+        if (currentPath !== rootPath) {
           void this.router.navigateByUrl(fallbackUrl);
         }
       });
@@ -86,8 +89,29 @@ export class App {
     }
   }
 
+  private rootPath(): string {
+    if (this.authService.isAuthenticated()) {
+      return this.authService.getDefaultRoute();
+    }
+    return '/businesses';
+  }
+
   private resolveNativeBackFallback(): string {
     const path = this.currentPath();
+    const root = this.rootPath();
+
+    if (path.startsWith('/driver/')) {
+      return '/driver/dashboard';
+    }
+
+    if (path.startsWith('/business/') || path.startsWith('/restaurant/')) {
+      return '/business/dashboard';
+    }
+
+    if (path.startsWith('/admin/')) {
+      return '/admin/dashboard';
+    }
+
     const productMatch = path.match(/^\/businesses\/([^/]+)\/products\/[^/]+$/);
 
     if (productMatch) {
@@ -98,10 +122,10 @@ export class App {
       return '/businesses';
     }
 
-    return '/businesses';
+    return root;
   }
 
   private currentPath(): string {
-    return this.router.url.split('?')[0]?.split('#')[0] || '/businesses';
+    return this.router.url.split('?')[0]?.split('#')[0] || this.rootPath();
   }
 }

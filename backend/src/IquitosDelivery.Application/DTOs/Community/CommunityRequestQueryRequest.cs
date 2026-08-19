@@ -11,4 +11,6 @@ public class CommunityRequestQueryRequest
     public CommunityRequestType? Type { get; set; }
 
     public bool Mine { get; set; }
+
+    public string? View { get; set; }
 }

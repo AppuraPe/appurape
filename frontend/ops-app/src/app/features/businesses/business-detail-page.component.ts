@@ -1,4 +1,4 @@
-﻿import { CurrencyPipe, DOCUMENT } from '@angular/common';
+import { CurrencyPipe, DOCUMENT } from '@angular/common';
 import { Component, DestroyRef, OnDestroy, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -19,7 +19,7 @@ import { OrdersApiService } from '../../core/services/orders-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { formatTimeSpan, getApiErrorMessage, hasText } from '../../core/utils/api-utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
-import { MenuCardComponent } from '../restaurants/components/menu-card.component';
+import { MenuCardComponent } from './menu-card.component';
 import { BusinessCartService } from './business-cart.service';
 import { BusinessCheckoutDrawerComponent } from './business-checkout-drawer.component';
 

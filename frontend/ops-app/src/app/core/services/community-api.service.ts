@@ -86,6 +86,9 @@ export class CommunityApiService {
     if (filters.mine) {
       params = params.set('mine', String(filters.mine));
     }
+    if (filters.view?.trim()) {
+      params = params.set('view', filters.view.trim());
+    }
 
     return this.http.get<CommunityRequestListItemResponse[]>(`${this.baseUrl}/requests`, { params });
   }

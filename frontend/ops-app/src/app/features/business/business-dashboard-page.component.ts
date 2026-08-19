@@ -65,7 +65,7 @@ export class BusinessDashboardPageComponent {
   approvalStatusLabel(status: string): string {
     switch (status) {
       case 'Pending':
-        return 'Pendiente de aprobación';
+        return 'En revisión';
       case 'Approved':
         return 'Aprobado';
       case 'Rejected':
@@ -73,7 +73,7 @@ export class BusinessDashboardPageComponent {
       case 'Suspended':
         return 'Suspendido';
       default:
-        return 'Estado por revisar';
+        return 'Por revisar';
     }
   }
 

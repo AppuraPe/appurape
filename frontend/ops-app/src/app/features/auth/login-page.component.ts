@@ -65,7 +65,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Email</span>
                 <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="mailIcon" aria-hidden="true"></lucide-angular>
-                  <input id="email" type="email" formControlName="email" placeholder="tu@correo.com" class="min-h-0 min-w-0 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
+                  <input id="email" type="email" inputmode="email" autocomplete="username" formControlName="email" placeholder="tu@correo.com" class="min-h-0 min-w-0 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                 </div>
               </label>
 
@@ -73,7 +73,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
                 <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Contraseña</span>
                 <div class="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/15">
                   <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="lockIcon" aria-hidden="true"></lucide-angular>
-                  <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder="Tu contraseña" class="min-h-0 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
+                  <input id="password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password" formControlName="password" placeholder="Tu contraseña" class="min-h-0 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm text-loreto-carbon shadow-none placeholder:text-text-muted/70 focus:ring-0" />
                   <button
                     type="button"
                     class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-soft hover:text-primary-700"

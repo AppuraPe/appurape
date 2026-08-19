@@ -1,5 +1,6 @@
 export type AppRole = 'Customer' | 'Restaurant' | 'Driver' | 'Admin';
 export type UserRole = AppRole;
+export type AppProfile = 'Customer' | 'BusinessOwner' | 'Driver' | 'Collaborator' | 'Admin';
 export type OpsRole = Exclude<AppRole, 'Customer'>;
 export type TrustLevel = 'Verified' | 'Trusted';
 
@@ -26,12 +27,18 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+export interface SwitchProfileRequest {
+  profile: AppProfile | string;
+}
+
 export interface AuthResponse {
   token: string;
   userId: string;
   fullName: string;
   email: string;
   role: AppRole | string;
+  primaryRole?: AppRole | string;
+  activeProfile?: AppProfile | string;
   status: string;
   trustLevel?: TrustLevel | string | null;
   trustScore?: number | null;
@@ -45,7 +52,7 @@ export interface AuthResponse {
   hasCollaboratorProfile?: boolean;
   collaboratorApprovalStatus?: string | null;
   isCollaboratorIdentityVerified?: boolean | null;
-  availableProfiles?: string[];
+  availableProfiles?: (AppProfile | string)[];
 }
 
 export interface CurrentUserResponse {
@@ -53,6 +60,8 @@ export interface CurrentUserResponse {
   fullName: string;
   email: string;
   role: AppRole | string;
+  primaryRole?: AppRole | string;
+  activeProfile?: AppProfile | string;
   status: string;
   trustLevel?: TrustLevel | string | null;
   trustScore?: number | null;
@@ -66,7 +75,7 @@ export interface CurrentUserResponse {
   hasCollaboratorProfile?: boolean;
   collaboratorApprovalStatus?: string | null;
   isCollaboratorIdentityVerified?: boolean | null;
-  availableProfiles?: string[];
+  availableProfiles?: (AppProfile | string)[];
   isAuthenticated: boolean;
 }
 

@@ -42,19 +42,16 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
   ],
   template: `
     <section class="grid w-full min-w-0 max-w-full gap-3.5 sm:gap-4">
-      <header class="grid gap-3 px-0.5">
-        <div class="grid gap-1.5">
-          <span class="text-[11px] font-bold uppercase tracking-[0.06em] text-primary-700">Catálogo</span>
-          <h1 class="text-2xl font-extrabold leading-tight tracking-[-0.03em] text-slate-950">Productos</h1>
-          <p class="max-w-2xl text-sm leading-5 text-slate-500">Revisa tu catálogo y controla la disponibilidad.</p>
+      <header class="flex min-w-0 items-center justify-between gap-3 px-0.5">
+        <div class="min-w-0">
+          <h1 class="truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Productos</h1>
+          <p class="truncate text-xs font-semibold text-slate-500">{{ items().length }} productos en catálogo</p>
         </div>
 
-        <div class="flex flex-wrap gap-2">
-          <app-button [routerLink]="['new']" size="md">
-            <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
-            Nuevo producto
-          </app-button>
-        </div>
+        <app-button [routerLink]="['new']" size="sm">
+          <lucide-angular class="h-4 w-4" [img]="imagePlusIcon" aria-hidden="true"></lucide-angular>
+          Nuevo producto
+        </app-button>
       </header>
 
       @if (errorMessage()) {
@@ -282,26 +279,23 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 
                     <div class="grid gap-2 xl:justify-items-end">
                       <div class="flex flex-wrap items-center gap-2">
-                        <app-status-badge [status]="item.isAvailable" [label]="item.isAvailable ? 'Disponible' : 'No disponible'" />
-                        <app-status-badge [status]="item.isActive" [label]="item.isActive ? 'Activo' : 'Inactivo'" />
-                      </div>
-
-                      <div class="grid grid-cols-[auto_minmax(0,1fr)] gap-2 xl:flex xl:justify-end">
-                        <app-button variant="secondary" size="sm" type="button" (click)="startEdit(item)" [disabled]="isSubmitting()">
-                          Editar
-                        </app-button>
-                        <app-button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           type="button"
                           (click)="toggleAvailability(item)"
                           [disabled]="availabilityItemId() === item.id"
+                          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold transition active:scale-95 disabled:opacity-50"
+                          [class]="item.isAvailable ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 ring-1 ring-emerald-600/20' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 ring-1 ring-rose-600/20'"
+                          [title]="item.isAvailable ? 'Toca para marcar como agotado' : 'Toca para marcar como disponible'"
                         >
-                          {{
-                            availabilityItemId() === item.id
-                              ? 'Actualizando...'
-                              : (item.isAvailable ? 'Marcar no disponible' : 'Marcar disponible')
-                          }}
+                          <span class="h-2 w-2 rounded-full" [class]="item.isAvailable ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                          {{ availabilityItemId() === item.id ? 'Guardando...' : (item.isAvailable ? 'Disponible' : 'Agotado') }}
+                        </button>
+                        <app-status-badge [status]="item.isActive" [label]="item.isActive ? 'Activo' : 'Inactivo'" />
+                      </div>
+
+                      <div class="flex items-center gap-2 xl:justify-end">
+                        <app-button variant="secondary" size="sm" type="button" (click)="startEdit(item)" [disabled]="isSubmitting()">
+                          Editar
                         </app-button>
                       </div>
                     </div>

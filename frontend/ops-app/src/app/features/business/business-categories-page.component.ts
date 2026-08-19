@@ -20,7 +20,6 @@ import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppMetricCardComponent } from '../../shared/components/app-metric-card.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 
@@ -31,7 +30,6 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
   },
   standalone: true,
   imports: [
-    PageHeaderComponent,
     ReactiveFormsModule,
     LucideAngularModule,
     AppNoticeComponent,
@@ -43,11 +41,12 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
   template: `
     <section class="grid w-full min-w-0 max-w-full gap-4 sm:gap-5">
       <header class="grid gap-3 px-0.5">
-        <app-page-header
-          eyebrow="Catálogo"
-          title="Categorías"
-          subtitle="Crea y edita categorías para ordenar mejor el catálogo del negocio."
-        />
+        <div class="flex min-w-0 items-center justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Categorías</h1>
+            <p class="truncate text-xs font-semibold text-slate-500">{{ categories().length }} registradas para organizar el menú</p>
+          </div>
+        </div>
 
         @if (errorMessage()) {
           <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
@@ -116,11 +115,11 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
         </app-surface-card>
 
         <app-surface-card variant="page">
-          <app-page-header
-            eyebrow="Lista"
-            title="Categorías actuales"
-            subtitle="Selecciona una categoría para editarla o revisa su estado."
-          />
+          <div class="mb-4 min-w-0">
+            <span class="text-[10px] font-black uppercase tracking-[0.14em] text-primary-700">Lista</span>
+            <h2 class="text-lg font-extrabold tracking-tight text-slate-950">Categorías actuales</h2>
+            <p class="mt-0.5 text-xs text-slate-500">Selecciona una categoría para editarla o revisa su estado.</p>
+          </div>
 
           <form class="grid w-full min-w-0 max-w-full gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_auto]" [formGroup]="filtersForm" (ngSubmit)="loadCategories()">
             <label class="grid gap-2">

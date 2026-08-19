@@ -35,7 +35,7 @@
     } @else {
       <div class="space-y-3">
         @for (address of addresses(); track address.id) {
-          <app-surface-card variant="soft" extraClass="p-4">
+          <app-surface-card variant="soft" extraClass="p-4 rounded-3xl border border-slate-200">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 max-w-full flex-1 overflow-hidden">
                 <div class="flex flex-wrap items-center gap-2">
@@ -45,36 +45,60 @@
                   }
                 </div>
                 <p class="mt-1 min-w-0 break-words text-sm font-semibold text-slate-700">{{ address.recipientName }} · {{ address.recipientPhone }}</p>
-                <p class="mt-2 min-w-0 break-words text-sm text-slate-900">{{ address.addressLine }}</p>
-                <p class="mt-1 min-w-0 break-words text-sm text-slate-500">{{ address.reference }}</p>
-                <p class="mt-2 min-w-0 truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{{ address.zoneName }}</p>
+                <p class="mt-2 min-w-0 break-words text-sm text-slate-900 font-medium">{{ address.addressLine }}</p>
+                <p class="mt-1 min-w-0 break-words text-xs text-slate-500">{{ address.reference }}</p>
+                <div class="mt-2 flex items-center justify-between gap-2">
+                  <span class="truncate text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ address.zoneName }}</span>
+                  @if (address.addressLine) {
+                    <a
+                      [href]="buildGoogleMapsUrl(address.addressLine + ', ' + address.zoneName)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-1 text-[11px] font-bold text-primary-700 hover:underline"
+                    >
+                      <lucide-angular class="h-3 w-3" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+                      Ver en mapa
+                    </a>
+                  }
+                </div>
+              </div>
+
+              <!-- BOTONES RÁPIDOS DE ACCIÓN -->
+              <div class="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  class="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 transition active:scale-95 hover:bg-slate-200"
+                  [disabled]="!!deletingAddressId()"
+                  (click)="editAddress(address)"
+                  aria-label="Editar dirección"
+                >
+                  <lucide-angular class="h-4 w-4" [img]="pencilIcon" aria-hidden="true"></lucide-angular>
+                </button>
+                <button
+                  type="button"
+                  class="grid h-9 w-9 place-items-center rounded-full bg-red-50 text-red-600 transition active:scale-95 hover:bg-red-100"
+                  [disabled]="!!deletingAddressId()"
+                  (click)="requestDeleteAddress(address)"
+                  aria-label="Eliminar dirección"
+                >
+                  <lucide-angular class="h-4 w-4" [img]="trashIcon" aria-hidden="true"></lucide-angular>
+                </button>
               </div>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-              <app-button
-                class="col-span-2 sm:col-span-1"
-                type="button"
-                variant="secondary"
-                size="sm"
-                [disabled]="address.isDefault || !!deletingAddressId()"
-                (click)="setDefault(address)"
-              >
-                Marcar predeterminada
-              </app-button>
-              <app-button type="button" variant="ghost" size="sm" [disabled]="!!deletingAddressId()" (click)="editAddress(address)">
-                Editar
-              </app-button>
-              <app-button
-                type="button"
-                variant="ghost"
-                size="sm"
-                [disabled]="!!deletingAddressId()"
-                (click)="requestDeleteAddress(address)"
-              >
-                Eliminar
-              </app-button>
-            </div>
+            @if (!address.isDefault) {
+              <div class="mt-3 border-t border-slate-100 pt-3">
+                <app-button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  [disabled]="!!deletingAddressId()"
+                  (click)="setDefault(address)"
+                >
+                  Establecer como principal
+                </app-button>
+              </div>
+            }
 
             @if (pendingDeleteAddressId() === address.id) {
               <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3">
@@ -163,11 +187,23 @@
           </div>
 
           <div class="grid gap-2">
-            <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500" for="addressLine">Dirección</label>
+            <div class="flex items-center justify-between">
+              <label class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500" for="addressLine">Dirección</label>
+              <button
+                type="button"
+                (click)="detectCurrentLocation()"
+                [disabled]="isDetectingLocation()"
+                class="inline-flex items-center gap-1 text-[11px] font-bold text-primary-700 transition hover:underline active:scale-95 disabled:opacity-50"
+              >
+                <lucide-angular class="h-3.5 w-3.5" [class.animate-spin]="isDetectingLocation()" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
+                {{ isDetectingLocation() ? 'Detectando...' : 'Usar mi GPS actual' }}
+              </button>
+            </div>
             <input
               id="addressLine"
               type="text"
               formControlName="addressLine"
+              placeholder="Ej: Av. Abelardo Quiñones 123"
               class="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
             />
           </div>

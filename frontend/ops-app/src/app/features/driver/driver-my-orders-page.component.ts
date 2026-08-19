@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -14,7 +14,6 @@ import { ActionChipRowComponent } from '../../shared/components/action-chip-row.
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
-import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
@@ -41,34 +40,37 @@ interface DriverOrderAction {
     AppSurfaceCardComponent,
     StatusBadgeComponent,
     MobilePageShellComponent,
-    InternalPageSectionHeaderComponent,
     UnifiedEmptyStateComponent,
     ActionChipRowComponent,
   ],
   template: `
     <app-mobile-page-shell [bottomSpacingClass]="'pb-0'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-4xl content-start gap-3.5 overflow-x-hidden lg:gap-4'">
       <header class="grid gap-3 px-0.5">
-        <app-internal-page-section-header
-          eyebrow="Repartidor"
-          title="Mis entregas"
-          subtitle="Continúa las entregas activas o revisa tu historial."
-          [meta]="orders().length + ' visibles'"
-        />
+        <div class="min-w-0">
+          <span class="text-[10px] font-black uppercase tracking-[0.12em] text-primary-700">Repartidor</span>
+          <h1 class="text-xl font-black tracking-tight text-slate-950">Mis entregas</h1>
+          <p class="text-xs text-slate-500">Historial y entregas activas.</p>
+        </div>
 
         @if (errorMessage()) {
-          <app-notice class="mt-4" tone="danger" [message]="errorMessage()" />
+          <app-notice class="mt-2" tone="danger" [message]="errorMessage()" />
         }
 
-        <div class="grid grid-cols-2 gap-2">
-          <div class="min-w-0 rounded-2xl bg-white p-3.5 shadow-sm">
-            <p class="truncate text-[10px] font-black uppercase tracking-[0.06em] text-slate-500">Entregas</p>
-            <p class="mt-1.5 text-2xl font-black leading-none text-slate-950">{{ orders().length }}</p>
-            <p class="mt-1 text-xs text-slate-500">En esta lista</p>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="min-w-0 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3 shadow-sm">
+            <p class="truncate text-[10px] font-black uppercase tracking-[0.06em] text-emerald-800">Total Ganado</p>
+            <p class="mt-1 text-lg font-black leading-none tabular-nums text-emerald-800">{{ totalEarningsInList() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</p>
+            <p class="mt-0.5 truncate text-[10px] font-semibold text-emerald-700">En lista</p>
           </div>
-          <div class="min-w-0 rounded-2xl bg-white p-3.5 shadow-sm">
-            <p class="truncate text-[10px] font-black uppercase tracking-[0.06em] text-slate-500">En curso</p>
-            <p class="mt-1.5 text-2xl font-black leading-none text-primary-700">{{ ordersWithActionsCount() }}</p>
-            <p class="mt-1 text-xs text-slate-500">Requieren acción</p>
+          <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <p class="truncate text-[10px] font-black uppercase tracking-[0.06em] text-slate-500">Entregas</p>
+            <p class="mt-1 text-lg font-black leading-none text-slate-950">{{ orders().length }}</p>
+            <p class="mt-0.5 truncate text-[10px] text-slate-500">Visibles</p>
+          </div>
+          <div class="min-w-0 rounded-2xl border border-primary-200 bg-primary-50/70 p-3 shadow-sm">
+            <p class="truncate text-[10px] font-black uppercase tracking-[0.06em] text-primary-800">En curso</p>
+            <p class="mt-1 text-lg font-black leading-none text-primary-700">{{ ordersWithActionsCount() }}</p>
+            <p class="mt-0.5 truncate text-[10px] font-semibold text-primary-700">Por entregar</p>
           </div>
         </div>
       </header>
@@ -209,6 +211,9 @@ export class DriverMyOrdersPageComponent {
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
   readonly actionOrderId = signal<string | null>(null);
+  readonly totalEarningsInList = computed(() =>
+    this.orders().reduce((sum, order) => sum + (order.courierEarningAmount || 0), 0),
+  );
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],

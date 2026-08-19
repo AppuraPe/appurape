@@ -26,6 +26,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
 import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
+import { LucideAngularModule, Navigation } from 'lucide-angular';
+import { buildGoogleMapsUrl } from '../../core/utils/maps.utils';
+
 @Component({
   selector: 'app-community-request-detail-page',
   host: {
@@ -38,6 +41,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
     DecimalPipe,
     ReactiveFormsModule,
     RouterLink,
+    LucideAngularModule,
     AppBackButtonComponent,
     AppNoticeComponent,
     StatusBadgeComponent,
@@ -201,15 +205,41 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
             <p class="mt-1 break-words text-sm leading-5 text-slate-600">{{ currentRequest.description }}</p>
           </div>
 
-          <div class="grid gap-2 sm:grid-cols-2">
-            <div class="min-w-0 rounded-2xl bg-slate-50 p-3">
-              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Origen</p>
-              <p class="mt-1 break-words text-sm font-semibold text-slate-950">{{ currentRequest.originLabel }}</p>
+          <div class="grid gap-2.5 sm:grid-cols-2">
+            <div class="min-w-0 rounded-2xl bg-slate-50 p-3.5 flex flex-col justify-between">
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Origen</p>
+                <p class="mt-1 break-words text-sm font-semibold text-slate-950">{{ currentRequest.originLabel }}</p>
+              </div>
+              @if (currentRequest.originLabel) {
+                <a
+                  [href]="buildGoogleMapsUrl(currentRequest.originLabel, currentRequest.originLatitude, currentRequest.originLongitude)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 active:scale-95 shadow-xs"
+                >
+                  <lucide-angular class="h-3.5 w-3.5 text-primary-700" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+                  Ver en Google Maps
+                </a>
+              }
             </div>
 
-            <div class="min-w-0 rounded-2xl bg-slate-50 p-3">
-              <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Destino</p>
-              <p class="mt-1 break-words text-sm font-semibold text-slate-950">{{ currentRequest.destinationLabel }}</p>
+            <div class="min-w-0 rounded-2xl bg-slate-50 p-3.5 flex flex-col justify-between">
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Destino</p>
+                <p class="mt-1 break-words text-sm font-semibold text-slate-950">{{ currentRequest.destinationLabel }}</p>
+              </div>
+              @if (currentRequest.destinationLabel) {
+                <a
+                  [href]="buildGoogleMapsUrl(currentRequest.destinationLabel, currentRequest.destinationLatitude, currentRequest.destinationLongitude)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 active:scale-95 shadow-xs"
+                >
+                  <lucide-angular class="h-3.5 w-3.5 text-primary-700" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+                  Ver en Google Maps
+                </a>
+              }
             </div>
           </div>
         </app-surface-card>
@@ -521,6 +551,9 @@ export class CommunityRequestDetailPageComponent {
       isCurrent: step.key === status,
     }));
   });
+
+  readonly navigationIcon = Navigation;
+  readonly buildGoogleMapsUrl = buildGoogleMapsUrl;
 
   constructor() {
     this.reload();

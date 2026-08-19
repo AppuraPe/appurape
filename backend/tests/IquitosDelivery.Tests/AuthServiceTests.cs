@@ -235,21 +235,81 @@ public class AuthServiceTests
         return userId;
     }
 
+    [Fact]
+    public async Task SwitchProfileAsync_RestaurantToCustomer_CreatesCustomerProfileAndReturnsCustomerToken()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await SeedUserWithProfileAsync(dbContext, UserRole.Restaurant, UserStatus.Active, "resto@appurape.test");
+        var service = CreateAuthService(dbContext, userId);
+
+        var response = await service.SwitchProfileAsync(new SwitchProfileRequest
+        {
+            Profile = "Customer"
+        });
+
+        Assert.Equal("Customer", response.ActiveProfile);
+        Assert.Equal("Customer", response.Role);
+        Assert.Equal("Restaurant", response.PrimaryRole);
+        Assert.True(response.HasCustomerProfile);
+        Assert.True(response.HasBusinessProfile);
+
+        // Verify CustomerProfile was persisted idempotently
+        var userInDb = await dbContext.Users.Include(x => x.CustomerProfile).FirstOrDefaultAsync(x => x.Id == userId);
+        Assert.NotNull(userInDb?.CustomerProfile);
+        Assert.Equal(UserRole.Restaurant, userInDb.Role); // User.Role in DB unchanged
+    }
+
+    [Fact]
+    public async Task SwitchProfileAsync_CustomerToBusinessOwnerWithoutBusiness_ThrowsForbidden()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await SeedUserWithProfileAsync(dbContext, UserRole.Customer, UserStatus.Active, "customer@appurape.test");
+        var service = CreateAuthService(dbContext, userId);
+
+        var exception = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.SwitchProfileAsync(new SwitchProfileRequest
+            {
+                Profile = "BusinessOwner"
+            }));
+
+        Assert.Equal("Este modo aún no está disponible para tu cuenta.", exception.Message);
+    }
+
+    [Fact]
+    public async Task SwitchProfileAsync_InvalidProfile_ThrowsAppException()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await SeedUserWithProfileAsync(dbContext, UserRole.Customer, UserStatus.Active, "customer@appurape.test");
+        var service = CreateAuthService(dbContext, userId);
+
+        var exception = await Assert.ThrowsAsync<AppException>(() =>
+            service.SwitchProfileAsync(new SwitchProfileRequest
+            {
+                Profile = "InvalidRole123"
+            }));
+
+        Assert.Equal("Perfil solicitado no válido.", exception.Message);
+    }
+
     private sealed class FakeJwtTokenService : IJwtTokenService
     {
-        public string GenerateToken(User user)
+        public string GenerateToken(User user, string? activeProfile = null)
         {
-            return $"token-{user.Id:N}";
+            return $"token-{user.Id:N}-{activeProfile ?? user.Role.ToString()}";
         }
     }
 
-    private sealed class TestCurrentUserService(Guid? userId) : ICurrentUserService
+    private sealed class TestCurrentUserService(Guid? userId, string? activeProfile = null, string? primaryRole = null) : ICurrentUserService
     {
         public Guid? UserId { get; } = userId;
 
         public string? Email => "current@appurape.test";
 
         public string? Role => UserRole.Customer.ToString();
+
+        public string? ActiveProfile { get; } = activeProfile;
+
+        public string? PrimaryRole { get; } = primaryRole;
 
         public bool IsAuthenticated => UserId.HasValue;
     }

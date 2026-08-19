@@ -10,6 +10,7 @@ import { validateImageFile } from '../../core/utils/file-upload.utils';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
+import { ProfileModeSwitcherCardComponent } from '../../shared/components/profile-mode-switcher-card.component';
 
 @Component({
   selector: 'app-business-profile-page',
@@ -24,6 +25,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
     LucideAngularModule,
     AppButtonComponent,
     AppSurfaceCardComponent,
+    ProfileModeSwitcherCardComponent,
   ],
   templateUrl: './business-profile-page.component.html',
 })
@@ -199,7 +201,7 @@ export class BusinessProfilePageComponent {
   approvalStatusLabel(status: string): string {
     switch (status) {
       case 'Pending':
-        return 'Pendiente de aprobación';
+        return 'En revisión';
       case 'Approved':
         return 'Aprobado';
       case 'Rejected':
@@ -207,7 +209,7 @@ export class BusinessProfilePageComponent {
       case 'Suspended':
         return 'Suspendido';
       default:
-        return 'Estado por revisar';
+        return 'Por revisar';
     }
   }
 

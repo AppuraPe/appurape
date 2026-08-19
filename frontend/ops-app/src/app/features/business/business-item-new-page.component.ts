@@ -13,7 +13,6 @@ import { AppButtonComponent } from '../../shared/components/app-button.component
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { BottomSafeActionBarComponent } from '../../shared/components/bottom-safe-action-bar.component';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 @Component({
   selector: 'app-business-item-new-page',
@@ -29,16 +28,14 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
     AppNoticeComponent,
     AppSurfaceCardComponent,
     BottomSafeActionBarComponent,
-    PageHeaderComponent,
   ],
   template: `
     <section class="mx-auto grid w-full min-w-0 max-w-3xl gap-4 pb-2 sm:gap-5">
       <header class="grid gap-3 px-0.5">
-        <app-page-header
-          eyebrow="Catálogo"
-          title="Nuevo producto"
-          subtitle="Completa los datos esenciales. Podrás cambiar su disponibilidad después de publicarlo."
-        />
+        <div class="min-w-0">
+          <h1 class="truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Nuevo producto</h1>
+          <p class="mt-0.5 text-xs text-slate-500">Completa los datos para publicar un producto en el catálogo.</p>
+        </div>
 
         @if (errorMessage()) {
           <app-notice tone="danger" [message]="errorMessage()" />

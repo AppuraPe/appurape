@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Domain.Entities;
 using Microsoft.Extensions.Configuration;
@@ -17,12 +18,17 @@ public class JwtTokenService : IJwtTokenService
         _configuration = configuration;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateToken(User user, string? activeProfile = null)
     {
         var issuer = _configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is not configured.");
         var audience = _configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
         var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
         var expirationMinutes = ResolveAccessTokenLifetimeMinutes();
+
+        var resolvedActiveProfile = string.IsNullOrWhiteSpace(activeProfile)
+            ? UserProfiles.RoleToDefaultProfile(user.Role.ToString())
+            : activeProfile;
+        var effectiveRole = UserProfiles.ProfileToEffectiveRole(resolvedActiveProfile);
 
         var claims = new List<Claim>
         {
@@ -30,7 +36,9 @@ public class JwtTokenService : IJwtTokenService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role.ToString()),
+            new(ClaimTypes.Role, effectiveRole),
+            new("active_profile", resolvedActiveProfile),
+            new("primary_role", user.Role.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

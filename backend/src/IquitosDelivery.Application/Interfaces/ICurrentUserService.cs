@@ -8,5 +8,9 @@ public interface ICurrentUserService
 
     string? Role { get; }
 
+    string? ActiveProfile => null;
+
+    string? PrimaryRole => null;
+
     bool IsAuthenticated { get; }
 }

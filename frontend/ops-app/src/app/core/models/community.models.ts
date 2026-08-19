@@ -221,6 +221,7 @@ export interface CommunityRequestQueryRequest {
   status?: string;
   type?: string;
   mine?: boolean;
+  view?: string;
 }
 
 export interface CancelCommunityRequestRequest {

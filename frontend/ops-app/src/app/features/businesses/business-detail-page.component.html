@@ -1,4 +1,4 @@
-﻿<section class="w-full space-y-4 px-4 pb-28 pt-3 lg:mx-auto lg:max-w-[1240px] lg:space-y-6 lg:px-8 lg:pb-12">
+<section class="w-full space-y-4 px-4 pb-28 pt-3 lg:mx-auto lg:max-w-[1240px] lg:space-y-6 lg:px-8 lg:pb-12">
   <div class="flex items-center justify-between gap-3 lg:hidden">
     <div class="min-w-0 flex-1">
       <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Negocio</p>
@@ -233,15 +233,21 @@
     </section>
 
     @if (cartItems().length) {
-      <div class="fixed inset-x-3 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[70] rounded-[18px] border border-[#ead8d2] bg-white/96 p-3 shadow-[0_14px_30px_rgba(6,25,43,0.14)] backdrop-blur-md lg:hidden" aria-label="Resumen móvil del pedido">
-        <div class="mb-2.5 flex items-center justify-between gap-3">
-          <div class="min-w-0">
-            <span class="text-[0.68rem] font-black uppercase tracking-[0.14em] text-primary-700">Tu pedido</span>
-            <strong class="mt-1 block text-sm text-loreto-carbon">{{ totalQuantity() }} producto(s)</strong>
+      <div class="fixed inset-x-4 bottom-[calc(18px+env(safe-area-inset-bottom))] z-[80] lg:hidden" aria-label="Resumen móvil del pedido">
+        <button
+          data-checkout-target
+          type="button"
+          class="flex min-h-14 w-full items-center justify-between rounded-2xl bg-primary-700 px-5 text-white shadow-2xl shadow-primary-700/40 transition active:scale-[0.98]"
+          (click)="openCheckoutDrawer()"
+        >
+          <div class="flex items-center gap-3">
+            <span class="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-xs font-black">
+              {{ totalQuantity() }}
+            </span>
+            <span class="text-sm font-black tracking-tight">Ver Carrito</span>
           </div>
-          <strong class="text-sm font-black text-primary-700">{{ subtotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
-        </div>
-        <button data-checkout-target type="button" class="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary-700 px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition hover:bg-primary-600" (click)="openCheckoutDrawer()">Revisar pedido</button>
+          <strong class="text-base font-black">{{ subtotal() | currency: 'PEN' : 'S/ ' : '1.2-2' }}</strong>
+        </button>
       </div>
     }
   }

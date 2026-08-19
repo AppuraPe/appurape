@@ -1,4 +1,5 @@
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Auth;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
@@ -369,12 +370,17 @@ public class AuthService : IAuthService
             throw new NotFoundException("Authenticated user was not found.");
         }
 
+        var activeProfile = _currentUserService.ActiveProfile ?? UserProfiles.RoleToDefaultProfile(user.Role.ToString());
+        var effectiveRole = UserProfiles.ProfileToEffectiveRole(activeProfile);
+
         return await Task.FromResult(new CurrentUserResponse
         {
             UserId = user.Id,
             FullName = BuildFullName(user),
             Email = user.Email,
-            Role = user.Role.ToString(),
+            Role = effectiveRole,
+            PrimaryRole = user.Role.ToString(),
+            ActiveProfile = activeProfile,
             Status = user.Status.ToString(),
             TrustLevel = GetTrustLevel(user),
             TrustScore = GetTrustScore(user),
@@ -391,6 +397,66 @@ public class AuthService : IAuthService
             AvailableProfiles = GetAvailableProfiles(user),
             IsAuthenticated = true
         });
+    }
+
+    public async Task<AuthResponse> SwitchProfileAsync(SwitchProfileRequest request, CancellationToken cancellationToken = default)
+    {
+        if (!_currentUserService.IsAuthenticated || _currentUserService.UserId is null)
+        {
+            throw new UnauthorizedException("Tu sesión ha vencido. Inicia sesión nuevamente.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request?.Profile) || !UserProfiles.IsValidProfile(request.Profile.Trim()))
+        {
+            throw new AppException("Perfil solicitado no válido.");
+        }
+
+        var targetProfile = request.Profile.Trim();
+
+        var user = await _dbContext.Users
+            .Include(x => x.CustomerProfile)
+            .Include(x => x.OwnedRestaurants)
+            .Include(x => x.DriverProfile)
+            .Include(x => x.CollaboratorProfile)
+            .Include(x => x.CommunityCollaborator)
+            .FirstOrDefaultAsync(x => x.Id == _currentUserService.UserId.Value, cancellationToken)
+            ?? throw new NotFoundException("Usuario no encontrado.");
+
+        if (user.Status == UserStatus.Suspended)
+        {
+            throw new UnauthorizedException("Tu cuenta se encuentra suspendida.");
+        }
+
+        var availableProfiles = GetAvailableProfiles(user);
+        if (!availableProfiles.Contains(targetProfile, StringComparer.Ordinal))
+        {
+            if (targetProfile == UserProfiles.Collaborator)
+            {
+                if (user.CollaboratorProfile is null)
+                {
+                    throw new ForbiddenException("Solicita la verificación para hacer favores.");
+                }
+                throw new ForbiddenException("Tu perfil de colaborador aún no está aprobado.");
+            }
+
+            throw new ForbiddenException("Este modo aún no está disponible para tu cuenta.");
+        }
+
+        // Automatic creation of CustomerProfile if switching to Customer
+        if (targetProfile == UserProfiles.Customer && user.CustomerProfile is null)
+        {
+            var customerProfile = new CustomerProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                User = user
+            };
+            _dbContext.Add(customerProfile);
+            user.CustomerProfile = customerProfile;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return CreateAuthResponse(user, targetProfile);
     }
 
     private async Task EnsureEmailIsUniqueAsync(string email, CancellationToken cancellationToken)
@@ -450,15 +516,23 @@ public class AuthService : IAuthService
         };
     }
 
-    private AuthResponse CreateAuthResponse(User user)
+    private AuthResponse CreateAuthResponse(User user, string? requestedProfile = null)
     {
+        var availableProfiles = GetAvailableProfiles(user);
+        var activeProfile = string.IsNullOrWhiteSpace(requestedProfile)
+            ? UserProfiles.RoleToDefaultProfile(user.Role.ToString())
+            : requestedProfile;
+        var effectiveRole = UserProfiles.ProfileToEffectiveRole(activeProfile);
+
         return new AuthResponse
         {
-            Token = _jwtTokenService.GenerateToken(user),
+            Token = _jwtTokenService.GenerateToken(user, activeProfile),
             UserId = user.Id,
             FullName = BuildFullName(user),
             Email = user.Email,
-            Role = user.Role.ToString(),
+            Role = effectiveRole,
+            PrimaryRole = user.Role.ToString(),
+            ActiveProfile = activeProfile,
             Status = user.Status.ToString(),
             TrustLevel = GetTrustLevel(user),
             TrustScore = GetTrustScore(user),
@@ -472,7 +546,7 @@ public class AuthService : IAuthService
             HasCollaboratorProfile = user.CollaboratorProfile is not null,
             CollaboratorApprovalStatus = user.CollaboratorProfile?.ApprovalStatus.ToString(),
             IsCollaboratorIdentityVerified = user.CollaboratorProfile?.IsIdentityVerified,
-            AvailableProfiles = GetAvailableProfiles(user)
+            AvailableProfiles = availableProfiles
         };
     }
 
@@ -569,29 +643,33 @@ public class AuthService : IAuthService
     {
         var profiles = new List<string>();
 
-        if (user.CustomerProfile is not null || user.Role == UserRole.Customer)
+        if (user.Role is UserRole.Customer or UserRole.Restaurant or UserRole.Driver || user.CustomerProfile is not null)
         {
-            profiles.Add("Customer");
+            profiles.Add(UserProfiles.Customer);
         }
 
         if (user.OwnedRestaurants.Any() || user.Role == UserRole.Restaurant)
         {
-            profiles.Add("BusinessOwner");
+            profiles.Add(UserProfiles.BusinessOwner);
         }
 
         if (user.DriverProfile is not null || user.Role == UserRole.Driver)
         {
-            profiles.Add("Driver");
+            profiles.Add(UserProfiles.Driver);
         }
 
-        if (user.CollaboratorProfile is not null || user.CommunityCollaborator is not null)
+        var isApprovedCollaborator = user.CollaboratorProfile is not null &&
+                                     user.CollaboratorProfile.ApprovalStatus == ApprovalStatus.Approved &&
+                                     user.CollaboratorProfile.IsIdentityVerified;
+
+        if (isApprovedCollaborator)
         {
-            profiles.Add("Collaborator");
+            profiles.Add(UserProfiles.Collaborator);
         }
 
         if (user.Role == UserRole.Admin)
         {
-            profiles.Add("Admin");
+            profiles.Add(UserProfiles.Admin);
         }
 
         return profiles.Distinct(StringComparer.Ordinal).ToArray();

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { publicPortalGuard } from './core/guards/public-portal.guard';
 
 const businessOpsChildren: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -78,46 +79,51 @@ export const routes: Routes = [
       },
       {
         path: 'restaurants',
+        canActivate: [publicPortalGuard],
         loadComponent: () => import('./features/businesses/business-list-page.component').then((m) => m.BusinessListPageComponent),
       },
       {
         path: 'businesses',
+        canActivate: [publicPortalGuard],
         loadComponent: () => import('./features/businesses/business-list-page.component').then((m) => m.BusinessListPageComponent),
       },
       {
         path: 'businesses/:businessId/products/:productId',
+        canActivate: [publicPortalGuard],
         loadComponent: () => import('./features/businesses/business-product-detail-page.component').then((m) => m.BusinessProductDetailPageComponent),
       },
       {
         path: 'restaurants/:id',
+        canActivate: [publicPortalGuard],
         loadComponent: () => import('./features/businesses/business-detail-page.component').then((m) => m.BusinessDetailPageComponent),
       },
       {
         path: 'businesses/:id',
+        canActivate: [publicPortalGuard],
         loadComponent: () => import('./features/businesses/business-detail-page.component').then((m) => m.BusinessDetailPageComponent),
       },
       {
         path: 'community',
         canActivate: [authGuard, roleGuard],
-        data: { roles: ['Customer', 'Driver'] },
+        data: { roles: ['Customer'] },
         loadComponent: () => import('./features/community/community-hub-page.component').then((m) => m.CommunityHubPageComponent),
       },
       {
         path: 'favors',
         canActivate: [authGuard, roleGuard],
-        data: { roles: ['Customer', 'Driver'] },
+        data: { roles: ['Customer'] },
         loadComponent: () => import('./features/community/community-hub-page.component').then((m) => m.CommunityHubPageComponent),
       },
       {
         path: 'community/requests/:id',
         canActivate: [authGuard, roleGuard],
-        data: { roles: ['Customer', 'Driver'] },
+        data: { roles: ['Customer'] },
         loadComponent: () => import('./features/community/community-request-detail-page.component').then((m) => m.CommunityRequestDetailPageComponent),
       },
       {
         path: 'favors/:id',
         canActivate: [authGuard, roleGuard],
-        data: { roles: ['Customer', 'Driver'] },
+        data: { roles: ['Customer'] },
         loadComponent: () => import('./features/community/community-request-detail-page.component').then((m) => m.CommunityRequestDetailPageComponent),
       },
       {
@@ -251,6 +257,10 @@ export const routes: Routes = [
           {
             path: 'orders/:orderId',
             loadComponent: () => import('./features/driver/driver-order-detail-page.component').then((m) => m.DriverOrderDetailPageComponent),
+          },
+          {
+            path: 'profile',
+            loadComponent: () => import('./features/driver/driver-profile-page.component').then((m) => m.DriverProfilePageComponent),
           },
         ],
       },
