@@ -30,6 +30,7 @@ interface NavItem {
   helper?: string;
   exact?: boolean;
   icon?: typeof Home;
+  badge?: () => number;
 }
 
 @Component({
@@ -38,48 +39,6 @@ interface NavItem {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, StatusBadgeComponent, MobilePageShellComponent],
   template: `
     <div class="grid min-h-dvh bg-slate-50 xl:grid-cols-[304px_minmax(0,1fr)]">
-      <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-slate-50/95 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top,0px))] backdrop-blur xl:hidden">
-        <div class="flex min-w-0 items-center justify-between gap-3">
-          <a class="flex min-w-0 items-center gap-3 text-slate-950 no-underline" [routerLink]="defaultRoute()">
-            @if (headerImageUrl() && !headerImageFailed()) {
-              <img
-                class="h-9 w-9 shrink-0 rounded-xl border border-slate-200 bg-white object-cover"
-                [src]="headerImageUrl()!"
-                [alt]="headerImageAlt()"
-                (error)="markHeaderImageFailed()"
-              />
-            } @else {
-              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-700 text-xs font-black uppercase text-white shadow-lg shadow-primary-700/20">{{ headerInitials() }}</span>
-            }
-            <span class="min-w-0">
-              <strong class="block truncate text-sm font-black leading-5">{{ navHeading() }}</strong>
-              <small class="block truncate text-xs font-semibold text-slate-500">
-                {{ mobileHeaderSubtitle() }}
-              </small>
-            </span>
-          </a>
-
-          <div class="flex shrink-0 items-center gap-2">
-            <a
-              class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition active:scale-[0.98]"
-              routerLink="/notifications"
-              aria-label="Notificaciones"
-            >
-              <lucide-angular class="h-5 w-5" [img]="bellIcon" aria-hidden="true" />
-              @if (unreadNotificationCount() > 0) {
-                <span class="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-slate-50 bg-primary-600 px-1 text-[9px] font-black leading-none text-white">{{ unreadNotificationCount() > 99 ? '99+' : unreadNotificationCount() }}</span>
-              }
-            </a>
-            <a
-              class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-black text-primary-700 shadow-sm transition active:scale-[0.98]"
-              [routerLink]="mobileAccountRoute()"
-            >
-              Cuenta
-            </a>
-          </div>
-        </div>
-      </header>
-
       <aside class="z-20 hidden flex-col gap-3 border-b border-slate-200 bg-white/95 px-3 pb-3 pt-[max(12px,env(safe-area-inset-top,0px))] backdrop-blur xl:sticky xl:top-0 xl:flex xl:h-screen xl:justify-between xl:gap-5 xl:overflow-y-auto xl:border-r xl:border-b-0 xl:bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.12),transparent_32%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] xl:p-4 xl:backdrop-blur-0">
         <div class="grid gap-4">
           <a class="flex items-center text-primary-900 no-underline" [routerLink]="defaultRoute()">
@@ -153,7 +112,7 @@ interface NavItem {
           [backgroundClass]="'bg-slate-50'"
           [bottomSpacingClass]="'pb-[calc(88px+env(safe-area-inset-bottom,0px))]'"
           [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'"
-          [extraClass]="'px-4 pt-4 md:px-6 md:pt-5 xl:px-6 xl:pt-0'"
+          [extraClass]="'px-4 pt-[max(18px,env(safe-area-inset-top,0px))] md:px-6 md:pt-6 xl:px-6 xl:pt-0'"
         >
           <router-outlet />
         </app-mobile-page-shell>
@@ -166,15 +125,22 @@ interface NavItem {
         >
           @for (item of mobileNavItems(); track item.path) {
             <a
-              routerLinkActive="text-primary-700"
+              routerLinkActive="text-primary-700 font-extrabold"
               [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
               [routerLink]="item.path"
-              class="group flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center text-[0.68rem] font-black leading-tight text-slate-500 no-underline transition active:scale-[0.98]"
+              class="group relative flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center text-[0.68rem] font-bold leading-tight text-slate-500 no-underline transition active:scale-[0.98]"
             >
-              @if (item.icon) {
-                <lucide-angular class="h-5 w-5 transition group-[.text-primary-700]:scale-110" [img]="item.icon" aria-hidden="true"></lucide-angular>
-              }
-              <span class="line-clamp-2">{{ item.label }}</span>
+              <div class="relative">
+                @if (item.icon) {
+                  <lucide-angular class="h-5 w-5 transition group-[.text-primary-700]:scale-110" [img]="item.icon" aria-hidden="true"></lucide-angular>
+                }
+                @if (item.badge && item.badge()! > 0) {
+                  <span class="absolute -right-2 -top-1.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-primary-600 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
+                    {{ item.badge()! > 99 ? '99+' : item.badge()! }}
+                  </span>
+                }
+              </div>
+              <span class="line-clamp-1">{{ item.label }}</span>
             </a>
           }
         </div>
@@ -275,7 +241,7 @@ export class OpsLayoutComponent {
     }
 
     if (role === 'Driver') {
-      return '/account-settings';
+      return '/driver/profile';
     }
 
     return this.authService.getDefaultRoute();
@@ -299,6 +265,7 @@ export class OpsLayoutComponent {
           { label: 'Pedidos disponibles', path: '/driver/orders', helper: 'Listos para tomar' },
           { label: 'Pedido activo', path: '/driver/active-order', helper: 'Entrega en curso', exact: false },
           { label: 'Mis pedidos', path: '/driver/orders/my', helper: 'Historial operativo', exact: false },
+          { label: 'Mi perfil', path: '/driver/profile', helper: 'Cuenta y confianza' },
         ];
       case 'Admin':
         return [
@@ -317,7 +284,7 @@ export class OpsLayoutComponent {
           { label: 'Todos los drivers', path: '/admin/drivers', helper: 'Estados y detalle', exact: false },
         ];
       default:
-        return [{ label: 'Favores', path: '/community', helper: 'Solicitudes y trayectos', exact: false }];
+        return [{ label: 'Inicio', path: this.authService.getDefaultRoute(), helper: 'Panel principal' }];
     }
   });
 
@@ -329,6 +296,7 @@ export class OpsLayoutComponent {
         return [
           { label: 'Pedidos', path: '/business/orders', exact: false, icon: ClipboardList },
           { label: 'Catálogo', path: '/business/menu/items', exact: false, icon: Package },
+          { label: 'Avisos', path: '/notifications', exact: true, icon: Bell, badge: () => this.unreadNotificationCount() },
           { label: 'Perfil', path: '/business/profile', exact: false, icon: Store },
           { label: 'Más', path: '/business/dashboard', exact: true, icon: Ellipsis },
         ];
@@ -336,21 +304,22 @@ export class OpsLayoutComponent {
         return [
           { label: 'Disponibles', path: '/driver/orders', exact: true, icon: Bike },
           { label: 'Activo', path: '/driver/active-order', exact: false, icon: ClipboardList },
+          { label: 'Avisos', path: '/notifications', exact: true, icon: Bell, badge: () => this.unreadNotificationCount() },
           { label: 'Historial', path: '/driver/orders/my', exact: false, icon: Tags },
-          { label: 'Cuenta', path: '/account-settings', exact: true, icon: UserRound },
+          { label: 'Perfil', path: '/driver/profile', exact: false, icon: UserRound },
         ];
       case 'Admin':
         return [
           { label: 'Inicio', path: '/admin/dashboard', exact: true, icon: Home },
           { label: 'Pagos', path: '/admin/payments', exact: false, icon: CreditCard },
+          { label: 'Avisos', path: '/notifications', exact: true, icon: Bell, badge: () => this.unreadNotificationCount() },
           { label: 'Comisiones', path: '/admin/commissions', exact: false, icon: CircleDollarSign },
-          { label: 'Liquidar', path: '/admin/settlements', exact: false, icon: ReceiptText },
           { label: 'Negocios', path: '/admin/businesses', exact: false, icon: Store },
         ];
       default:
         return [
           { label: 'Inicio', path: this.authService.getDefaultRoute(), exact: true, icon: Home },
-          { label: 'Favores', path: '/community', exact: false, icon: HeartHandshake },
+          { label: 'Avisos', path: '/notifications', exact: true, icon: Bell, badge: () => this.unreadNotificationCount() },
         ];
     }
   });

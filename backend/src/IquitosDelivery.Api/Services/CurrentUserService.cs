@@ -25,6 +25,10 @@ public class CurrentUserService : ICurrentUserService
 
     public string? Role => GetClaim(ClaimTypes.Role);
 
+    public string? ActiveProfile => GetClaim("active_profile");
+
+    public string? PrimaryRole => GetClaim("primary_role");
+
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
     private string? GetClaim(string claimType)

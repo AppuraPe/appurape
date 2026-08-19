@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ArrowLeft, Home, LockKeyhole, LucideAngularModule, ShieldAlert } from 'lucide-angular';
+import { AuthService } from '../../core/services/auth.service';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -50,7 +51,7 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
               <lucide-angular class="h-4 w-4" [img]="arrowLeftIcon" aria-hidden="true"></lucide-angular>
               Ir al login
             </app-button>
-            <app-button size="lg" variant="ghost" [routerLink]="'/'">
+            <app-button size="lg" variant="ghost" [routerLink]="defaultRoute()">
               <lucide-angular class="h-4 w-4" [img]="homeIcon" aria-hidden="true"></lucide-angular>
               Ir al inicio
             </app-button>
@@ -61,8 +62,12 @@ import { AppSurfaceCardComponent } from '../../shared/components/app-surface-car
   `,
 })
 export class UnauthorizedPageComponent {
+  private readonly authService = inject(AuthService);
+
   readonly shieldAlertIcon = ShieldAlert;
   readonly lockIcon = LockKeyhole;
   readonly arrowLeftIcon = ArrowLeft;
   readonly homeIcon = Home;
+
+  readonly defaultRoute = computed(() => this.authService.getDefaultRoute());
 }

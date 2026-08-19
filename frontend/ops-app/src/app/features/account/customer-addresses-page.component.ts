@@ -17,11 +17,15 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
 import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
 
+import { LucideAngularModule, MapPin, Navigation, Pencil, Plus, Trash2 } from 'lucide-angular';
+import { buildGoogleMapsUrl } from '../../core/utils/maps.utils';
+
 @Component({
   selector: 'app-customer-addresses-page',
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    LucideAngularModule,
     MobilePageShellComponent,
     AppBackButtonComponent,
     InternalPageSectionHeaderComponent,
@@ -35,6 +39,13 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
   templateUrl: './customer-addresses-page.component.html',
 })
 export class CustomerAddressesPageComponent {
+  readonly pencilIcon = Pencil;
+  readonly trashIcon = Trash2;
+  readonly plusIcon = Plus;
+  readonly mapPinIcon = MapPin;
+  readonly navigationIcon = Navigation;
+  readonly buildGoogleMapsUrl = buildGoogleMapsUrl;
+  readonly isDetectingLocation = signal(false);
   private readonly formBuilder = inject(FormBuilder);
   private readonly customerAddressesApi = inject(CustomerAddressesApiService);
   private readonly zonesApi = inject(ZonesApiService);
@@ -284,6 +295,34 @@ export class CustomerAddressesPageComponent {
       reference: raw.reference.trim(),
       zoneId: raw.zoneId,
     };
+  }
+
+  detectCurrentLocation(): void {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.notificationService.error('Tu dispositivo no soporta geolocalización.');
+      return;
+    }
+
+    this.isDetectingLocation.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.isDetectingLocation.set(false);
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
+        const currentLine = this.addressForm.controls.addressLine.value;
+        if (!currentLine) {
+          this.addressForm.patchValue({
+            addressLine: `Ubicación GPS (${lat}, ${lng})`,
+          });
+        }
+        this.notificationService.success('Ubicación GPS detectada correctamente.');
+      },
+      (error) => {
+        this.isDetectingLocation.set(false);
+        this.notificationService.error('No se pudo obtener la ubicación GPS. Verifica los permisos de tu dispositivo.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
   }
 
   private readonly sortAddresses = (left: CustomerAddressResponse, right: CustomerAddressResponse): number => {

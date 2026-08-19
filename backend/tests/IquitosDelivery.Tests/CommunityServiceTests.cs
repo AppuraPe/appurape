@@ -501,6 +501,40 @@ public class CommunityServiceTests
         return (requesterUserId, collaboratorUserId, collaboratorId, outsiderUserId);
     }
 
+    [Fact]
+    public async Task GetRequestsAsync_ViewMy_ReturnsOnlyRequesterRequests()
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedCommunityFixtureAsync(dbContext);
+        var requesterService = CreateCommunityService(dbContext, fixture.RequesterUserId, UserRole.Customer);
+        var created = await requesterService.CreateRequestAsync(CreateValidRequest());
+
+        var list = await requesterService.GetRequestsAsync(new CommunityRequestQueryRequest { View = "my" });
+
+        Assert.Single(list);
+        Assert.Equal(created.Id, list[0].Id);
+        Assert.True(list[0].IsMine);
+    }
+
+    [Fact]
+    public async Task GetRequestsAsync_ViewAvailable_ExcludesOwnAndConfirmedRequests()
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedCommunityFixtureAsync(dbContext);
+        var requesterService = CreateCommunityService(dbContext, fixture.RequesterUserId, UserRole.Customer);
+        var collaboratorService = CreateCommunityService(dbContext, fixture.CollaboratorUserId, UserRole.Customer);
+
+        var created1 = await requesterService.CreateRequestAsync(CreateValidRequest());
+
+        // Collaborator sees created1 in available
+        var availableList = await collaboratorService.GetRequestsAsync(new CommunityRequestQueryRequest { View = "available" });
+        Assert.Contains(availableList, x => x.Id == created1.Id);
+
+        // Requester does NOT see their own request in available
+        var requesterAvailable = await requesterService.GetRequestsAsync(new CommunityRequestQueryRequest { View = "available" });
+        Assert.DoesNotContain(requesterAvailable, x => x.Id == created1.Id);
+    }
+
     private sealed class TestCurrentUserService(Guid userId, string role) : ICurrentUserService
     {
         public Guid? UserId => userId;

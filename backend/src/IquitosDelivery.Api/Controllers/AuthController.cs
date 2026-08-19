@@ -279,4 +279,13 @@ public class AuthController : ControllerBase
         var response = await _authService.GetCurrentUserAsync(cancellationToken);
         return Ok(response);
     }
+
+    [HttpPost("switch-profile")]
+    [Authorize]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AuthResponse>> SwitchProfile([FromBody] SwitchProfileRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _authService.SwitchProfileAsync(request, cancellationToken);
+        return Ok(response);
+    }
 }

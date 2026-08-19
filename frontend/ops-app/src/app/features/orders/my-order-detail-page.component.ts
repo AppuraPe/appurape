@@ -13,6 +13,7 @@ import {
   ScrollText,
   Ticket,
   Truck,
+  Navigation,
 } from 'lucide-angular';
 import { CustomerOrderDetailResponse, OrderCollaboratorPickupQuoteResponse, OrderDeliveryConfirmationResponse, OrderFulfillmentOptionsResponse, RefundResponse } from '../../core/models/orders.models';
 import { CustomerAddressResponse } from '../../core/models/customer-addresses.models';
@@ -20,6 +21,7 @@ import { CustomerAddressesApiService } from '../../core/services/customer-addres
 import { NotificationService } from '../../core/services/notification.service';
 import { OrdersApiService } from '../../core/services/orders-api.service';
 import { getApiErrorMessage, hasText } from '../../core/utils/api-utils';
+import { buildGoogleMapsUrl } from '../../core/utils/maps.utils';
 import { ActionChipRowComponent } from '../../shared/components/action-chip-row.component';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
@@ -143,6 +145,8 @@ export class MyOrderDetailPageComponent {
   readonly receiptIcon = ReceiptText;
   readonly packageIcon = Package;
   readonly calendarIcon = CalendarDays;
+  readonly navigationIcon = Navigation;
+  readonly buildGoogleMapsUrl = buildGoogleMapsUrl;
   readonly clockIcon = Clock3;
   readonly deliveryIcon = MapPinned;
   readonly timelineIcon = ScrollText;
@@ -612,6 +616,19 @@ export class MyOrderDetailPageComponent {
       default:
         return this.packageIcon;
     }
+  }
+
+  isCustomerStepComplete(currentStatus: string, stepKey: string): boolean {
+    const sequence = ['Created', 'Accepted', 'Preparing', 'ReadyForPickup', 'Assigned', 'PickedUp', 'OnTheWay', 'Delivered'];
+    const stepPositions: Record<string, number> = {
+      Created: 0,
+      Preparing: 2,
+      OnTheWay: 6,
+      Delivered: 7,
+    };
+    const currentIdx = sequence.indexOf(currentStatus);
+    const targetIdx = stepPositions[stepKey] ?? 0;
+    return currentIdx >= targetIdx;
   }
 
   private findTrackingState(key: (typeof this.trackingStates)[number]['key']) {

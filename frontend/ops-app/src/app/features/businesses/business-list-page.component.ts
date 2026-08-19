@@ -1,4 +1,4 @@
-﻿import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
@@ -25,10 +25,10 @@ import { BusinessesFiltersCardComponent } from './businesses-filters-card.compon
 import { BusinessesBusinessCardComponent } from './businesses-business-card.component';
 import { BusinessesHeroSectionComponent } from './businesses-hero-section.component';
 import { BusinessesPageContainerComponent } from './businesses-page-container.component';
-import { MenuCardComponent } from '../restaurants/components/menu-card.component';
-import { FoodResultCardComponent } from '../restaurants/components/food-result-card.component';
-import { SectionHeaderComponent } from '../restaurants/components/section-header.component';
-import { StateCardComponent } from '../restaurants/components/state-card.component';
+import { MenuCardComponent } from './menu-card.component';
+import { FoodResultCardComponent } from './food-result-card.component';
+import { SectionHeaderComponent } from './section-header.component';
+import { StateCardComponent } from './state-card.component';
 import { MobileExploreHeaderComponent } from './mobile-explore-header.component';
 import { BusinessFilterSheetComponent } from './business-filter-sheet.component';
 import { PopularCategoryCarouselComponent } from './popular-category-carousel.component';

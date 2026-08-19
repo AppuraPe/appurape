@@ -2,7 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CommunityApiService } from '../../core/services/community-api.service';
@@ -24,11 +24,17 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
 import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
+import { LucideAngularModule, MapPin, Navigation, Sparkles, Store, ShieldCheck, Clock, CheckCircle2, ArrowRight } from 'lucide-angular';
 
-type RequestScope = 'active' | 'completed' | 'cancelled' | 'available' | 'taken' | 'history';
-type HubMode = 'requester' | 'collaborator';
-type HubWarning = { title: string; message: string };
-type HubLoadResult<T> = { data: T; warning: HubWarning | null };
+export type CommunityMode =
+  | 'customer'
+  | 'collaborator'
+  | 'driver'
+  | 'business-blocked'
+  | 'admin-redirect';
+
+type CustomerScope = 'active' | 'completed' | 'cancelled';
+type CollaboratorScope = 'available' | 'taken' | 'history';
 
 @Component({
   selector: 'app-community-hub-page',
@@ -38,6 +44,7 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
     DatePipe,
     ReactiveFormsModule,
     RouterLink,
+    LucideAngularModule,
     AppBackButtonComponent,
     AppNoticeComponent,
     StatusBadgeComponent,
@@ -52,600 +59,533 @@ type HubLoadResult<T> = { data: T; warning: HubWarning | null };
     <app-mobile-page-shell
       [topSafeArea]="false"
       extraClass="space-y-4 px-4 pt-4 sm:px-5 lg:px-0 lg:pt-0"
-      bottomSpacingClass="pb-0"
+      bottomSpacingClass="pb-6"
     >
-      <app-back-button fallbackUrl="/businesses" label="Volver a negocios" />
+      <app-back-button [fallbackUrl]="defaultBackUrl()" label="Volver" />
 
-      <section class="grid min-w-0 gap-3 rounded-[20px] border border-slate-200/80 bg-white p-3.5 shadow-sm sm:p-4">
-        <app-internal-page-section-header
-          eyebrow="Favores"
-          [title]="pageTitle()"
-          [subtitle]="pageSubtitle()"
-        />
-
-        @if (isCustomerView()) {
-          <div class="grid min-w-0 grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Elegir cómo participar en Favores">
-            <button
-              type="button"
-              class="min-h-11 min-w-0 rounded-xl px-2 text-xs font-semibold transition min-[360px]:text-sm"
-              [class]="hubModeClass('requester')"
-              (click)="selectHubMode('requester')"
-            >
-              Necesito ayuda
-            </button>
-            <button
-              type="button"
-              class="min-h-11 min-w-0 rounded-xl px-2 text-xs font-semibold transition min-[360px]:text-sm"
-              [class]="hubModeClass('collaborator')"
-              (click)="selectHubMode('collaborator')"
-            >
-              Quiero ayudar
-            </button>
+      <!-- MODO: NEGOCIO BLOQUEADO -->
+      @if (communityMode() === 'business-blocked') {
+        <app-surface-card variant="hero" extraClass="p-5 sm:p-6 text-center space-y-4">
+          <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-100 text-amber-800 shadow-xs">
+            <i-lucide [img]="storeIcon" class="h-7 w-7"></i-lucide>
           </div>
-        }
-      </section>
-
-      @if (errorMessage()) {
-        <app-notice tone="danger" title="No pudimos cargar tus solicitudes" [message]="errorMessage()" />
-      }
-
-      @if (successMessage()) {
-        <app-notice tone="success" title="Solicitud publicada" [message]="successMessage()" />
-      }
-
-      @for (warning of hubWarnings(); track warning.title) {
-        <app-notice tone="warning" [title]="warning.title" [message]="warning.message" />
-      }
-
-      @if (isLoading()) {
-        <app-unified-loading-state label="Cargando favores" />
-      } @else {
-        @if (isCustomerView() && isCollaboratorView() && !isApprovedCollaborator()) {
-          <app-surface-card variant="page" extraClass="grid gap-4 p-4 sm:p-5">
-            <app-internal-page-section-header eyebrow="Identidad" title="Valida tu perfil de colaborador" subtitle="Necesitamos comparar tu perfil, DNI y una selfie tomada ahora antes de permitirte ayudar." [meta]="verificationStatusLabel()" />
-            <app-notice tone="warning" title="Revisión administrativa" message="La cámara frontal se abrirá para una selfie en vivo. DNI y selfie se guardan de forma privada y solo Administración puede revisarlos." />
-            @if (verificationStatus() === 'PendingVerification') {
-              <app-notice tone="info" title="Solicitud enviada" message="Tu identidad está pendiente de revisión. Te avisaremos cuando Administración termine la validación." />
-            } @else {
-              <form class="grid gap-4" novalidate (ngSubmit)="submitCollaboratorVerification()">
-                <label class="grid min-w-0 gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Foto de perfil</span>
-                  <input
-                    class="min-h-11 min-w-0 rounded-2xl border border-slate-200 p-2 text-sm"
-                    [class.border-red-400]="!!verificationProfileError()"
-                    [attr.aria-invalid]="!!verificationProfileError()"
-                    [attr.aria-describedby]="verificationProfileError() ? 'verification-profile-error' : null"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    (change)="selectVerificationFile($event, 'profile')"
-                  />
-                  @if (verificationProfileName()) {
-                    <small class="break-all text-xs font-semibold text-emerald-700">Seleccionada: {{ verificationProfileName() }}</small>
-                  }
-                  @if (verificationProfileError()) {
-                    <small id="verification-profile-error" class="text-xs font-semibold leading-5 text-red-600" role="alert">{{ verificationProfileError() }}</small>
-                  } @else {
-                    <small class="text-xs leading-5 text-slate-500">JPG, PNG o WEBP. Máximo 5 MB.</small>
-                  }
-                </label>
-
-                <label class="grid min-w-0 gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Foto del DNI</span>
-                  <input
-                    class="min-h-11 min-w-0 rounded-2xl border border-slate-200 p-2 text-sm"
-                    [class.border-red-400]="!!verificationDniError()"
-                    [attr.aria-invalid]="!!verificationDniError()"
-                    [attr.aria-describedby]="verificationDniError() ? 'verification-dni-error' : null"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    (change)="selectVerificationFile($event, 'dni')"
-                  />
-                  @if (verificationDniName()) {
-                    <small class="break-all text-xs font-semibold text-emerald-700">Seleccionada: {{ verificationDniName() }}</small>
-                  }
-                  @if (verificationDniError()) {
-                    <small id="verification-dni-error" class="text-xs font-semibold leading-5 text-red-600" role="alert">{{ verificationDniError() }}</small>
-                  } @else {
-                    <small class="text-xs leading-5 text-slate-500">Toma una foto legible, sin reflejos y con los bordes completos.</small>
-                  }
-                </label>
-
-                <div class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Selfie en vivo</span>
-                  <app-button type="button" variant="secondary" block (click)="captureLiveSelfie()">{{ verificationSelfieReady() ? 'Volver a tomar selfie' : 'Abrir cámara frontal' }}</app-button>
-                  @if (verificationSelfieReady()) {
-                    <small class="text-xs font-semibold text-emerald-700">Selfie capturada correctamente.</small>
-                  } @else if (verificationSelfieError()) {
-                    <small class="text-xs font-semibold leading-5 text-red-600" role="alert">{{ verificationSelfieError() }}</small>
-                  } @else {
-                    <small class="text-xs leading-5 text-slate-500">Android solicitará permiso de cámara. La galería no se utiliza para esta evidencia.</small>
-                  }
-                </div>
-
-                @if (collaboratorConsentDocument(); as consent) {
-                  <div class="grid gap-1.5">
-                    <label class="flex items-start gap-3 rounded-2xl border p-3" [class.border-red-400]="!!verificationConsentError()" [class.border-slate-200]="!verificationConsentError()">
-                      <input class="mt-1 h-5 w-5 shrink-0" type="checkbox" [checked]="collaboratorConsentAccepted()" (change)="toggleCollaboratorConsent()" />
-                      <span class="min-w-0 text-xs leading-5 text-slate-600">Acepto el tratamiento privado de mi foto, DNI y selfie para verificar mi identidad. <a class="font-bold text-primary-700" [routerLink]="'/legal/document/' + consent.slug" target="_blank">Leer consentimiento</a>.</span>
-                    </label>
-                    @if (verificationConsentError()) {
-                      <small class="text-xs font-semibold leading-5 text-red-600" role="alert">{{ verificationConsentError() }}</small>
-                    }
-                  </div>
-                }
-                @if (verificationSubmissionError()) {
-                  <app-notice tone="danger" title="Revisa la solicitud" [message]="verificationSubmissionError()" />
-                }
-                <app-button type="button" block [disabled]="isSubmittingVerification()" (click)="submitCollaboratorVerification()">{{ isSubmittingVerification() ? 'Enviando validación...' : 'Enviar para validación' }}</app-button>
-              </form>
-            }
-          </app-surface-card>
-        }
-
-        @if (isCollaboratorView() && collaborator() && (!isCustomerView() || isApprovedCollaborator())) {
-        <details class="group min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
-          <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
-            <span class="min-w-0">
-              <strong class="block text-sm text-slate-950">Mi disponibilidad</strong>
-              <span class="block truncate text-xs text-slate-500">Configura cuándo quieres colaborar</span>
-            </span>
-            <span class="shrink-0 text-xs font-semibold text-red-500 group-open:hidden">Configurar</span>
-            <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
-          </summary>
-          <div class="grid gap-4 border-t border-slate-100 p-4 sm:p-5">
-          <app-internal-page-section-header
-            eyebrow="Tu perfil"
-            title="Participa como solicitante o colaborador"
-            subtitle="Activa tu disponibilidad y mantén tus rutas al día para recibir mejores coincidencias."
-            [meta]="availabilityStatusLabel(collaborator()!.availabilityStatus)"
-          />
-
-          <app-notice
-            [tone]="collaborator()!.isAvailable ? 'success' : 'warning'"
-            [title]="collaborator()!.isAvailable ? 'Disponibilidad activa' : 'Disponibilidad pausada'"
-            [message]="collaborator()!.isAvailable
-              ? 'Aparecerás para nuevas coincidencias mientras tu estado se mantenga disponible.'
-              : 'Puedes seguir publicando favores, pero no aparecerás como colaborador disponible hasta activarte.'"
-          />
-
-          <form class="grid gap-4" [formGroup]="availabilityForm" (ngSubmit)="saveAvailability()">
-            <div class="grid gap-3 sm:grid-cols-2">
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Disponibilidad general</span>
-                <select class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" formControlName="availabilityStatus">
-                  <option value="Disconnected">Desconectado</option>
-                  <option value="Available">Disponible</option>
-                  <option value="Busy">Ocupado</option>
-                </select>
-              </label>
-
-              <label class="flex min-h-11 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <span class="text-sm font-semibold text-slate-700">Mostrarme para coincidencias</span>
-                <input class="h-4 w-4" type="checkbox" formControlName="isAvailable" />
-              </label>
-
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Latitud actual</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="currentLatitude" />
-              </label>
-
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Longitud actual</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="currentLongitude" />
-              </label>
-
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Radio de cobertura (km)</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.1" min="1" formControlName="availabilityRadiusKm" />
-              </label>
-
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Disponible desde</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="datetime-local" formControlName="availableFromUtc" />
-              </label>
-
-              <label class="grid gap-2 sm:col-span-2">
-                <span class="text-sm font-semibold text-slate-700">Disponible hasta</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="datetime-local" formControlName="availableUntilUtc" />
-              </label>
-            </div>
-
-            <app-button type="submit" [disabled]="isSavingAvailability()" block>
-              {{ isSavingAvailability() ? 'Guardando disponibilidad...' : 'Guardar disponibilidad' }}
+          <div class="space-y-1.5">
+            <h1 class="text-xl font-black tracking-tight text-slate-900">Favores no disponible en modo negocio</h1>
+            <p class="text-xs text-slate-600 sm:text-sm max-w-md mx-auto">
+              Esta sección es exclusiva para solicitar encargos personales o realizar favores comunitarios. Cambia a modo Cliente con esta misma cuenta.
+            </p>
+          </div>
+          <div class="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-center">
+            <app-button variant="primary" (click)="switchToCustomer()">
+              Usar como Cliente
             </app-button>
-          </form>
-          </div>
-        </details>
-        }
-
-        @if (isRequesterView()) {
-        <details class="group min-w-0 overflow-hidden rounded-[20px] border border-red-100 bg-white shadow-sm">
-          <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
-            <span class="min-w-0">
-              <strong class="block text-sm text-slate-950">Publicar un favor</strong>
-              <span class="block truncate text-xs text-slate-500">Crea una solicitud válida por un máximo de 24 horas</span>
-            </span>
-            <span class="shrink-0 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 group-open:hidden">Nuevo</span>
-            <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
-          </summary>
-          <div class="grid gap-4 border-t border-red-50 p-4 sm:p-5">
-          <app-internal-page-section-header
-            eyebrow="Crear favor"
-            title="Nueva solicitud"
-            subtitle="Publica un encargo con origen, destino y recompensa. La red verá el favor y podrá postularse."
-          />
-
-          <form class="grid gap-4" [formGroup]="requestForm" (ngSubmit)="createRequest()">
-            <div class="grid gap-3 sm:grid-cols-2">
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Tipo de favor</span>
-                <select class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" formControlName="type">
-                  <option value="MarketPurchase">Compra de mercado</option>
-                  <option value="Errand">Encargo</option>
-                  <option value="ProductPickup">Recojo de productos</option>
-                  <option value="PackageDelivery">Entrega de paquetes</option>
-                  <option value="CompensatedFavor">Favor compensado</option>
-                </select>
-              </label>
-
-              <label class="grid min-w-0 gap-2">
-                <span class="text-sm font-semibold text-slate-700">Pago al colaborador</span>
-                <div class="relative min-w-0">
-                  <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-500">S/</span>
-                  <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700" type="number" step="0.01" min="0" formControlName="compensationAmount" />
-                </div>
-                <small class="text-xs leading-5 text-slate-500">La tarifa de servicio AppuraPe se muestra por separado antes de confirmar.</small>
-              </label>
-
-              <label class="grid gap-2 sm:col-span-2">
-                <span class="text-sm font-semibold text-slate-700">Título</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="title" />
-              </label>
-
-              <label class="grid gap-2 sm:col-span-2">
-                <span class="text-sm font-semibold text-slate-700">Descripción</span>
-                <textarea class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700" rows="3" formControlName="description"></textarea>
-              </label>
-
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Origen</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" />
-              </label>
-
-              <label class="grid gap-2">
-                <span class="text-sm font-semibold text-slate-700">Destino</span>
-                <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" />
-              </label>
-
-              <details class="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:col-span-2">
-                <summary class="cursor-pointer text-sm font-semibold text-slate-700">Ubicación precisa (opcional)</summary>
-                <p class="mt-1 text-xs leading-5 text-slate-500">Completa coordenadas solo si necesitas mejorar la coincidencia por cercanía.</p>
-                <div class="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
-              <label class="grid min-w-0 gap-2">
-                <span class="text-sm font-semibold text-slate-700">Latitud origen</span>
-                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLatitude" />
-              </label>
-
-              <label class="grid min-w-0 gap-2">
-                <span class="text-sm font-semibold text-slate-700">Longitud origen</span>
-                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLongitude" />
-              </label>
-
-              <label class="grid min-w-0 gap-2">
-                <span class="text-sm font-semibold text-slate-700">Latitud destino</span>
-                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLatitude" />
-              </label>
-
-              <label class="grid min-w-0 gap-2">
-                <span class="text-sm font-semibold text-slate-700">Longitud destino</span>
-                <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLongitude" />
-              </label>
-                </div>
-              </details>
-
-              <label class="grid gap-2 sm:col-span-2">
-                <span class="text-sm font-semibold text-slate-700">Fecha límite</span>
-                <input
-                  class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
-                  type="datetime-local"
-                  formControlName="deadlineUtc"
-                  [min]="deadlineMinimum()"
-                  [max]="deadlineMaximum()"
-                />
-                <small class="text-xs leading-5 text-slate-500">Debe vencer dentro de las próximas 24 horas.</small>
-              </label>
-            </div>
-
-            <app-button type="submit" [disabled]="isCreatingRequest()" block>
-              {{ isCreatingRequest() ? 'Publicando solicitud...' : 'Publicar solicitud' }}
+            <app-button variant="secondary" routerLink="/business/dashboard">
+              Volver al negocio
             </app-button>
-          </form>
           </div>
-        </details>
-        }
+        </app-surface-card>
+      }
 
-        <div class="grid gap-4">
-          @if (isCollaboratorView() && (!isCustomerView() || isApprovedCollaborator())) {
-          <details class="group order-2 min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
-            <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
-              <span class="min-w-0">
-                <strong class="block text-sm text-slate-950">Mis trayectos habituales</strong>
-                <span class="block truncate text-xs text-slate-500">{{ routes().length }} rutas para mejorar coincidencias</span>
-              </span>
-              <span class="shrink-0 text-xs font-semibold text-red-500 group-open:hidden">Gestionar</span>
-              <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
-            </summary>
-            <div class="grid gap-4 border-t border-slate-100 p-4 sm:p-5">
-            <app-internal-page-section-header
-              eyebrow="Tus trayectos"
-              title="Rutas para mejorar coincidencias"
-              subtitle="Define trayectos habituales para recibir mejores coincidencias cuando haya favores compatibles."
+      <!-- MODO: ADMIN REDIRECT -->
+      @else if (communityMode() === 'admin-redirect') {
+        <app-surface-card variant="hero" extraClass="p-5 sm:p-6 text-center space-y-4">
+          <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-800 shadow-xs">
+            <i-lucide [img]="shieldIcon" class="h-7 w-7"></i-lucide>
+          </div>
+          <div class="space-y-1.5">
+            <h1 class="text-xl font-black tracking-tight text-slate-900">Administración de Favores</h1>
+            <p class="text-xs text-slate-600 sm:text-sm max-w-md mx-auto">
+              Como administrador, gestiona los favores y las verificaciones desde el panel de control.
+            </p>
+          </div>
+          <div class="pt-2">
+            <app-button variant="primary" routerLink="/admin/dashboard">
+              Ir al panel de administración
+            </app-button>
+          </div>
+        </app-surface-card>
+      }
+
+      <!-- MODO: DRIVER SIN PERFIL COLABORADOR -->
+      @else if (communityMode() === 'driver') {
+        <section class="grid min-w-0 gap-3 rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm">
+          <app-internal-page-section-header
+            eyebrow="Favores"
+            title="Colaboración comunitaria"
+            subtitle="Para tomar encargos comunitarios, activa y valida tu perfil de colaborador."
+          />
+          @if (isApprovedCollaborator()) {
+            <app-notice
+              tone="success"
+              title="Perfil de colaborador aprobado"
+              message="Ya estás verificado como colaborador. Cambia a modo Colaborador para tomar favores disponibles."
             />
-
-            @if (routeEditingId()) {
-              <app-notice
-                tone="warning"
-                title="Editando trayecto"
-                message="Estás actualizando una ruta existente. Puedes limpiar el formulario si prefieres crear una nueva."
-              />
-            }
-
-            <form class="grid gap-4" [formGroup]="routeForm" (ngSubmit)="saveRoute()">
-              <div class="grid gap-3 sm:grid-cols-2">
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Origen</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" />
-                </label>
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Destino</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" />
-                </label>
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Latitud origen</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLatitude" />
-                </label>
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Longitud origen</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="originLongitude" />
-                </label>
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Latitud destino</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLatitude" />
-                </label>
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Longitud destino</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.000001" formControlName="destinationLongitude" />
-                </label>
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Tiempo estimado (min)</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" min="1" formControlName="estimatedMinutes" />
-                </label>
-                <label class="grid gap-2">
-                  <span class="text-sm font-semibold text-slate-700">Desvío permitido (km)</span>
-                  <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="number" step="0.1" min="1" formControlName="deviationRadiusKm" />
-                </label>
-                <label class="flex min-h-11 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:col-span-2">
-                  <span class="text-sm font-semibold text-slate-700">Ruta activa</span>
-                  <input class="h-4 w-4" type="checkbox" formControlName="isActive" />
-                </label>
-              </div>
-
-              <div class="grid gap-3 sm:grid-cols-2">
-                <app-button variant="secondary" type="submit" [disabled]="isSavingRoute()" block>
-                  {{ isSavingRoute() ? 'Guardando trayecto...' : routeEditingId() ? 'Actualizar trayecto' : 'Guardar trayecto' }}
-                </app-button>
-                @if (routeEditingId()) {
-                  <app-button variant="ghost" type="button" (click)="resetRouteForm()" block>
-                    Limpiar edición
-                  </app-button>
-                }
-              </div>
-            </form>
-
-            @if (!routes().length) {
-              <app-unified-empty-state
-                eyebrow="Trayectos"
-                title="Aún no tienes rutas guardadas"
-                message="Guarda al menos un trayecto para recibir mejores coincidencias con favores cercanos."
-              />
-            } @else {
-              <div class="grid gap-3">
-                @for (route of routes(); track route.id) {
-                  <button
-                    class="grid gap-2 rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-red-200"
-                    type="button"
-                    (click)="editRoute(route)"
-                  >
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="min-w-0">
-                        <p class="text-sm font-extrabold text-slate-950">{{ route.originLabel }} → {{ route.destinationLabel }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ route.estimatedMinutes }} min · Desvío {{ route.deviationRadiusKm }} km</p>
-                      </div>
-                      <app-status-badge [status]="route.isActive" [label]="route.isActive ? 'Activo' : 'Inactivo'" />
-                    </div>
-                  </button>
-                }
-              </div>
-            }
+            <div class="pt-2">
+              <app-button variant="primary" (click)="switchToCollaborator()">
+                Cambiar a modo Colaborador
+              </app-button>
             </div>
-          </details>
+          } @else {
+            <app-notice
+              tone="info"
+              title="Activación requerida"
+              message="Los conductores verificados pueden activar su perfil de colaborador para generar ingresos adicionales con favores."
+            />
+            <div class="pt-2">
+              <app-button variant="primary" (click)="switchToCustomer()">
+                Ir a modo Cliente para solicitar verificación
+              </app-button>
+            </div>
+          }
+        </section>
+      }
+
+      <!-- MODO: CLIENTE / COLABORADOR -->
+      @else {
+        <!-- HEADER PRINCIPAL -->
+        <section class="grid min-w-0 gap-3 rounded-[20px] border border-slate-200/80 bg-white p-3.5 shadow-sm sm:p-4">
+          <app-internal-page-section-header
+            eyebrow="Favores"
+            [title]="pageTitle()"
+            [subtitle]="pageSubtitle()"
+          />
+        </section>
+
+        @if (errorMessage()) {
+          <app-notice tone="danger" title="Aviso" [message]="errorMessage()" />
+        }
+
+        @if (successMessage()) {
+          <app-notice tone="success" title="Completado" [message]="successMessage()" />
+        }
+
+        @if (isLoading()) {
+          <app-unified-loading-state label="Cargando favores" />
+        } @else {
+          <!-- EXPERIENCIA CUSTOMER: MIS FAVORES -->
+          @if (communityMode() === 'customer') {
+            <!-- ACCIÓN 1: PUBLICAR UN FAVOR -->
+            <details class="group min-w-0 overflow-hidden rounded-[20px] border border-orange-200/70 bg-gradient-to-r from-orange-50/50 via-white to-amber-50/30 shadow-sm">
+              <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
+                <span class="min-w-0">
+                  <strong class="block text-sm font-bold text-slate-950">¿Necesitas ayuda? Solicita un favor</strong>
+                  <span class="block truncate text-xs text-slate-500">Publica un encargo o compra rápida para recibir apoyo</span>
+                </span>
+                <span class="shrink-0 rounded-full bg-primary-600 px-3 py-1.5 text-xs font-bold text-white group-open:hidden">Solicitar</span>
+                <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
+              </summary>
+              <div class="grid gap-4 border-t border-orange-100 bg-white p-4 sm:p-5">
+                <app-internal-page-section-header
+                  eyebrow="Crear favor"
+                  title="Nueva solicitud de ayuda"
+                  subtitle="Publica tu encargo indicando origen, destino y recompensa."
+                />
+
+                <form class="grid gap-4" [formGroup]="requestForm" (ngSubmit)="createRequest()">
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="grid gap-2">
+                      <span class="text-sm font-semibold text-slate-700">Tipo de favor</span>
+                      <select class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" formControlName="type">
+                        <option value="MarketPurchase">Compra de mercado</option>
+                        <option value="Errand">Encargo</option>
+                        <option value="ProductPickup">Recojo de productos</option>
+                        <option value="PackageDelivery">Entrega de paquetes</option>
+                        <option value="CompensatedFavor">Favor compensado</option>
+                      </select>
+                    </label>
+
+                    <label class="grid min-w-0 gap-2">
+                      <span class="text-sm font-semibold text-slate-700">Pago al colaborador</span>
+                      <div class="relative min-w-0">
+                        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-500">S/</span>
+                        <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700" type="number" step="0.01" min="0" formControlName="compensationAmount" />
+                      </div>
+                      <small class="text-xs leading-5 text-slate-500">Recompensa ofrecida a quien te ayude.</small>
+                    </label>
+
+                    <label class="grid gap-2 sm:col-span-2">
+                      <span class="text-sm font-semibold text-slate-700">Título</span>
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="title" placeholder="Ej. Comprar medicina en farmacia" />
+                    </label>
+
+                    <label class="grid gap-2 sm:col-span-2">
+                      <span class="text-sm font-semibold text-slate-700">Descripción</span>
+                      <textarea class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700" rows="3" formControlName="description" placeholder="Detalles de lo que necesitas..."></textarea>
+                    </label>
+
+                    <label class="grid gap-2">
+                      <span class="text-sm font-semibold text-slate-700">Origen</span>
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" placeholder="Lugar de recojo / compra" />
+                    </label>
+
+                    <label class="grid gap-2">
+                      <span class="text-sm font-semibold text-slate-700">Destino</span>
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" placeholder="Lugar de entrega" />
+                    </label>
+
+                    <label class="grid gap-2 sm:col-span-2">
+                      <span class="text-sm font-semibold text-slate-700">Fecha límite</span>
+                      <input
+                        class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                        type="datetime-local"
+                        formControlName="deadlineUtc"
+                        [min]="deadlineMinimum()"
+                        [max]="deadlineMaximum()"
+                      />
+                      <small class="text-xs leading-5 text-slate-500">Válido hasta por 24 horas.</small>
+                    </label>
+                  </div>
+
+                  <app-button type="submit" [disabled]="isCreatingRequest()" block>
+                    {{ isCreatingRequest() ? 'Publicando solicitud...' : 'Publicar solicitud' }}
+                  </app-button>
+                </form>
+              </div>
+            </details>
+
+            <!-- ACCIÓN 2: CARD HACER FAVORES (VERIFICACIÓN / ACTIVACIÓN) -->
+            <app-surface-card variant="default" extraClass="p-4 sm:p-5 border border-slate-200/90 space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-orange-100 text-orange-700">
+                    <i-lucide [img]="sparklesIcon" class="h-4.5 w-4.5"></i-lucide>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-900">¿Quieres hacer favores?</h3>
+                    <p class="text-xs text-slate-500">Gana realizando encargos y ayudando en tu zona.</p>
+                  </div>
+                </div>
+                <span
+                  class="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                  [class]="verificationBadgeClass()"
+                >
+                  {{ verificationStatusLabel() }}
+                </span>
+              </div>
+
+              @if (verificationStatus() === 'Verified' || isApprovedCollaborator()) {
+                <div class="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 flex items-center justify-between gap-2">
+                  <span>¡Tu perfil de colaborador está aprobado!</span>
+                  <button
+                    type="button"
+                    (click)="switchToCollaborator()"
+                    class="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-600 transition"
+                  >
+                    Ir a modo Colaborador
+                  </button>
+                </div>
+              } @else if (verificationStatus() === 'PendingVerification') {
+                <div class="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+                  Estamos revisando tu información de identidad. Te avisaremos cuando se apruebe.
+                </div>
+              } @else {
+                <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+                  <summary class="flex cursor-pointer list-none items-center justify-between text-xs font-bold text-primary-700 marker:content-none">
+                    <span>Solicitar verificación de colaborador</span>
+                    <span class="group-open:hidden">Abrir formulario</span>
+                    <span class="hidden group-open:inline">Ocultar</span>
+                  </summary>
+                  <form class="grid gap-3 pt-3" (ngSubmit)="submitCollaboratorVerification()">
+                    <label class="grid gap-1">
+                      <span class="text-xs font-semibold text-slate-700">Foto de perfil</span>
+                      <input class="rounded-xl border border-slate-200 bg-white p-1.5 text-xs" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectVerificationFile($event, 'profile')" />
+                      @if (verificationProfileName()) {
+                        <small class="text-[11px] text-emerald-700 font-medium">✓ {{ verificationProfileName() }}</small>
+                      }
+                    </label>
+
+                    <label class="grid gap-1">
+                      <span class="text-xs font-semibold text-slate-700">Foto del DNI</span>
+                      <input class="rounded-xl border border-slate-200 bg-white p-1.5 text-xs" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectVerificationFile($event, 'dni')" />
+                      @if (verificationDniName()) {
+                        <small class="text-[11px] text-emerald-700 font-medium">✓ {{ verificationDniName() }}</small>
+                      }
+                    </label>
+
+                    <div class="grid gap-1">
+                      <span class="text-xs font-semibold text-slate-700">Selfie en vivo</span>
+                      <app-button type="button" variant="secondary" (click)="captureLiveSelfie()">
+                        {{ verificationSelfieReady() ? '✓ Selfie capturada (repetir)' : 'Abrir cámara para selfie' }}
+                      </app-button>
+                    </div>
+
+                    @if (verificationSubmissionError()) {
+                      <small class="text-xs text-red-600 font-semibold">{{ verificationSubmissionError() }}</small>
+                    }
+
+                    <app-button type="button" [disabled]="isSubmittingVerification()" (click)="submitCollaboratorVerification()">
+                      {{ isSubmittingVerification() ? 'Enviando solicitud...' : 'Enviar para validación' }}
+                    </app-button>
+                  </form>
+                </details>
+              }
+            </app-surface-card>
+
+            <!-- TABS & LISTA CLIENTE -->
+            <app-surface-card variant="page" extraClass="grid gap-3.5 p-4 sm:p-5">
+              <div class="grid w-full min-w-0 grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1" role="tablist">
+                <button
+                  type="button"
+                  class="min-h-10 min-w-0 rounded-xl px-2 text-xs font-bold transition"
+                  [class]="customerScope() === 'active' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  (click)="setCustomerScope('active')"
+                >
+                  Activos
+                </button>
+                <button
+                  type="button"
+                  class="min-h-10 min-w-0 rounded-xl px-2 text-xs font-bold transition"
+                  [class]="customerScope() === 'completed' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  (click)="setCustomerScope('completed')"
+                >
+                  Completados
+                </button>
+                <button
+                  type="button"
+                  class="min-h-10 min-w-0 rounded-xl px-2 text-xs font-bold transition"
+                  [class]="customerScope() === 'cancelled' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  (click)="setCustomerScope('cancelled')"
+                >
+                  Cancelados
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+                <span>{{ filteredCustomerRequests().length }} solicitud(es)</span>
+                <button type="button" class="font-bold text-primary-700 hover:underline" (click)="loadHub()">Actualizar</button>
+              </div>
+
+              @if (!filteredCustomerRequests().length) {
+                <app-unified-empty-state
+                  eyebrow="Sin favores"
+                  title="No hay solicitudes en esta sección"
+                  message="Cuando publiques un favor, podrás hacerle seguimiento desde aquí."
+                />
+              } @else {
+                <div class="grid gap-3">
+                  @for (request of filteredCustomerRequests(); track request.id) {
+                    <a
+                      class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-xs transition hover:border-primary-300 active:scale-99"
+                      [routerLink]="['/community/requests', request.id]"
+                    >
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <span class="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 mb-1">
+                            {{ requestTypeLabel(request.type) }}
+                          </span>
+                          <h3 class="font-bold text-sm text-slate-900 line-clamp-1">{{ request.title }}</h3>
+                          <p class="text-xs text-slate-500 truncate mt-0.5">{{ request.originLabel }} → {{ request.destinationLabel }}</p>
+                        </div>
+                        <div class="shrink-0 text-right bg-emerald-50 px-2.5 py-1 rounded-xl">
+                          <span class="block text-[9px] font-black uppercase text-emerald-700">Recompensa</span>
+                          <span class="font-bold text-sm text-emerald-700">{{ request.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}</span>
+                        </div>
+                      </div>
+                      <div class="flex items-center justify-between border-t border-slate-100 pt-2 text-xs">
+                        <app-status-badge [status]="request.status" [label]="mapCommunityStatusLabel(request.status)" />
+                        @if (request.deadlineUtc) {
+                          <span class="text-[11px] text-slate-400">Hasta {{ request.deadlineUtc | date:'shortTime' }}</span>
+                        }
+                      </div>
+                    </a>
+                  }
+                </div>
+              }
+            </app-surface-card>
           }
 
-          <app-surface-card class="order-1" variant="page" extraClass="grid gap-4 p-4 sm:p-5">
-            <div class="grid w-full min-w-0 grid-cols-3 gap-2 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="Filtrar favores">
-              @if (isCollaboratorView()) {
-              <button
-                type="button"
-                class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs"
-                [class]="scopeChipClass('available')"
-                (click)="selectedScope.set('available')"
-              >
-                Disponibles
-              </button>
-              <button
-                type="button"
-                class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs"
-                [class]="scopeChipClass('taken')"
-                (click)="selectedScope.set('taken')"
-              >
-                Tomados
-              </button>
-              <button
-                type="button"
-                class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs"
-                [class]="scopeChipClass('history')"
-                (click)="selectedScope.set('history')"
-              >
-                Historial
-              </button>
-              } @else {
-              <button type="button" class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs" [class]="scopeChipClass('active')" (click)="selectedScope.set('active')">Activos</button>
-              <button type="button" class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs" [class]="scopeChipClass('completed')" (click)="selectedScope.set('completed')">Completados</button>
-              <button type="button" class="min-h-10 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold leading-tight transition min-[360px]:px-2 min-[360px]:text-xs" [class]="scopeChipClass('cancelled')" (click)="selectedScope.set('cancelled')">Cancelados</button>
-              }
-            </div>
+          <!-- EXPERIENCIA COLLABORATOR: FAVORES DISPONIBLES -->
+          @else if (communityMode() === 'collaborator') {
+            <!-- DISPONIBILIDAD & RUTAS -->
+            <details class="group min-w-0 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
+              <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none">
+                <span class="min-w-0">
+                  <strong class="block text-sm font-bold text-slate-950">Mi disponibilidad para ayudar</strong>
+                  <span class="block truncate text-xs text-slate-500">Configura tu radio de cobertura y estado</span>
+                </span>
+                <span class="shrink-0 text-xs font-semibold text-primary-700 group-open:hidden">Configurar</span>
+                <span class="hidden shrink-0 text-xs font-semibold text-slate-500 group-open:inline">Cerrar</span>
+              </summary>
+              <div class="grid gap-4 border-t border-slate-100 p-4 sm:p-5">
+                <form class="grid gap-3 sm:grid-cols-2" [formGroup]="availabilityForm" (ngSubmit)="saveAvailability()">
+                  <label class="grid gap-1.5">
+                    <span class="text-xs font-semibold text-slate-700">Estado</span>
+                    <select class="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700" formControlName="availabilityStatus">
+                      <option value="Available">Disponible</option>
+                      <option value="Busy">Ocupado</option>
+                      <option value="Disconnected">Desconectado</option>
+                    </select>
+                  </label>
 
-            <div class="flex min-w-0 items-center justify-between gap-2 px-1 text-sm text-slate-500">
-              <p class="min-w-0 truncate">{{ requestsSummary() }}</p>
-              <button class="min-h-9 shrink-0 rounded-xl px-3 text-xs font-bold text-red-600" type="button" [disabled]="isLoading()" (click)="loadHub()">Actualizar</button>
-            </div>
+                  <label class="grid gap-1.5">
+                    <span class="text-xs font-semibold text-slate-700">Radio de cobertura (km)</span>
+                    <input class="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700" type="number" formControlName="availabilityRadiusKm" min="1" />
+                  </label>
 
-            @if (!filteredRequests().length) {
-              <app-unified-empty-state
-                eyebrow="Sin resultados"
-                [title]="emptyTitle()"
-                [message]="emptyMessage()"
-              />
-            } @else {
-              <div class="grid gap-3">
-                @for (request of filteredRequests(); track request.id) {
-                  <a
-                    class="grid gap-2.5 rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-red-200"
-                    [routerLink]="['/community/requests', request.id]"
-                  >
-                    <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                      <div class="min-w-0">
-                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-                          {{ request.sourceType === 'AppuraPeOrder' ? 'Compra AppuraPe' : requestTypeLabel(request.type) }}
-                        </p>
-                        <h3 class="mt-1 line-clamp-2 min-w-0 text-base font-extrabold tracking-tight text-slate-950">{{ request.title }}</h3>
-                        <p class="mt-1 min-w-0 truncate text-sm text-slate-500">{{ request.originLabel }} → {{ request.destinationLabel }}</p>
-                      </div>
-                      <app-status-badge class="max-w-[104px]" [status]="request.status" [label]="displayStatusLabel(request)" />
-                    </div>
-
-                    <div class="flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-500">
-                      @if (request.isMine) {
-                        <app-status-badge status="verified" label="Mi solicitud" />
-                      }
-                      @if (request.isAssignedToMe) {
-                        <app-status-badge status="trusted" label="Asignada a mí" />
-                      }
-                      @if (isCollaboratorView() && selectedScope() === 'available') {
-                        <span>Coincidencia {{ formatMatchScore(request.matchScore) }}</span>
-                      }
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2 rounded-2xl bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
-                      <div class="min-w-0">
-                        <span class="block">Recompensa</span>
-                        <strong class="mt-0.5 block text-sm text-slate-950">{{ request.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
-                      </div>
-                      @if (request.deadlineUtc) {
-                        <div class="min-w-0 border-l border-slate-200 pl-3">
-                          <span class="block">Hasta</span>
-                          <strong class="mt-0.5 block truncate text-sm font-semibold text-slate-700">{{ request.deadlineUtc | date:'short' }}</strong>
-                        </div>
-                      }
-                    </div>
-
-                    <div class="flex items-center justify-end gap-2">
-                      <span class="text-xs font-bold text-red-600">
-                        {{ requestActionLabel(request) }}
-                      </span>
-                    </div>
-                  </a>
-                }
+                  <div class="sm:col-span-2 pt-1">
+                    <app-button type="submit" [disabled]="isSavingAvailability()" block>
+                      {{ isSavingAvailability() ? 'Guardando...' : 'Guardar disponibilidad' }}
+                    </app-button>
+                  </div>
+                </form>
               </div>
-            }
-          </app-surface-card>
-        </div>
+            </details>
+
+            <!-- TABS & LISTA COLABORADOR -->
+            <app-surface-card variant="page" extraClass="grid gap-3.5 p-4 sm:p-5">
+              <div class="grid w-full min-w-0 grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1" role="tablist">
+                <button
+                  type="button"
+                  class="min-h-10 min-w-0 rounded-xl px-2 text-xs font-bold transition"
+                  [class]="collaboratorScope() === 'available' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  (click)="setCollaboratorScope('available')"
+                >
+                  Disponibles
+                </button>
+                <button
+                  type="button"
+                  class="min-h-10 min-w-0 rounded-xl px-2 text-xs font-bold transition"
+                  [class]="collaboratorScope() === 'taken' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  (click)="setCollaboratorScope('taken')"
+                >
+                  Tomados
+                </button>
+                <button
+                  type="button"
+                  class="min-h-10 min-w-0 rounded-xl px-2 text-xs font-bold transition"
+                  [class]="collaboratorScope() === 'history' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  (click)="setCollaboratorScope('history')"
+                >
+                  Historial
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+                <span>{{ filteredCollaboratorRequests().length }} encargo(s)</span>
+                <button type="button" class="font-bold text-primary-700 hover:underline" (click)="loadHub()">Actualizar</button>
+              </div>
+
+              @if (!filteredCollaboratorRequests().length) {
+                <app-unified-empty-state
+                  eyebrow="Sin favores"
+                  [title]="collaboratorScope() === 'available' ? 'No hay favores disponibles por ahora' : 'No hay encargos en esta sección'"
+                  message="Vuelve a revisar en unos minutos para ver nuevos favores solicitados."
+                />
+              } @else {
+                <div class="grid gap-3">
+                  @for (request of filteredCollaboratorRequests(); track request.id) {
+                    <a
+                      class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-xs transition hover:border-primary-300 active:scale-99"
+                      [routerLink]="['/community/requests', request.id]"
+                    >
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <span class="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 mb-1">
+                            {{ requestTypeLabel(request.type) }}
+                          </span>
+                          <h3 class="font-bold text-sm text-slate-900 line-clamp-1">{{ request.title }}</h3>
+                          <p class="text-xs text-slate-500 truncate mt-0.5">{{ request.originLabel }} → {{ request.destinationLabel }}</p>
+                        </div>
+                        <div class="shrink-0 text-right bg-emerald-50 px-2.5 py-1 rounded-xl">
+                          <span class="block text-[9px] font-black uppercase text-emerald-700">Ganancia</span>
+                          <span class="font-bold text-sm text-emerald-700">{{ request.collaboratorEarningAmount || request.compensationAmount | currency:'PEN':'S/ ':'1.2-2' }}</span>
+                        </div>
+                      </div>
+                      <div class="flex items-center justify-between border-t border-slate-100 pt-2 text-xs">
+                        <app-status-badge [status]="request.status" [label]="mapCommunityStatusLabel(request.status)" />
+                        @if (request.deadlineUtc) {
+                          <span class="text-[11px] text-slate-400">Hasta {{ request.deadlineUtc | date:'shortTime' }}</span>
+                        }
+                      </div>
+                    </a>
+                  }
+                </div>
+              }
+            </app-surface-card>
+          }
+        }
       }
     </app-mobile-page-shell>
   `,
 })
 export class CommunityHubPageComponent {
-  private static readonly MAXIMUM_VERIFICATION_FILE_SIZE = 5 * 1024 * 1024;
-  private static readonly ALLOWED_VERIFICATION_FILE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
   private static readonly MAXIMUM_FAVOR_DURATION_MS = 24 * 60 * 60 * 1000;
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly communityApi = inject(CommunityApiService);
   private readonly authService = inject(AuthService);
-  private readonly notificationService = inject(NotificationService);
+  private readonly router = inject(Router);
   private readonly legalApi = inject(LegalApiService);
 
+  readonly storeIcon = Store;
+  readonly shieldIcon = ShieldCheck;
+  readonly sparklesIcon = Sparkles;
+
+  readonly activeProfile = computed(() => this.authService.activeProfile());
+  readonly currentRole = computed(() => this.authService.currentRole());
+  readonly currentUser = computed(() => this.authService.currentUser());
+
+  readonly communityMode = computed<CommunityMode>(() => {
+    const profile = this.activeProfile();
+    if (profile === 'BusinessOwner') return 'business-blocked';
+    if (profile === 'Admin') return 'admin-redirect';
+    if (profile === 'Collaborator') return 'collaborator';
+    if (profile === 'Driver') return 'driver';
+    return 'customer';
+  });
+
+  readonly isApprovedCollaborator = computed(() => {
+    const user = this.currentUser();
+    return user?.hasCollaboratorProfile && user?.collaboratorApprovalStatus === 'Approved';
+  });
+
   readonly collaborator = signal<CommunityCollaboratorResponse | null>(null);
-  readonly routes = signal<CommunityRouteResponse[]>([]);
   readonly requests = signal<CommunityRequestListItemResponse[]>([]);
   readonly isLoading = signal(true);
-  readonly isSavingAvailability = signal(false);
-  readonly isSavingRoute = signal(false);
   readonly isCreatingRequest = signal(false);
+  readonly isSavingAvailability = signal(false);
   readonly isSubmittingVerification = signal(false);
+
+  readonly customerScope = signal<CustomerScope>('active');
+  readonly collaboratorScope = signal<CollaboratorScope>('available');
+
   readonly verificationStatus = signal('NotVerified');
   readonly verificationSelfieReady = signal(false);
   readonly verificationProfileName = signal('');
   readonly verificationDniName = signal('');
-  readonly verificationProfileError = signal('');
-  readonly verificationDniError = signal('');
-  readonly verificationSelfieError = signal('');
-  readonly verificationConsentError = signal('');
   readonly verificationSubmissionError = signal('');
-  readonly collaboratorConsentDocument = signal<LegalDocument | null>(null);
-  readonly collaboratorConsentAccepted = signal(false);
-  readonly errorMessage = signal('');
-  readonly successMessage = signal('');
-  readonly hubWarnings = signal<HubWarning[]>([]);
-  readonly routeEditingId = signal<string | null>(null);
-  readonly isDriverView = computed(() => this.authService.currentRole() === 'Driver');
-  readonly isCustomerView = computed(() => this.authService.currentRole() === 'Customer');
-  readonly hubMode = signal<HubMode>(this.authService.currentRole() === 'Driver' ? 'collaborator' : 'requester');
-  readonly isCollaboratorView = computed(() => this.isDriverView() || this.hubMode() === 'collaborator');
-  readonly isRequesterView = computed(() => this.isCustomerView() && this.hubMode() === 'requester');
-  readonly isApprovedCollaborator = computed(() => {
-    const collaborator = this.collaborator();
-    return !!collaborator &&
-      collaborator.collaboratorApprovalStatus === 'Approved' &&
-      collaborator.isIdentityVerified;
-  });
-  readonly selectedScope = signal<RequestScope>(this.authService.currentRole() === 'Driver' ? 'available' : 'active');
-  readonly deadlineMinimum = signal(this.toLocalInputValue(new Date(Date.now() + 5 * 60 * 1000)));
-  readonly deadlineMaximum = signal(this.toLocalInputValue(new Date(Date.now() + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS)));
+
   private verificationProfileFile: File | null = null;
   private verificationDniFile: File | null = null;
   private verificationSelfieFile: File | null = null;
 
-  readonly availabilityForm = this.formBuilder.nonNullable.group({
-    isAvailable: false,
-    availabilityStatus: 'Disconnected',
-    currentLatitude: [null as number | null],
-    currentLongitude: [null as number | null],
-    availabilityRadiusKm: [5, [Validators.required, Validators.min(1)]],
-    availableFromUtc: '',
-    availableUntilUtc: '',
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+
+  readonly deadlineMinimum = signal(this.toLocalInputValue(new Date(Date.now() + 5 * 60 * 1000)));
+  readonly deadlineMaximum = signal(this.toLocalInputValue(new Date(Date.now() + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS)));
+
+  readonly defaultBackUrl = computed(() => {
+    const profile = this.activeProfile();
+    if (profile === 'BusinessOwner') return '/business/dashboard';
+    if (profile === 'Driver') return '/driver/dashboard';
+    return '/businesses';
   });
 
-  readonly routeForm = this.formBuilder.nonNullable.group({
-    originLabel: ['', Validators.required],
-    originLatitude: [0, Validators.required],
-    originLongitude: [0, Validators.required],
-    destinationLabel: ['', Validators.required],
-    destinationLatitude: [0, Validators.required],
-    destinationLongitude: [0, Validators.required],
-    estimatedMinutes: [30, [Validators.required, Validators.min(1)]],
-    deviationRadiusKm: [3, [Validators.required, Validators.min(1)]],
-    isActive: true,
+  readonly pageTitle = computed(() => {
+    if (this.communityMode() === 'collaborator') return 'Favores disponibles';
+    return 'Mis favores';
+  });
+
+  readonly pageSubtitle = computed(() => {
+    if (this.communityMode() === 'collaborator') return 'Elige encargos que puedes tomar cerca de ti.';
+    return 'Solicita ayuda y revisa el estado de tus encargos.';
+  });
+
+  readonly availabilityForm = this.formBuilder.nonNullable.group({
+    availabilityStatus: 'Available',
+    availabilityRadiusKm: [5, [Validators.required, Validators.min(1)]],
   });
 
   readonly requestForm = this.formBuilder.nonNullable.group({
@@ -653,564 +593,313 @@ export class CommunityHubPageComponent {
     title: ['', Validators.required],
     description: ['', Validators.required],
     originLabel: ['', Validators.required],
-    originLatitude: [null as number | null],
-    originLongitude: [null as number | null],
     destinationLabel: ['', Validators.required],
-    destinationLatitude: [null as number | null],
-    destinationLongitude: [null as number | null],
-    compensationAmount: [0, [Validators.required, Validators.min(0)]],
+    compensationAmount: [5, [Validators.required, Validators.min(1)]],
     deadlineUtc: [this.defaultFavorDeadline(), Validators.required],
   });
 
-  readonly filteredRequests = computed(() => {
-    const scope = this.selectedScope();
-    const requests = this.requests();
+  readonly filteredCustomerRequests = computed(() => {
+    const scope = this.customerScope();
+    const reqs = this.requests();
 
-    if (this.isCollaboratorView()) {
-      switch (scope) {
-        case 'taken':
-          return requests.filter(
-            (request) => request.isAssignedToMe && ['Accepted', 'InProcess', 'Delivered'].includes(request.status),
-          );
-        case 'history':
-          return requests.filter(
-            (request) => request.isAssignedToMe && ['Confirmed', 'Cancelled'].includes(request.status),
-          );
-        default:
-          return requests.filter((request) =>
-            !request.isMine &&
-            !request.isAssignedToMe &&
-            ['Published', 'Searching'].includes(request.status) &&
-            (!request.deadlineUtc || new Date(request.deadlineUtc).getTime() > Date.now()),
-          );
-      }
-    }
-
-    const mine = requests.filter((request) => request.isMine);
     switch (scope) {
       case 'completed':
-        return mine.filter((request) => request.status === 'Confirmed');
+        return reqs.filter((r) => r.status === 'Confirmed' || r.status === 'Delivered');
       case 'cancelled':
-        return mine.filter((request) => request.status === 'Cancelled');
+        return reqs.filter((r) => r.status === 'Cancelled');
+      case 'active':
       default:
-        return mine.filter((request) => ['Published', 'Searching', 'Accepted', 'InProcess', 'Delivered'].includes(request.status));
+        return reqs.filter((r) => ['Published', 'Searching', 'Accepted', 'InProcess'].includes(r.status));
     }
   });
 
-  readonly trustSummary = computed(() => {
-    const collaborator = this.collaborator();
-    if (!collaborator) {
-      return '0%';
-    }
+  readonly filteredCollaboratorRequests = computed(() => {
+    const scope = this.collaboratorScope();
+    const reqs = this.requests();
 
-    return `${Math.round(collaborator.trustScore)}%`;
+    switch (scope) {
+      case 'taken':
+        return reqs.filter((r) => r.isAssignedToMe && ['Accepted', 'InProcess', 'Delivered'].includes(r.status));
+      case 'history':
+        return reqs.filter((r) => r.isAssignedToMe && ['Confirmed', 'Cancelled'].includes(r.status));
+      case 'available':
+      default:
+        return reqs.filter((r) => !r.isMine && !r.isAssignedToMe && ['Published', 'Searching'].includes(r.status));
+    }
   });
-
-  readonly availabilitySummary = computed(() => {
-    const collaborator = this.collaborator();
-    return collaborator ? this.availabilityStatusLabel(collaborator.availabilityStatus) : 'Sin perfil';
-  });
-
-  readonly requestsSummary = computed(() => {
-    const count = this.filteredRequests().length;
-    const scope = this.selectedScope();
-
-    if (this.isCollaboratorView()) {
-      if (scope === 'taken') {
-        return count === 1 ? 'Tienes 1 favor en seguimiento.' : `Tienes ${count} favores en seguimiento.`;
-      }
-      if (scope === 'history') {
-        return count === 1 ? 'Tienes 1 favor en tu historial.' : `Tienes ${count} favores en tu historial.`;
-      }
-      return count === 1 ? 'Hay 1 favor disponible para tomar.' : `Hay ${count} favores disponibles para tomar.`;
-    }
-
-    if (scope === 'completed') {
-      return count === 1 ? 'Completaste 1 favor.' : `Completaste ${count} favores.`;
-    }
-    if (scope === 'cancelled') {
-      return count === 1 ? 'Tienes 1 favor cancelado.' : `Tienes ${count} favores cancelados.`;
-    }
-    return count === 1 ? 'Tienes 1 favor activo.' : `Tienes ${count} favores activos.`;
-  });
-
-  readonly pageTitle = computed(() => this.isCollaboratorView() ? 'Favores disponibles' : 'Mis favores');
-  readonly pageSubtitle = computed(() => this.isCollaboratorView()
-    ? 'Encuentra encargos cercanos en los que puedes colaborar.'
-    : 'Publica solicitudes y revisa su estado.');
-  readonly emptyTitle = computed(() => this.isCollaboratorView() && this.selectedScope() === 'available'
-    ? 'No hay favores disponibles por ahora'
-    : 'No hay favores en esta sección');
-  readonly emptyMessage = computed(() => this.isCollaboratorView() && this.selectedScope() === 'available'
-    ? 'Vuelve a revisar en unos minutos.'
-    : 'Cuando haya actividad, aparecerá aquí.');
 
   constructor() {
     this.loadHub();
-
-    effect(() => {
-      if (!this.collaborator()?.isAvailable && this.availabilityForm.controls.isAvailable.value) {
-        return;
-      }
-    });
   }
 
   loadHub(): void {
+    const mode = this.communityMode();
+    if (mode === 'business-blocked' || mode === 'admin-redirect') {
+      this.isLoading.set(false);
+      return;
+    }
+
     this.isLoading.set(true);
     this.errorMessage.set('');
-    this.hubWarnings.set([]);
 
-    const collaboratorLoad$ = (this.isCollaboratorView()
-      ? this.wrapLoad(
-          this.communityApi.getMyCollaborator(),
-          null,
-          'No pudimos cargar tu perfil colaborador',
-        )
-      : of({ data: null, warning: null } satisfies HubLoadResult<CommunityCollaboratorResponse | null>))
-      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    if (mode === 'collaborator') {
+      const scope = this.collaboratorScope();
+      const viewParam = scope === 'taken' ? 'assigned' : scope === 'history' ? 'history' : 'available';
 
-    forkJoin({
-      collaborator: collaboratorLoad$,
-      routes: collaboratorLoad$.pipe(
-        switchMap((collaborator) =>
-          this.isCollaboratorView() && collaborator.data
-            ? this.wrapLoad(this.communityApi.getMyRoutes(), [], 'No pudimos cargar rutas disponibles')
-            : of({ data: [], warning: null } satisfies HubLoadResult<CommunityRouteResponse[]>),
-        ),
-      ),
-      requests: this.wrapLoad(
-        this.communityApi.getRequests(this.isCollaboratorView() ? {} : { mine: true }),
-        [],
-        'No pudimos cargar tus solicitudes',
-      ),
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ({ collaborator, routes, requests }) => {
-          this.collaborator.set(collaborator.data);
-          this.routes.set(routes.data);
-          this.requests.set(requests.data);
-          this.errorMessage.set(requests.warning?.message ?? '');
-          this.hubWarnings.set(
-            [collaborator.warning, routes.warning].filter((warning): warning is HubWarning => !!warning),
-          );
-          if (collaborator.data) {
-            this.availabilityForm.patchValue({
-              isAvailable: collaborator.data.isAvailable,
-              availabilityStatus: collaborator.data.availabilityStatus,
-              currentLatitude: collaborator.data.currentLatitude ?? null,
-              currentLongitude: collaborator.data.currentLongitude ?? null,
-              availabilityRadiusKm: collaborator.data.availabilityRadiusKm,
-              availableFromUtc: this.toLocalDateTime(collaborator.data.availableFromUtc),
-              availableUntilUtc: this.toLocalDateTime(collaborator.data.availableUntilUtc),
-            });
-          }
-          this.isLoading.set(false);
-          if (this.isCustomerView() && this.isCollaboratorView()) this.loadVerification();
-          if (this.isCustomerView() && this.isCollaboratorView()) this.loadCollaboratorConsent();
-        },
-        error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No pudimos cargar Favores. Intenta nuevamente.'));
-          this.isLoading.set(false);
-        },
-      });
-  }
-
-  loadVerification(): void {
-    this.communityApi.getMyVerification().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (verification) => this.verificationStatus.set(verification.status),
-      error: () => this.verificationStatus.set('NotVerified'),
-    });
-  }
-
-  loadCollaboratorConsent(): void {
-    this.legalApi.getActive('Collaborator').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: documents => this.collaboratorConsentDocument.set(documents.find(x => x.audience === 'Collaborator') ?? null) });
-  }
-
-  verificationStatusLabel(): string {
-    return ({ NotVerified: 'Falta validar', PendingVerification: 'En revisión', Rejected: 'Rechazado', Verified: 'Aprobado' } as Record<string, string>)[this.verificationStatus()] ?? this.verificationStatus();
-  }
-
-  selectVerificationFile(event: Event, type: 'profile' | 'dni'): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.item(0) ?? null;
-    const error = this.validateVerificationFile(file, type === 'profile' ? 'la foto de perfil' : 'la foto del DNI');
-    this.verificationSubmissionError.set('');
-
-    if (type === 'profile') {
-      this.verificationProfileFile = error ? null : file;
-      this.verificationProfileName.set(error ? '' : file?.name ?? '');
-      this.verificationProfileError.set(error);
+      forkJoin({
+        collaborator: this.communityApi.getMyCollaborator().pipe(catchError(() => of(null))),
+        requests: this.communityApi.getRequests({ view: viewParam }).pipe(catchError(() => of([]))),
+      })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ({ collaborator, requests }) => {
+            this.collaborator.set(collaborator);
+            this.requests.set(requests);
+            if (collaborator) {
+              this.availabilityForm.patchValue({
+                availabilityStatus: collaborator.availabilityStatus,
+                availabilityRadiusKm: collaborator.availabilityRadiusKm,
+              });
+            }
+            this.isLoading.set(false);
+          },
+          error: () => {
+            this.errorMessage.set('No pudimos cargar los favores disponibles.');
+            this.isLoading.set(false);
+          },
+        });
     } else {
-      this.verificationDniFile = error ? null : file;
-      this.verificationDniName.set(error ? '' : file?.name ?? '');
-      this.verificationDniError.set(error);
-    }
-
-    if (error) {
-      input.value = '';
-    }
-  }
-
-  toggleCollaboratorConsent(): void {
-    this.collaboratorConsentAccepted.update((accepted) => !accepted);
-    this.verificationConsentError.set('');
-    this.verificationSubmissionError.set('');
-  }
-
-  async captureLiveSelfie(): Promise<void> {
-    try {
-      const { Camera, CameraDirection, CameraResultType, CameraSource } = await import('@capacitor/camera');
-      const permission = await Camera.requestPermissions({ permissions: ['camera'] });
-      if (permission.camera !== 'granted') {
-        this.verificationSelfieReady.set(false);
-        this.verificationSelfieError.set('Debes permitir el acceso a la cámara para tomar la selfie en vivo.');
-        return;
-      }
-      const photo = await Camera.getPhoto({
-        source: CameraSource.Camera,
-        direction: CameraDirection.Front,
-        resultType: CameraResultType.Uri,
-        quality: 82,
-        allowEditing: false,
-        saveToGallery: false,
-        correctOrientation: true,
-      });
-      if (!photo.webPath) throw new Error('Camera did not return an image.');
-      const response = await fetch(photo.webPath);
-      const blob = await response.blob();
-      const selfie = new File([blob], `selfie-${Date.now()}.${photo.format || 'jpeg'}`, { type: blob.type || 'image/jpeg' });
-      const validationError = this.validateVerificationFile(selfie, 'la selfie');
-      if (validationError) {
-        this.verificationSelfieFile = null;
-        this.verificationSelfieReady.set(false);
-        this.verificationSelfieError.set(validationError);
-        return;
-      }
-      this.verificationSelfieFile = selfie;
-      this.verificationSelfieReady.set(true);
-      this.verificationSelfieError.set('');
-      this.verificationSubmissionError.set('');
-      this.notificationService.success('Selfie capturada correctamente.');
-    } catch (error) {
-      console.warn('Live selfie capture failed.', error);
-      this.verificationSelfieFile = null;
-      this.verificationSelfieReady.set(false);
-      this.verificationSelfieError.set('No se pudo tomar la selfie. Revisa el permiso de cámara e inténtalo nuevamente.');
+      // Customer or Driver mode
+      forkJoin({
+        verification: this.communityApi.getMyVerification().pipe(catchError(() => of(null))),
+        requests: this.communityApi.getRequests({ view: 'my' }).pipe(catchError(() => of([]))),
+      })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ({ verification, requests }) => {
+            if (verification) {
+              this.verificationStatus.set(verification.status);
+            }
+            this.requests.set(requests);
+            this.isLoading.set(false);
+          },
+          error: () => {
+            this.errorMessage.set('No pudimos cargar tus favores.');
+            this.isLoading.set(false);
+          },
+        });
     }
   }
 
-  submitCollaboratorVerification(): void {
-    this.verificationSubmissionError.set('');
-    this.verificationProfileError.set(this.verificationProfileFile ? '' : 'Selecciona una foto de perfil.');
-    this.verificationDniError.set(this.verificationDniFile ? '' : 'Selecciona una foto legible de tu DNI.');
-    this.verificationSelfieError.set(this.verificationSelfieFile ? '' : 'Toma una selfie con la cámara frontal.');
-    const consent = this.collaboratorConsentDocument();
-    this.verificationConsentError.set(consent && !this.collaboratorConsentAccepted() ? 'Debes aceptar el consentimiento para continuar.' : '');
+  setCustomerScope(scope: CustomerScope): void {
+    this.customerScope.set(scope);
+  }
 
-    if (this.verificationProfileError() || this.verificationDniError() || this.verificationSelfieError() || this.verificationConsentError()) {
-      this.verificationSubmissionError.set('Revisa los campos marcados antes de enviar tu solicitud.');
-      this.notificationService.warning('Faltan datos obligatorios. Revisa los campos marcados en rojo.');
-      return;
-    }
+  setCollaboratorScope(scope: CollaboratorScope): void {
+    this.collaboratorScope.set(scope);
+    this.loadHub();
+  }
 
-    const data = new FormData();
-    data.set('ProfilePhoto', this.verificationProfileFile!);
-    data.set('IdentityDocument', this.verificationDniFile!);
-    data.set('LiveSelfie', this.verificationSelfieFile!);
-    this.isSubmittingVerification.set(true);
-    const submission = consent ? this.legalApi.accept([consent.id], 'native').pipe(switchMap(() => this.communityApi.submitVerification(data))) : this.communityApi.submitVerification(data);
-    submission.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (verification) => { this.verificationStatus.set(verification.status); this.isSubmittingVerification.set(false); this.notificationService.success('Validación enviada a Administración.'); },
-      error: (error) => {
-        const message = getErrorMessage(error, 'No se pudo enviar la validación. Revisa las imágenes e inténtalo nuevamente.');
-        this.isSubmittingVerification.set(false);
-        this.verificationSubmissionError.set(message);
-        this.notificationService.error(message);
+  switchToCustomer(): void {
+    this.authService.switchProfile('Customer').subscribe({
+      next: () => {
+        void this.router.navigate(['/businesses']);
       },
     });
   }
 
-  private validateVerificationFile(file: File | null, label: string): string {
-    if (!file) {
-      return `Selecciona ${label}.`;
-    }
-    if (!CommunityHubPageComponent.ALLOWED_VERIFICATION_FILE_TYPES.has(file.type.toLowerCase())) {
-      return `El archivo de ${label} debe ser JPG, PNG o WEBP. No se admite HEIC.`;
-    }
-    if (file.size <= 0) {
-      return `El archivo de ${label} está vacío.`;
-    }
-    if (file.size > CommunityHubPageComponent.MAXIMUM_VERIFICATION_FILE_SIZE) {
-      return `El archivo de ${label} supera el máximo de 5 MB.`;
-    }
-    return '';
-  }
-
-  saveAvailability(): void {
-    if (this.availabilityForm.invalid) {
-      this.availabilityForm.markAllAsTouched();
-      return;
-    }
-
-    this.isSavingAvailability.set(true);
-    this.communityApi
-      .updateMyCollaborator({
-        ...this.availabilityForm.getRawValue(),
-        availableFromUtc: this.toUtcString(this.availabilityForm.controls.availableFromUtc.value),
-        availableUntilUtc: this.toUtcString(this.availabilityForm.controls.availableUntilUtc.value),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (collaborator) => {
-          this.collaborator.set(collaborator);
-          this.isSavingAvailability.set(false);
-        },
-        error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo guardar la disponibilidad.'));
-          this.isSavingAvailability.set(false);
-        },
-      });
-  }
-
-  saveRoute(): void {
-    if (this.routeForm.invalid) {
-      this.routeForm.markAllAsTouched();
-      return;
-    }
-
-    this.isSavingRoute.set(true);
-    const request = this.routeForm.getRawValue();
-    const operation = this.routeEditingId()
-      ? this.communityApi.updateRoute(this.routeEditingId()!, request)
-      : this.communityApi.createRoute(request);
-
-    operation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+  switchToCollaborator(): void {
+    this.authService.switchProfile('Collaborator').subscribe({
       next: () => {
-        this.resetRouteForm();
-        this.isSavingRoute.set(false);
         this.loadHub();
       },
-      error: (error) => {
-        this.errorMessage.set(getErrorMessage(error, 'No se pudo guardar el trayecto.'));
-        this.isSavingRoute.set(false);
+      error: (err: { error?: { message?: string } }) => {
+        this.errorMessage.set(err.error?.message || 'Tu perfil aún no está habilitado como colaborador.');
       },
-    });
-  }
-
-  editRoute(route: CommunityRouteResponse): void {
-    this.routeEditingId.set(route.id);
-    this.routeForm.patchValue({
-      originLabel: route.originLabel,
-      originLatitude: route.originLatitude,
-      originLongitude: route.originLongitude,
-      destinationLabel: route.destinationLabel,
-      destinationLatitude: route.destinationLatitude,
-      destinationLongitude: route.destinationLongitude,
-      estimatedMinutes: route.estimatedMinutes,
-      deviationRadiusKm: route.deviationRadiusKm,
-      isActive: route.isActive,
-    });
-  }
-
-  resetRouteForm(): void {
-    this.routeEditingId.set(null);
-    this.routeForm.reset({
-      originLabel: '',
-      originLatitude: 0,
-      originLongitude: 0,
-      destinationLabel: '',
-      destinationLatitude: 0,
-      destinationLongitude: 0,
-      estimatedMinutes: 30,
-      deviationRadiusKm: 3,
-      isActive: true,
     });
   }
 
   createRequest(): void {
-    const deadlineValue = this.requestForm.controls.deadlineUtc.value;
-    const deadline = deadlineValue ? new Date(deadlineValue) : null;
-    const now = Date.now();
-    if (
-      !deadline ||
-      Number.isNaN(deadline.getTime()) ||
-      deadline.getTime() <= now ||
-      deadline.getTime() > now + CommunityHubPageComponent.MAXIMUM_FAVOR_DURATION_MS
-    ) {
-      this.requestForm.controls.deadlineUtc.markAsTouched();
-      const message = 'Elige una fecha límite futura dentro de las próximas 24 horas.';
-      this.errorMessage.set(message);
-      this.notificationService.warning(message);
-      return;
-    }
-
     if (this.requestForm.invalid) {
-      this.requestForm.markAllAsTouched();
-      const message = 'Completa los campos obligatorios del favor antes de publicarlo.';
-      this.errorMessage.set(message);
-      this.notificationService.warning(message);
+      this.errorMessage.set('Por favor completa todos los campos requeridos para publicar el favor.');
       return;
     }
 
     this.isCreatingRequest.set(true);
     this.errorMessage.set('');
-    this.successMessage.set('');
+
+    const values = this.requestForm.getRawValue();
     this.communityApi
       .createRequest({
-        ...this.requestForm.getRawValue(),
-        deadlineUtc: this.toUtcString(this.requestForm.controls.deadlineUtc.value),
+        type: values.type,
+        title: values.title,
+        description: values.description,
+        originLabel: values.originLabel,
+        destinationLabel: values.destinationLabel,
+        compensationAmount: values.compensationAmount,
+        deadlineUtc: values.deadlineUtc ? new Date(values.deadlineUtc).toISOString() : null,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.isCreatingRequest.set(false);
+          this.successMessage.set('¡Tu favor fue publicado con éxito!');
           this.requestForm.reset({
             type: 'MarketPurchase',
             title: '',
             description: '',
             originLabel: '',
-            originLatitude: null,
-            originLongitude: null,
             destinationLabel: '',
-            destinationLatitude: null,
-            destinationLongitude: null,
-            compensationAmount: 0,
+            compensationAmount: 5,
             deadlineUtc: this.defaultFavorDeadline(),
           });
-          this.selectedScope.set('active');
-          this.successMessage.set('Tu favor fue publicado correctamente y ya aparece en tu listado.');
-          this.notificationService.success('Favor publicado correctamente.');
-          this.isCreatingRequest.set(false);
           this.loadHub();
         },
-        error: (error) => {
-          this.errorMessage.set(getErrorMessage(error, 'No se pudo publicar la solicitud.'));
-          this.notificationService.error(this.errorMessage());
+        error: (err: { error?: { message?: string } }) => {
           this.isCreatingRequest.set(false);
+          this.errorMessage.set(err.error?.message || 'No se pudo crear el favor.');
         },
       });
   }
 
-  scopeChipClass(scope: RequestScope): string {
-    return this.selectedScope() === scope
-      ? 'bg-white text-red-600 shadow-sm ring-1 ring-slate-200'
-      : 'text-slate-600';
+  saveAvailability(): void {
+    const values = this.availabilityForm.getRawValue();
+    this.isSavingAvailability.set(true);
+    this.communityApi
+      .updateMyCollaborator({
+        isAvailable: values.availabilityStatus === 'Available',
+        availabilityStatus: values.availabilityStatus,
+        availabilityRadiusKm: values.availabilityRadiusKm,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.isSavingAvailability.set(false);
+          this.collaborator.set(res);
+          this.successMessage.set('Disponibilidad actualizada.');
+        },
+        error: () => {
+          this.isSavingAvailability.set(false);
+          this.errorMessage.set('No se pudo guardar la disponibilidad.');
+        },
+      });
   }
 
-  hubModeClass(mode: HubMode): string {
-    return this.hubMode() === mode
-      ? 'bg-white text-red-600 shadow-sm ring-1 ring-slate-200'
-      : 'text-slate-600';
+  selectVerificationFile(event: Event, type: 'profile' | 'dni'): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0) ?? null;
+    if (type === 'profile') {
+      this.verificationProfileFile = file;
+      this.verificationProfileName.set(file?.name ?? '');
+    } else {
+      this.verificationDniFile = file;
+      this.verificationDniName.set(file?.name ?? '');
+    }
   }
 
-  selectHubMode(mode: HubMode): void {
-    if (this.hubMode() === mode) {
+  async captureLiveSelfie(): Promise<void> {
+    try {
+      const { Camera, CameraDirection, CameraResultType, CameraSource } = await import('@capacitor/camera');
+      const photo = await Camera.getPhoto({
+        quality: 85,
+        allowEditing: false,
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Camera,
+        direction: CameraDirection.Front,
+      });
+
+      if (photo.webPath) {
+        const response = await fetch(photo.webPath);
+        const blob = await response.blob();
+        this.verificationSelfieFile = new File([blob], 'live-selfie.jpg', { type: 'image/jpeg' });
+        this.verificationSelfieReady.set(true);
+      }
+    } catch {
+      // User cancelled or platform unsupported
+    }
+  }
+
+  submitCollaboratorVerification(): void {
+    if (!this.verificationProfileFile || !this.verificationDniFile || !this.verificationSelfieFile) {
+      this.verificationSubmissionError.set('Debes adjuntar foto de perfil, DNI y tomar la selfie en vivo.');
       return;
     }
 
-    this.hubMode.set(mode);
-    this.selectedScope.set(mode === 'collaborator' ? 'available' : 'active');
-    this.successMessage.set('');
-    this.loadHub();
+    this.isSubmittingVerification.set(true);
+    this.verificationSubmissionError.set('');
+
+    const formData = new FormData();
+    formData.append('profilePhoto', this.verificationProfileFile);
+    formData.append('identityDocument', this.verificationDniFile);
+    formData.append('liveSelfie', this.verificationSelfieFile);
+
+    this.communityApi
+      .submitVerification(formData)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.isSubmittingVerification.set(false);
+          this.verificationStatus.set(res.status);
+          this.successMessage.set('¡Solicitud de verificación enviada con éxito!');
+        },
+        error: (err: { error?: { message?: string } }) => {
+          this.isSubmittingVerification.set(false);
+          this.verificationSubmissionError.set(err.error?.message || 'Error al enviar validación.');
+        },
+      });
   }
 
-  displayStatusLabel(request: CommunityRequestListItemResponse): string {
-    if (this.isCollaboratorView() && ['Published', 'Searching'].includes(request.status)) {
-      return 'Disponible';
-    }
-
-    if (request.status === 'Accepted') {
-      return 'Tomado';
-    }
-
-    return this.requestStatusLabel(request.status);
-  }
-
-  requestActionLabel(request: CommunityRequestListItemResponse): string {
-    if (this.isCollaboratorView() && ['Published', 'Searching'].includes(request.status)) {
-      return 'Tomar favor';
-    }
-
-    return ['Confirmed', 'Cancelled'].includes(request.status) ? 'Ver historial' : 'Ver seguimiento';
-  }
-
-  requestStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
+  mapCommunityStatusLabel(status: string): string {
+    const map: Record<string, string> = {
       Published: 'Publicado',
-      Searching: 'Buscando ayuda',
-      Assigned: 'Asignado',
+      Searching: 'Buscando apoyo',
       Accepted: 'Asignado',
-      InProgress: 'En proceso',
       InProcess: 'En proceso',
       Delivered: 'Entregado',
       Confirmed: 'Confirmado',
+      Completed: 'Completado',
       Cancelled: 'Cancelado',
-      Rejected: 'Rechazado',
-      Expired: 'Vencido',
     };
-
-    return labels[status] ?? status;
+    return map[status] ?? status;
   }
 
   requestTypeLabel(type: string): string {
-    const labels: Record<string, string> = {
+    const map: Record<string, string> = {
       MarketPurchase: 'Compra de mercado',
       Errand: 'Encargo',
-      ProductPickup: 'Recojo de productos',
-      PackageDelivery: 'Entrega de paquetes',
-      CompensatedFavor: 'Favor compensado',
+      ProductPickup: 'Recojo de producto',
+      PackageDelivery: 'Envío de paquete',
+      CompensatedFavor: 'Favor',
     };
-
-    return labels[type] ?? type;
+    return map[type] ?? type;
   }
 
-  availabilityStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      Disconnected: 'Desconectado',
-      Available: 'Disponible',
-      Busy: 'Ocupado',
-    };
-
-    return labels[status] ?? status;
+  verificationStatusLabel(): string {
+    const status = this.verificationStatus();
+    if (status === 'Verified') return 'Aprobado';
+    if (status === 'PendingVerification') return 'En revisión';
+    if (status === 'Rejected') return 'Rechazado';
+    return 'No activado';
   }
 
-  formatMatchScore(score: number): string {
-    return `${Math.round(score)}%`;
-  }
-
-  private toUtcString(value: string | null): string | null {
-    return value ? new Date(value).toISOString() : null;
-  }
-
-  private toLocalDateTime(value?: string | null): string {
-    if (!value) {
-      return '';
-    }
-
-    return new Date(value).toISOString().slice(0, 16);
+  verificationBadgeClass(): string {
+    const status = this.verificationStatus();
+    if (status === 'Verified') return 'bg-emerald-100 text-emerald-800';
+    if (status === 'PendingVerification') return 'bg-amber-100 text-amber-800';
+    if (status === 'Rejected') return 'bg-red-100 text-red-800';
+    return 'bg-slate-100 text-slate-600';
   }
 
   private defaultFavorDeadline(): string {
     return this.toLocalInputValue(new Date(Date.now() + 4 * 60 * 60 * 1000));
   }
 
-  private toLocalInputValue(value: Date): string {
-    const localTime = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
-    return localTime.toISOString().slice(0, 16);
-  }
-
-  private wrapLoad<T>(source$: import('rxjs').Observable<T>, fallback: T, title: string) {
-    return source$.pipe(
-      map((data): HubLoadResult<T> => ({ data, warning: null })),
-      catchError((error) =>
-        of({
-          data: fallback,
-          warning: {
-            title,
-            message: getErrorMessage(error, 'Revisa tu conexión e inténtalo nuevamente.'),
-          },
-        } satisfies HubLoadResult<T>),
-      ),
-    );
+  private toLocalInputValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 }

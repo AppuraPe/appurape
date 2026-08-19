@@ -18,7 +18,6 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: R
     return true;
   }
 
-  return router.createUrlTree(['/unauthorized'], {
-    queryParams: { redirectTo: authService.getDefaultRoute(currentRole) },
-  });
+  const defaultRoute = authService.getDefaultRoute(currentRole);
+  return router.createUrlTree([defaultRoute]);
 };

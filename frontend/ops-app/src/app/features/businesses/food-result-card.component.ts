@@ -1,8 +1,8 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PublicSearchFoodItemResponse } from '../../../core/models/restaurants.models';
-import { hasText } from '../../../core/utils/api-utils';
+import { PublicSearchFoodItemResponse } from '../../core/models/restaurants.models';
+import { hasText } from '../../core/utils/api-utils';
 
 @Component({
   selector: 'app-food-result-card',

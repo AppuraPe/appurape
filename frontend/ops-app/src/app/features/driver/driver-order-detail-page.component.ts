@@ -2,11 +2,12 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { CreditCard, LucideAngularModule, MapPin, Package, Phone, Store, Truck, UserRound } from 'lucide-angular';
+import { CreditCard, LucideAngularModule, MapPin, Navigation, Package, Phone, Store, Truck, UserRound } from 'lucide-angular';
 import { DriverOrderDetailResponse } from '../../core/models/driver.models';
 import { DriverOrdersApiService } from '../../core/services/driver-orders-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { buildGoogleMapsUrl } from '../../core/utils/maps.utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
@@ -97,23 +98,53 @@ interface DriverAction {
               </div>
 
               <div class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                    <lucide-angular class="h-4 w-4" [img]="storeIcon" aria-hidden="true"></lucide-angular>
-                    Recojo
+                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
+                      <span class="flex items-center gap-2">
+                        <lucide-angular class="h-4 w-4" [img]="storeIcon" aria-hidden="true"></lucide-angular>
+                        Recojo en Negocio
+                      </span>
+                    </div>
+                    <p class="mt-2 text-base font-bold text-slate-950">{{ order.restaurantName }}</p>
+                    <p class="mt-1 text-sm text-slate-600">{{ order.restaurantAddress }}</p>
                   </div>
-                  <p class="mt-2 text-sm font-bold text-slate-950">{{ order.restaurantName }}</p>
-                  <p class="mt-1 text-sm text-slate-500">{{ order.restaurantAddress }}</p>
+                  @if (order.restaurantAddress) {
+                    <a
+                      [href]="buildGoogleMapsUrl(order.restaurantAddress)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-xl bg-orange-50 px-3 py-2 text-xs font-bold text-primary-700 transition hover:bg-orange-100 active:scale-95"
+                    >
+                      <lucide-angular class="h-3.5 w-3.5" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+                      Abrir en Google Maps
+                    </a>
+                  }
                 </div>
 
-                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
-                    <lucide-angular class="h-4 w-4" [img]="mapIcon" aria-hidden="true"></lucide-angular>
-                    Entrega
+                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between text-xs font-extrabold uppercase tracking-[0.16em] text-primary-700">
+                      <span class="flex items-center gap-2">
+                        <lucide-angular class="h-4 w-4" [img]="mapIcon" aria-hidden="true"></lucide-angular>
+                        Entrega al Cliente
+                      </span>
+                    </div>
+                    <p class="mt-2 text-base font-bold text-slate-950">{{ order.deliveryAddress }}</p>
+                    @if (order.deliveryReference) {
+                      <p class="mt-1 text-xs text-slate-500 font-medium">{{ order.deliveryReference }}</p>
+                    }
                   </div>
-                  <p class="mt-2 text-sm font-bold text-slate-950">{{ order.deliveryAddress }}</p>
-                  @if (order.deliveryReference) {
-                    <p class="mt-1 text-sm text-slate-500">{{ order.deliveryReference }}</p>
+                  @if (order.deliveryAddress) {
+                    <a
+                      [href]="buildGoogleMapsUrl(order.deliveryAddress)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100 active:scale-95"
+                    >
+                      <lucide-angular class="h-3.5 w-3.5" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+                      Abrir en Google Maps
+                    </a>
                   }
                 </div>
               </div>
@@ -217,6 +248,8 @@ export class DriverOrderDetailPageComponent {
   readonly phoneIcon = Phone;
   readonly creditCardIcon = CreditCard;
   readonly packageIcon = Package;
+  readonly navigationIcon = Navigation;
+  readonly buildGoogleMapsUrl = buildGoogleMapsUrl;
 
   readonly order = signal<DriverOrderDetailResponse | null>(null);
   readonly isLoading = signal(true);

@@ -160,9 +160,34 @@ public class CommunityService : ICommunityService
             query = query.Where(x => x.Type == request.Type.Value);
         }
 
-        if (request.Mine)
+        var normalizedView = request.View?.Trim().ToLowerInvariant();
+        if (normalizedView == "my" || request.Mine)
         {
-            query = query.Where(x => x.CreatedByUserId == userId || x.AssignedCollaborator!.UserId == userId);
+            query = query.Where(x => x.CreatedByUserId == userId);
+        }
+        else if (normalizedView == "available")
+        {
+            query = query.Where(x =>
+                x.CreatedByUserId != userId &&
+                x.AssignedCollaboratorId == null &&
+                (x.Status == CommunityRequestStatus.Published || x.Status == CommunityRequestStatus.Searching));
+        }
+        else if (normalizedView is "assigned" or "taken" or "my-assignments")
+        {
+            query = query.Where(x =>
+                x.AssignedCollaborator != null &&
+                x.AssignedCollaborator.UserId == userId &&
+                (x.Status == CommunityRequestStatus.Accepted || x.Status == CommunityRequestStatus.InProcess || x.Status == CommunityRequestStatus.Delivered));
+        }
+        else if (normalizedView == "history")
+        {
+            query = query.Where(x =>
+                (x.CreatedByUserId == userId || (x.AssignedCollaborator != null && x.AssignedCollaborator.UserId == userId)) &&
+                (x.Status == CommunityRequestStatus.Confirmed || x.Status == CommunityRequestStatus.Cancelled));
+        }
+        else if (_currentUserService.ActiveProfile == UserProfiles.Customer)
+        {
+            query = query.Where(x => x.CreatedByUserId == userId);
         }
 
         if (search is not null)

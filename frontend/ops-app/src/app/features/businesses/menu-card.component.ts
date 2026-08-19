@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ArrowRight, Clock3, LucideAngularModule, ShoppingCart, Store } from 'lucide-angular';
-import { hasText } from '../../../core/utils/api-utils';
+import { hasText } from '../../core/utils/api-utils';
 
 export type MenuCardActionMode = 'link' | 'button';
 export type MenuCardStatusTone = 'success' | 'warning' | 'muted';
@@ -152,4 +152,3 @@ export class MenuCardComponent {
     return 'bg-white/92 text-loreto-carbon';
   }
 }
-

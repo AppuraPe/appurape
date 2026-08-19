@@ -10,6 +10,10 @@ public class CurrentUserResponse
 
     public string Role { get; set; } = string.Empty;
 
+    public string PrimaryRole { get; set; } = string.Empty;
+
+    public string ActiveProfile { get; set; } = string.Empty;
+
     public string Status { get; set; } = string.Empty;
 
     public string? TrustLevel { get; set; }

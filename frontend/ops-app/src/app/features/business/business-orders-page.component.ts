@@ -70,23 +70,7 @@ type PaymentActionMode = 'confirm' | 'reject';
       [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'"
       [extraClass]="'grid w-full min-w-0 max-w-4xl gap-3.5 overflow-x-hidden pt-1 lg:gap-4'"
     >
-      <section class="grid w-full min-w-0 max-w-full gap-3.5 px-0.5" aria-labelledby="business-orders-title">
-        <div class="min-w-0">
-          <div class="flex min-w-0 items-center justify-between gap-3">
-            <span class="inline-flex min-h-7 items-center rounded-full bg-primary-100 px-2.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary-700">
-              Negocio
-            </span>
-            <span class="shrink-0 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
-              {{ orders().length }} visibles
-            </span>
-          </div>
-          <h1 id="business-orders-title" class="mt-2 text-[1.35rem] font-black leading-tight tracking-[-0.04em] text-slate-950 sm:text-2xl">
-            Pedidos del negocio
-          </h1>
-          <p class="mt-1 max-w-full text-sm leading-5 text-slate-500">
-            Bandeja móvil para aceptar, preparar y dejar pedidos listos.
-          </p>
-        </div>
+      <section class="grid w-full min-w-0 max-w-full gap-3 px-0.5" aria-labelledby="business-orders-title">
 
         <div class="grid grid-cols-3 gap-2">
           <div class="min-w-0 rounded-2xl bg-white px-2.5 py-3 text-center shadow-sm">
@@ -94,7 +78,7 @@ type PaymentActionMode = 'confirm' | 'reject';
             <p class="mt-1 text-[1.35rem] font-black leading-none text-amber-700">{{ ordersByStatus('Pending') }}</p>
           </div>
           <div class="min-w-0 rounded-2xl bg-white px-2.5 py-3 text-center shadow-sm">
-            <p class="text-[10px] font-black uppercase tracking-[0.05em] text-slate-500">En cocina</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.05em] text-slate-500">Preparando</p>
             <p class="mt-1 text-[1.35rem] font-black leading-none text-sky-700">{{ ordersByStatus('Preparing') }}</p>
           </div>
           <div class="min-w-0 rounded-2xl bg-white px-2.5 py-3 text-center shadow-sm">

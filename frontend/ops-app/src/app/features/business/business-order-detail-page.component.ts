@@ -7,6 +7,7 @@ import {
   CircleSlash,
   CookingPot,
   LucideAngularModule,
+  Navigation,
   Package,
   Phone,
   ShieldCheck,
@@ -16,13 +17,13 @@ import { RefundResponse } from '../../core/models/orders.models';
 import { BusinessOrdersApiService } from '../../core/services/business-orders-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
+import { buildGoogleMapsUrl } from '../../core/utils/maps.utils';
 import { toOrderStatusValue } from '../../core/utils/order-status.utils';
 import { AppBackButtonComponent } from '../../shared/components/app-back-button.component';
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { BottomSafeActionBarComponent } from '../../shared/components/bottom-safe-action-bar.component';
-import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
@@ -50,7 +51,6 @@ interface BusinessOrderAction {
     AppSurfaceCardComponent,
     StatusBadgeComponent,
     MobilePageShellComponent,
-    InternalPageSectionHeaderComponent,
     UnifiedEmptyStateComponent,
     BottomSafeActionBarComponent,
   ],
@@ -79,13 +79,7 @@ interface BusinessOrderAction {
           <app-button type="button" variant="secondary" (click)="loadOrder()">Reintentar</app-button>
         </app-unified-empty-state>
       } @else if (order(); as order) {
-        <section class="grid w-full min-w-0 max-w-full gap-4 px-0.5">
-          <app-internal-page-section-header
-            eyebrow="Negocio"
-            title="Detalle del pedido"
-            subtitle="Revisa productos, pago y el siguiente paso operativo antes de mover el estado."
-            [meta]="'#' + shortId(order.id)"
-          />
+        <section class="grid w-full min-w-0 max-w-full gap-3.5 px-0.5">
 
           @if (errorMessage()) {
             <app-notice class="mt-4" tone="danger" [message]="errorMessage()" />
@@ -136,11 +130,24 @@ interface BusinessOrderAction {
                 }
               </div>
 
-              <div class="min-w-0 border-t border-slate-100 pt-3">
-                <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary-700">Entrega</p>
-                <p class="mt-1 break-words text-sm font-semibold text-slate-900">{{ order.deliveryAddress }}</p>
-                @if (order.deliveryReference) {
-                  <p class="mt-1 break-words text-xs text-slate-500">{{ order.deliveryReference }}</p>
+              <div class="min-w-0 border-t border-slate-100 pt-3 flex flex-col justify-between">
+                <div>
+                  <p class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary-700">Entrega</p>
+                  <p class="mt-1 break-words text-sm font-semibold text-slate-900">{{ order.deliveryAddress }}</p>
+                  @if (order.deliveryReference) {
+                    <p class="mt-1 break-words text-xs text-slate-500">{{ order.deliveryReference }}</p>
+                  }
+                </div>
+                @if (order.deliveryAddress) {
+                  <a
+                    [href]="buildGoogleMapsUrl(order.deliveryAddress)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 active:scale-95"
+                  >
+                    <lucide-angular class="h-3.5 w-3.5 text-primary-700" [img]="navigationIcon" aria-hidden="true"></lucide-angular>
+                    Ver en Google Maps
+                  </a>
                 }
               </div>
 
@@ -156,7 +163,11 @@ interface BusinessOrderAction {
 
         @if (refund(); as refundCase) {
           <app-surface-card variant="default" extraClass="grid gap-3 border-amber-200 bg-amber-50/60 p-4">
-            <app-internal-page-section-header eyebrow="Reembolso" title="Devuelve el pago con evidencia" subtitle="El estado solo cambiará a reembolsado cuando el cliente confirme que recibió el dinero." />
+            <div class="min-w-0">
+              <span class="text-[10px] font-black uppercase tracking-[0.14em] text-primary-700">Reembolso</span>
+              <h3 class="text-sm font-black text-slate-950">Devuelve el pago con evidencia</h3>
+              <p class="mt-0.5 text-xs text-slate-500">El estado solo cambiará a reembolsado cuando el cliente confirme que recibió el dinero.</p>
+            </div>
             <div class="flex flex-wrap items-center justify-between gap-3 text-sm"><app-status-badge [status]="refundCase.status" [label]="refundStatusLabel(refundCase.status)" /><strong>{{ refundCase.amount | currency: refundCase.currencyCode : 'S/ ' : '1.2-2' }}</strong></div>
             @if (refundCase.status === 'AwaitingBusinessRefund') {
               <label class="grid gap-1 text-sm font-bold text-slate-700">Número de operación<input class="min-h-11 min-w-0 rounded-xl border border-slate-300 bg-white px-3" [value]="refundOperation()" (input)="refundOperation.set($any($event.target).value)" /></label>
@@ -172,7 +183,11 @@ interface BusinessOrderAction {
 
         @if (order.deliveryMode === 'CommunityCollaboratorDelivery' && order.assignedCourierType === 'Collaborator' && (order.status === 'Assigned' || order.status === 'ReadyForPickup')) {
           <app-surface-card variant="default" extraClass="grid gap-3 p-4">
-            <app-internal-page-section-header eyebrow="Recojo" title="Validar al colaborador" subtitle="Pide el código de seis dígitos antes de entregar el paquete." />
+            <div class="min-w-0">
+              <span class="text-[10px] font-black uppercase tracking-[0.14em] text-primary-700">Recojo</span>
+              <h3 class="text-sm font-black text-slate-950">Validar al colaborador</h3>
+              <p class="mt-0.5 text-xs text-slate-500">Pide el código de seis dígitos antes de entregar el paquete.</p>
+            </div>
             <label class="grid gap-2">
               <span class="text-sm font-semibold text-slate-700">Código de recojo</span>
               <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-center text-lg font-black tracking-[0.2em]" inputmode="numeric" maxlength="6" [value]="pickupCode()" (input)="pickupCode.set($any($event.target).value)" />
@@ -185,7 +200,11 @@ interface BusinessOrderAction {
 
         @if ((order.deliveryMode === 'PickupOrDirect' && order.status === 'ReadyForPickup') || (order.deliveryMode === 'BusinessDelivery' && order.status === 'OnTheWay')) {
           <app-surface-card variant="default" extraClass="grid gap-3 p-4">
-            <app-internal-page-section-header eyebrow="Entrega segura" title="Confirmar entrega" subtitle="Solicita al cliente el código de seis dígitos cuando ya tenga su pedido." />
+            <div class="min-w-0">
+              <span class="text-[10px] font-black uppercase tracking-[0.14em] text-primary-700">Entrega segura</span>
+              <h3 class="text-sm font-black text-slate-950">Confirmar entrega</h3>
+              <p class="mt-0.5 text-xs text-slate-500">Solicita al cliente el código de seis dígitos cuando ya tenga su pedido.</p>
+            </div>
             <label class="grid gap-2">
               <span class="text-sm font-semibold text-slate-700">Código de entrega</span>
               <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-center text-lg font-black tracking-[0.2em]" inputmode="numeric" maxlength="6" [value]="deliveryCode()" (input)="deliveryCode.set($any($event.target).value)" />
@@ -312,6 +331,8 @@ export class BusinessOrderDetailPageComponent {
   readonly acceptIcon = ShieldCheck;
   readonly readyIcon = BadgeCheck;
   readonly cancelIcon = CircleSlash;
+  readonly navigationIcon = Navigation;
+  readonly buildGoogleMapsUrl = buildGoogleMapsUrl;
 
   readonly order = signal<BusinessOrderDetailResponse | null>(null);
   readonly isLoading = signal(true);

@@ -1,57 +1,57 @@
+import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { Bike, Bolt, Compass, LucideAngularModule, RefreshCw, ShieldCheck, Star } from 'lucide-angular';
+import { Bike, Bolt, Compass, LucideAngularModule, RefreshCw, ShieldCheck, Star, MapPin, TrendingUp, Wallet, Power } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { DriverOrdersApiService } from '../../core/services/driver-orders-api.service';
 import { getErrorMessage } from '../../core/utils/http-error.utils';
 import { AppNoticeComponent } from '../../shared/components/app-notice.component';
-import { InternalPageSectionHeaderComponent } from '../../shared/components/internal-page-section-header.component';
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
 
 @Component({
   selector: 'app-driver-dashboard-page',
   host: {
-    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden',
+    class: 'block w-full min-w-0 max-w-full box-border overflow-x-hidden bg-slate-50 min-h-screen',
   },
   standalone: true,
   imports: [
+    CurrencyPipe,
     RouterLink,
     LucideAngularModule,
     AppNoticeComponent,
     MobilePageShellComponent,
-    InternalPageSectionHeaderComponent,
   ],
   template: `
-    <app-mobile-page-shell [bottomSpacingClass]="'pb-0'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-4xl content-start gap-3.5 overflow-x-hidden lg:gap-4'">
-      <header class="grid gap-3 px-0.5">
-        <div class="flex min-w-0 items-start justify-between gap-3">
-          <app-internal-page-section-header
-            eyebrow="Repartidor"
-            title="Tu ruta de hoy"
-            subtitle="Encuentra un pedido o continúa la entrega que tienes activa."
-          />
-          <button
-            type="button"
-            class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-primary-700 shadow-sm transition active:scale-95"
-            [disabled]="isLoading()"
-            (click)="loadDashboard()"
-            aria-label="Actualizar resumen"
-          >
-            <lucide-angular class="h-4 w-4" [class.animate-spin]="isLoading()" [img]="refreshIcon" aria-hidden="true"></lucide-angular>
-          </button>
+    <app-mobile-page-shell [bottomSpacingClass]="'pb-0'" [desktopClass]="'xl:mx-0 xl:max-w-none xl:bg-transparent xl:px-0 xl:pb-0 xl:pt-0'" [extraClass]="'grid w-full min-w-0 max-w-4xl content-start gap-4 overflow-x-hidden pt-2 px-2'">
+      
+      <!-- COMPACT HEADER WITH ONLINE TOGGLE -->
+      <header class="flex items-center justify-between rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center gap-3">
+          <div class="h-11 w-11 overflow-hidden rounded-full border-2 border-primary-100 bg-primary-50 shadow-sm">
+            <img src="https://ui-avatars.com/api/?name=Repartidor&background=0D8ABC&color=fff&bold=true" alt="Perfil" class="h-full w-full object-cover" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm font-black text-slate-800 leading-none">¡Hola, equipo!</h1>
+              <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
+                {{ trustScore() }}%
+              </span>
+            </div>
+            <p class="mt-1 text-xs font-semibold text-slate-500">{{ trustLevelLabel() }}</p>
+          </div>
         </div>
-
-        <div class="flex min-w-0 items-center gap-2 overflow-hidden">
-          <span class="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700">
-            <lucide-angular class="h-3.5 w-3.5 shrink-0" [img]="shieldCheckIcon" aria-hidden="true"></lucide-angular>
-            <span class="truncate">{{ trustLevelLabel() }}</span>
-          </span>
-          <span class="shrink-0 rounded-full bg-white px-2.5 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
-            Confianza {{ trustScore() }}%
-          </span>
-        </div>
+        
+        <button
+          type="button"
+          (click)="toggleOnlineStatus()"
+          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black shadow-sm transition active:scale-95"
+          [class]="isOnline() ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/30' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-300'"
+        >
+          <span class="h-2 w-2 rounded-full" [class]="isOnline() ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+          {{ isOnline() ? 'Conectado' : 'En pausa' }}
+        </button>
       </header>
 
       @if (errorMessage()) {
@@ -59,67 +59,99 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
       }
 
       @if (isLoading()) {
-        <div class="grid gap-2" aria-label="Cargando resumen del repartidor" aria-busy="true">
-          @for (skeleton of [1, 2, 3]; track skeleton) {
-            <div class="h-[80px] animate-pulse rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div class="flex h-full items-center gap-3">
-                <div class="h-10 w-10 shrink-0 rounded-xl bg-slate-200"></div>
-                <div class="min-w-0 flex-1 space-y-2">
-                  <div class="h-3 w-2/3 rounded-full bg-slate-200"></div>
-                  <div class="h-2.5 w-1/2 rounded-full bg-slate-100"></div>
-                </div>
-              </div>
-            </div>
-          }
+        <div class="grid gap-4" aria-label="Cargando resumen" aria-busy="true">
+          <div class="h-44 animate-pulse rounded-3xl bg-slate-200"></div>
+          <div class="flex gap-4">
+             <div class="h-28 flex-1 animate-pulse rounded-3xl bg-slate-200"></div>
+             <div class="h-28 flex-1 animate-pulse rounded-3xl bg-slate-200"></div>
+          </div>
         </div>
       } @else {
-        <section class="grid grid-cols-2 gap-2" aria-label="Resumen de pedidos">
-          <div class="min-w-0 rounded-2xl bg-white p-3.5 shadow-sm">
-            <p class="truncate text-[10px] font-black uppercase tracking-[0.06em] text-slate-500">Disponibles</p>
-            <p class="mt-1.5 text-2xl font-black leading-none text-primary-700">{{ availableOrdersCount() }}</p>
-            <p class="mt-1 text-xs text-slate-500">Para tomar ahora</p>
+        
+        <!-- TARJETA FINANCIERA DE HOY -->
+        <section class="overflow-hidden rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/40 p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-800">
+              <lucide-angular class="h-4 w-4" [img]="trendingUpIcon" aria-hidden="true"></lucide-angular>
+              Ganancias de Hoy
+            </span>
+            <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black text-emerald-800">En tiempo real</span>
           </div>
-          <div class="min-w-0 rounded-2xl bg-white p-3.5 shadow-sm">
-            <p class="truncate text-[10px] font-black uppercase tracking-[0.06em] text-slate-500">Mis entregas</p>
-            <p class="mt-1.5 text-2xl font-black leading-none text-slate-950">{{ myOrdersCount() }}</p>
-            <p class="mt-1 text-xs text-slate-500">Asignadas a ti</p>
+          <div class="mt-3 flex items-baseline justify-between">
+            <p class="text-3xl font-black tracking-tight text-emerald-700 tabular-nums">
+              {{ todayEarnings() | currency: 'PEN' : 'S/ ' : '1.2-2' }}
+            </p>
+            <p class="text-xs font-bold text-slate-500">
+              {{ myOrdersCount() }} {{ myOrdersCount() === 1 ? 'entrega' : 'entregas' }} hoy
+            </p>
           </div>
         </section>
 
-        <div class="grid gap-3 md:grid-cols-2">
-          <a class="flex min-w-0 items-center gap-3 rounded-2xl bg-primary-700 p-4 text-white no-underline shadow-lg shadow-primary-700/20 transition active:scale-[0.99]" routerLink="/driver/orders">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/15">
-              <lucide-angular class="h-5 w-5" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
-            </span>
-            <span class="min-w-0 flex-1">
-              <strong class="block truncate text-sm font-black">Buscar pedidos</strong>
-              <small class="mt-0.5 block truncate text-xs font-semibold text-white/80">Revisa los disponibles cerca de ti</small>
-            </span>
-          </a>
+        <!-- DYNAMIC ACTION HERO -->
+        <section aria-label="Acción Principal">
+          @if (myOrdersCount() > 0) {
+            <!-- ACTIVO: Tiene una entrega en curso -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 to-red-600 p-6 shadow-lg shadow-orange-500/30 text-white">
+              <div class="absolute -right-4 -top-4 opacity-10">
+                <lucide-angular class="h-32 w-32" [img]="boltIcon" aria-hidden="true"></lucide-angular>
+              </div>
+              <div class="relative z-10">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur-sm">
+                  <span class="h-2 w-2 animate-pulse rounded-full bg-white"></span>
+                  En progreso
+                </span>
+                <h2 class="mt-4 text-2xl font-black leading-tight">Entrega activa</h2>
+                <p class="mt-1 text-sm font-medium text-white/90">Sigue la ruta hacia tu destino en el mapa</p>
+                
+                <a routerLink="/driver/active-order" class="mt-5 flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 font-black text-orange-600 shadow-sm transition active:scale-95 no-underline">
+                  <lucide-angular class="h-5 w-5" [img]="mapPinIcon" aria-hidden="true"></lucide-angular>
+                  Ver Mapa y Ruta
+                </a>
+              </div>
+            </div>
+          } @else {
+            <!-- INACTIVO: Buscar pedidos -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 shadow-lg shadow-primary-700/30 text-white">
+              <div class="absolute -right-4 -top-4 opacity-10">
+                <lucide-angular class="h-40 w-40" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
+              </div>
+              <div class="relative z-10">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur-sm">
+                  <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                  {{ isOnline() ? 'Listo para recibir pedidos' : 'En descanso' }}
+                </span>
+                <h2 class="mt-4 text-2xl font-black leading-tight">¿Listo para rodar?</h2>
+                <p class="mt-1 text-sm font-medium text-primary-100">Hay <strong class="text-white">{{ availableOrdersCount() }} pedidos disponibles</strong> cerca de ti.</p>
+                
+                <a routerLink="/driver/orders" class="mt-5 flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 font-black text-primary-700 shadow-sm transition active:scale-95 no-underline">
+                  <lucide-angular class="h-5 w-5" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
+                  Ver Pedidos Disponibles
+                </a>
+              </div>
+            </div>
+          }
+        </section>
 
-          <a class="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-slate-950 no-underline shadow-sm transition active:scale-[0.99]" routerLink="/driver/active-order">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-700">
-              <lucide-angular class="h-5 w-5" [img]="boltIcon" aria-hidden="true"></lucide-angular>
-            </span>
-            <span class="min-w-0 flex-1">
-              <strong class="block truncate text-sm font-black">Entrega activa</strong>
-              <small class="mt-0.5 block truncate text-xs font-semibold text-slate-500">Continúa el pedido en curso</small>
-            </span>
+        <!-- DASHBOARD DISPONIBILIDAD -->
+        <section class="grid grid-cols-2 gap-3" aria-label="Métricas del día">
+          <a class="flex flex-col justify-center rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 no-underline transition active:scale-95" routerLink="/driver/orders">
+            <div class="flex items-center gap-2 text-slate-500">
+               <lucide-angular class="h-4 w-4 text-primary-600" [img]="bikeIcon" aria-hidden="true"></lucide-angular>
+               <span class="text-[11px] font-black uppercase tracking-wider text-slate-600">Disponibles</span>
+            </div>
+            <p class="mt-2 text-3xl font-black text-slate-900">{{ availableOrdersCount() }}</p>
           </a>
-        </div>
+          
+          <a class="flex flex-col justify-center rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 no-underline transition active:scale-95" routerLink="/driver/orders/my">
+            <div class="flex items-center gap-2 text-slate-500">
+               <lucide-angular class="h-4 w-4 text-amber-500" [img]="starIcon" aria-hidden="true"></lucide-angular>
+               <span class="text-[11px] font-black uppercase tracking-wider text-slate-600">Historial</span>
+            </div>
+            <p class="mt-2 text-3xl font-black text-slate-900">{{ myOrdersCount() }}</p>
+          </a>
+        </section>
 
-        <div class="grid grid-cols-2 gap-2">
-          <a class="flex min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-center text-xs font-bold text-slate-700 no-underline" routerLink="/driver/orders/my">
-            <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="starIcon" aria-hidden="true"></lucide-angular>
-            <span class="truncate">Mi historial</span>
-          </a>
-          <a class="flex min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-center text-xs font-bold text-slate-700 no-underline" routerLink="/community">
-            <lucide-angular class="h-4 w-4 shrink-0 text-primary-700" [img]="compassIcon" aria-hidden="true"></lucide-angular>
-            <span class="truncate">Favores</span>
-          </a>
-        </div>
-
-        <p class="px-1 text-xs leading-5 text-slate-500">{{ trustLevelHint() }}</p>
+        <p class="mt-2 px-4 text-center text-xs leading-relaxed text-slate-400">{{ trustLevelHint() }}</p>
       }
     </app-mobile-page-shell>
   `,
@@ -135,15 +167,25 @@ export class DriverDashboardPageComponent {
   readonly boltIcon = Bolt;
   readonly starIcon = Star;
   readonly refreshIcon = RefreshCw;
+  readonly mapPinIcon = MapPin;
+  readonly trendingUpIcon = TrendingUp;
+  readonly walletIcon = Wallet;
+  readonly powerIcon = Power;
 
   readonly availableOrdersCount = signal(0);
   readonly myOrdersCount = signal(0);
+  readonly todayEarnings = signal(0);
+  readonly isOnline = signal(true);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
   readonly currentRole = computed(() => this.authService.currentUser()?.role ?? 'Driver');
 
   constructor() {
     this.loadDashboard();
+  }
+
+  toggleOnlineStatus(): void {
+    this.isOnline.update((v) => !v);
   }
 
   trustLevelLabel(): string {
@@ -190,6 +232,8 @@ export class DriverDashboardPageComponent {
         next: ({ availableOrders, myOrders }) => {
           this.availableOrdersCount.set(availableOrders.length);
           this.myOrdersCount.set(myOrders.length);
+          const totalEarned = myOrders.reduce((sum, o) => sum + (o.courierEarningAmount || 0), 0);
+          this.todayEarnings.set(totalEarned);
           this.isLoading.set(false);
         },
         error: (error) => {

@@ -48,6 +48,8 @@ export abstract class AuthSessionStore {
       fullName: response.fullName,
       email: response.email,
       role: response.role,
+      primaryRole: response.primaryRole ?? response.role,
+      activeProfile: response.activeProfile,
       status: response.status,
       trustLevel: response.trustLevel ?? null,
       trustScore: response.trustScore ?? null,
@@ -55,6 +57,13 @@ export abstract class AuthSessionStore {
       communityTrustScore: response.communityTrustScore ?? null,
       communityAvailabilityStatus: response.communityAvailabilityStatus ?? null,
       isCommunityAvailable: response.isCommunityAvailable ?? null,
+      hasCustomerProfile: response.hasCustomerProfile,
+      hasBusinessProfile: response.hasBusinessProfile,
+      hasDriverProfile: response.hasDriverProfile,
+      hasCollaboratorProfile: response.hasCollaboratorProfile,
+      collaboratorApprovalStatus: response.collaboratorApprovalStatus ?? null,
+      isCollaboratorIdentityVerified: response.isCollaboratorIdentityVerified ?? null,
+      availableProfiles: response.availableProfiles ?? [],
       isAuthenticated: true,
     };
   }

@@ -15,6 +15,7 @@ import {
   ResendPasswordResetCodeRequest,
   ResendRegistrationCodeRequest,
   StartCustomerRegistrationRequest,
+  SwitchProfileRequest,
   VerificationCodeResponse,
   VerificationStatusResponse,
   VerifyCustomerRegistrationCodeRequest,
@@ -100,5 +101,9 @@ export class AuthApiService {
 
   completeDriverRegistration(request: CompleteRegistrationRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/register/driver/complete`, request);
+  }
+
+  switchProfile(request: SwitchProfileRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/switch-profile`, request);
   }
 }

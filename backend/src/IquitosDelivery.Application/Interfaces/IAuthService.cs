@@ -19,4 +19,6 @@ public interface IAuthService
     Task<VerificationStatusResponse> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
 
     Task<CurrentUserResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+
+    Task<AuthResponse> SwitchProfileAsync(SwitchProfileRequest request, CancellationToken cancellationToken = default);
 }

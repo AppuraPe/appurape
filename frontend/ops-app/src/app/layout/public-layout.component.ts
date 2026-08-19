@@ -128,6 +128,13 @@ export class PublicLayoutComponent {
         this.currentPath.set(event.urlAfterRedirects);
         if (this.isAuthenticated()) {
           this.notificationInbox.refreshUnreadCount();
+          if (this.isOperationsRole()) {
+            const url = event.urlAfterRedirects;
+            if (!url.startsWith('/community') && !url.startsWith('/favors')) {
+              void this.router.navigateByUrl(this.defaultRoute(), { replaceUrl: true });
+              return;
+            }
+          }
         }
         this.closeNavbar();
         this.closeUserDropdown();

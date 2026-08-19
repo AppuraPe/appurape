@@ -21,6 +21,7 @@ import { PlatformSettingsApiService } from '../../core/services/platform-setting
 import { AppButtonComponent } from '../../shared/components/app-button.component';
 import { AppSurfaceCardComponent } from '../../shared/components/app-surface-card.component';
 import { MobilePageShellComponent } from '../../shared/components/mobile-page-shell.component';
+import { ProfileModeSwitcherCardComponent } from '../../shared/components/profile-mode-switcher-card.component';
 
 @Component({
   selector: 'app-customer-profile-page',
@@ -31,6 +32,7 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
     MobilePageShellComponent,
     AppSurfaceCardComponent,
     AppButtonComponent,
+    ProfileModeSwitcherCardComponent,
   ],
   template: `
     <app-mobile-page-shell
@@ -43,6 +45,9 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
         <h1 class="text-2xl font-extrabold leading-tight tracking-[-0.03em] text-slate-950">Perfil</h1>
         <p class="text-sm leading-5 text-slate-500">Tus datos y accesos frecuentes.</p>
       </header>
+
+      <!-- Modo de uso / Switcher -->
+      <app-profile-mode-switcher-card class="block w-full min-w-0 max-w-full" />
 
       <app-surface-card class="block w-full min-w-0 max-w-full box-border" variant="hero" extraClass="box-border w-full min-w-0 max-w-full overflow-hidden !p-4">
         <div class="flex w-full min-w-0 max-w-full items-center gap-3">

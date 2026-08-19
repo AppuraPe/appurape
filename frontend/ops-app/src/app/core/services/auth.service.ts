@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, firstValueFrom, map, Observable, of, tap } from 'rxjs';
 import {
+  AppProfile,
   AuthResponse,
   CompleteCustomerRegistrationRequest,
   CompleteRegistrationRequest,
@@ -11,6 +12,7 @@ import {
   ResendRegistrationCodeRequest,
   StartCustomerRegistrationRequest,
   StartDriverRegistrationRequest,
+  SwitchProfileRequest,
   UserRole,
   VerificationCodeResponse,
   VerificationStatusResponse,
@@ -19,7 +21,13 @@ import {
 import { AuthApiService } from './auth-api.service';
 import { PushNotificationService } from '../notifications/push-notification.service';
 import { AuthSessionStore } from '@app/shared/core/auth/auth-session.store';
-import { getDefaultRouteForRole, isOpsRole as isOpsRoleHelper } from '@app/shared/core/auth/role.utils';
+import {
+  getDefaultRouteForProfile,
+  getDefaultRouteForRole,
+  isOpsRole as isOpsRoleHelper,
+  profileToEffectiveRole,
+  roleToDefaultProfile,
+} from '@app/shared/core/auth/role.utils';
 import { isJwtExpired } from '../auth/jwt.utils';
 
 const TOKEN_KEY = 'iquitosDelivery.app.token';
@@ -39,7 +47,14 @@ export class AuthService extends AuthSessionStore {
   readonly currentUser = this.userState.asReadonly();
   readonly authReady = this.readyState.asReadonly();
   readonly isAuthenticated = computed(() => !!this.tokenState() && !!this.userState()?.isAuthenticated);
-  readonly currentRole = computed(() => this.userState()?.role ?? null);
+  readonly activeProfile = computed<AppProfile>(
+    () => (this.userState()?.activeProfile as AppProfile | undefined) ?? roleToDefaultProfile(this.userState()?.role),
+  );
+  readonly primaryRole = computed(() => this.userState()?.primaryRole ?? this.userState()?.role ?? null);
+  readonly availableProfiles = computed<(AppProfile | string)[]>(
+    () => this.userState()?.availableProfiles ?? [],
+  );
+  readonly currentRole = computed(() => this.userState()?.role ?? profileToEffectiveRole(this.activeProfile()));
 
   constructor() {
     super({
@@ -197,8 +212,17 @@ export class AuthService extends AuthSessionStore {
     return this.isAuthenticated();
   }
 
-  getDefaultRoute(role: UserRole | string | null = this.getCurrentRole()): string {
-    return getDefaultRouteForRole(role);
+  switchProfile(profile: AppProfile): Observable<AuthResponse> {
+    return this.authApi.switchProfile({ profile }).pipe(
+      tap((response) => this.applyAuthResponse(response)),
+    );
+  }
+
+  getDefaultRoute(roleOrProfile?: UserRole | AppProfile | string | null): string {
+    if (!roleOrProfile) {
+      return getDefaultRouteForProfile(this.activeProfile());
+    }
+    return getDefaultRouteForProfile(roleOrProfile as AppProfile);
   }
 
   override isOpsRole(role: UserRole | string | null = this.getCurrentRole()): boolean {
@@ -211,6 +235,10 @@ export class AuthService extends AuthSessionStore {
 
   getCurrentRole(): UserRole | string | null {
     return this.currentRole();
+  }
+
+  getActiveProfile(): AppProfile {
+    return this.activeProfile();
   }
 
   private applyAuthResponse(response: AuthResponse): void {
