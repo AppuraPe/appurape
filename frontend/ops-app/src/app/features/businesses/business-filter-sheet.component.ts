@@ -38,7 +38,12 @@ import { BusinessTypeListItemResponse, BusinessZoneListItemResponse } from '../.
 
             <label class="grid min-w-0 gap-2">
               <span class="text-sm font-semibold text-loreto-carbon">Zona</span>
-              <select class="min-h-12 w-full min-w-0 rounded-[14px]" formControlName="zoneId" [disabled]="isLoadingZones() && !zones().length">
+              <select
+                class="min-h-12 w-full min-w-0 rounded-[14px]"
+                [class.opacity-60]="isLoadingZones() && !zones().length"
+                [attr.aria-busy]="isLoadingZones() && !zones().length"
+                formControlName="zoneId"
+              >
                 <option value="">Todas las zonas</option>
                 @for (zone of zones(); track zone.id) {
                   <option [value]="zone.id">{{ zone.name }}</option>

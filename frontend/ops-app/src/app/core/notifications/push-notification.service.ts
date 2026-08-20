@@ -3,6 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { NotificationInboxApiService } from '../services/notification-inbox-api.service';
 
 type AuthPushContext = {
   authToken: string;
@@ -38,6 +39,7 @@ export class PushNotificationService {
 
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly notificationInbox = inject(NotificationInboxApiService);
   private readonly notificationsApiUrl = `${environment.apiBaseUrl}/api/notifications/device-token`;
 
   private listenersAttached = false;
@@ -147,10 +149,12 @@ export class PushNotificationService {
 
     await pushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.info('Push notification received.', notification);
+      this.notificationInbox.refreshUnreadCount(true);
     });
 
     await pushNotifications.addListener('pushNotificationActionPerformed', (notificationAction) => {
       console.info('Push notification action performed.', notificationAction);
+      this.notificationInbox.refreshUnreadCount(true);
       void this.handleNotificationActionAsync(notificationAction.notification?.data);
     });
 
@@ -315,6 +319,6 @@ export class PushNotificationService {
     }
 
     const normalizedRoute = maybeRoute.trim();
-    return normalizedRoute.startsWith('/') ? normalizedRoute : null;
+    return normalizedRoute.startsWith('/') && !normalizedRoute.startsWith('//') ? normalizedRoute : null;
   }
 }

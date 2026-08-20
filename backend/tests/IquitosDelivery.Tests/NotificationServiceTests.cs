@@ -26,6 +26,30 @@ public class NotificationServiceTests
     }
 
     [Fact]
+    public async Task SendTestNotification_WhenPersistToInboxTrue_CreatesHistoryEvenWithoutActiveTokens()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await SeedUserAsync(dbContext, UserRole.Customer, "test-history@appurape.test");
+        var service = CreateService(dbContext, new TestCurrentUserService(userId), new FakePushNotificationSender(isConfigured: true));
+
+        var response = await service.SendTestNotificationToCurrentUserAsync(new TestPushNotificationRequest
+        {
+            Title = "QA",
+            Body = "Visible en historial",
+            PersistToInbox = true,
+            Data = new Dictionary<string, string> { ["targetRoute"] = "/account/notifications" }
+        });
+
+        var history = await dbContext.UserNotifications.AsNoTracking().SingleAsync();
+        Assert.Equal(0, response.TokensFound);
+        Assert.Equal(userId, history.UserId);
+        Assert.Equal("QA", history.Title);
+        Assert.Equal("test", history.EventType);
+        Assert.Equal("/account/notifications", history.TargetRoute);
+        Assert.Null(history.ReadAtUtc);
+    }
+
+    [Fact]
     public async Task SendTestNotification_UsesOnlyCurrentUsersActiveTokens_AndSendsSuccessfully()
     {
         await using var dbContext = CreateDbContext();
@@ -115,6 +139,36 @@ public class NotificationServiceTests
     }
 
     [Fact]
+    public async Task SendEventNotification_StripsUnsafeTargetRouteFromHistoryAndPushPayload()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await SeedUserAsync(dbContext, UserRole.Customer, "unsafe-route@appurape.test");
+        dbContext.Add(CreateToken(userId, UserRole.Customer, "safe-token", true));
+        await dbContext.SaveChangesAsync();
+
+        var sender = new FakePushNotificationSender(isConfigured: true);
+        var service = CreateService(dbContext, new TestCurrentUserService(userId), sender);
+
+        await service.SendToUserAsync(
+            userId,
+            new EventPushNotificationRequest
+            {
+                Title = "Ruta",
+                Body = "No debe navegar fuera",
+                Data = new Dictionary<string, string>
+                {
+                    ["type"] = "test",
+                    ["targetRoute"] = "https://evil.test"
+                }
+            });
+
+        var history = await dbContext.UserNotifications.AsNoTracking().SingleAsync();
+        Assert.Null(history.TargetRoute);
+        var call = Assert.Single(sender.Calls);
+        Assert.False(call.Data.ContainsKey("targetRoute"));
+    }
+
+    [Fact]
     public async Task SendEventNotification_WhenSenderNotConfigured_DoesNotThrow()
     {
         await using var dbContext = CreateDbContext();
@@ -157,16 +211,25 @@ public class NotificationServiceTests
         });
         dbContext.Add(new UserNotification
         {
+            Id = Guid.NewGuid(), UserId = currentUserId, Title = "Leída", Body = "Ya revisada.", ReadAtUtc = DateTime.UtcNow
+        });
+        dbContext.Add(new UserNotification
+        {
             Id = Guid.NewGuid(), UserId = otherUserId, Title = "Privada", Body = "No debe aparecer."
         });
         await dbContext.SaveChangesAsync();
         var service = CreateService(dbContext, new TestCurrentUserService(currentUserId), new FakePushNotificationSender(true));
 
         var inbox = await service.GetInboxAsync(1, 20);
-        Assert.Single(inbox.Items);
+        Assert.Equal(2, inbox.Items.Count);
         Assert.Equal(1, inbox.UnreadCount);
 
-        await service.MarkAsReadAsync(inbox.Items[0].Id);
+        var unreadOnly = await service.GetInboxAsync(1, 20, unreadOnly: true);
+        Assert.Single(unreadOnly.Items);
+        Assert.Equal(1, unreadOnly.UnreadCount);
+        Assert.Null(unreadOnly.Items[0].ReadAtUtc);
+
+        await service.MarkAsReadAsync(unreadOnly.Items[0].Id);
         Assert.Equal(0, (await service.GetUnreadCountAsync()).UnreadCount);
     }
 

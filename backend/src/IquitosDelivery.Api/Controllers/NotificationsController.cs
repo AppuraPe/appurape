@@ -66,7 +66,8 @@ public class NotificationsController : ControllerBase
             {
                 Title = request?.Title,
                 Body = request?.Body,
-                Data = request?.Data
+                Data = request?.Data,
+                PersistToInbox = request?.PersistToInbox ?? false
             },
             cancellationToken);
 
@@ -92,8 +93,9 @@ public class NotificationsController : ControllerBase
     public async Task<ActionResult<Application.DTOs.Notifications.NotificationInboxResponse>> GetInbox(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] bool unreadOnly = false,
         CancellationToken cancellationToken = default) =>
-        Ok(await _notificationService.GetInboxAsync(page, pageSize, cancellationToken));
+        Ok(await _notificationService.GetInboxAsync(page, pageSize, unreadOnly, cancellationToken));
 
     [HttpGet("unread-count")]
     [ProducesResponseType(typeof(Application.DTOs.Notifications.NotificationUnreadCountResponse), StatusCodes.Status200OK)]

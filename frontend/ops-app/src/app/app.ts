@@ -27,7 +27,7 @@ export class App {
   private readonly authService = inject(AuthService);
   private lastExitAttemptAt = 0;
 
-  private static readonly EXIT_CONFIRMATION_WINDOW_MS = 2_000;
+  private static readonly EXIT_CONFIRMATION_WINDOW_MS = 3_000;
 
   constructor() {
     void this.platformSettingsApi.ensureLoaded();
@@ -54,7 +54,11 @@ export class App {
         const currentPath = this.currentPath();
         const rootPath = this.rootPath();
 
-        if (currentPath === rootPath || currentPath === '/businesses') {
+        const isRoot =
+          currentPath === rootPath ||
+          (rootPath === '/businesses' && (currentPath === '/' || currentPath === '/businesses'));
+
+        if (isRoot) {
           const now = Date.now();
 
           if (now - this.lastExitAttemptAt <= App.EXIT_CONFIRMATION_WINDOW_MS) {
@@ -64,7 +68,7 @@ export class App {
           }
 
           this.lastExitAttemptAt = now;
-          this.toast.info('Presiona Atrás otra vez para salir', App.EXIT_CONFIRMATION_WINDOW_MS);
+          this.toast.info('Presiona Atrás otra vez para salir de la app', App.EXIT_CONFIRMATION_WINDOW_MS);
           return;
         }
 
@@ -76,9 +80,7 @@ export class App {
           return;
         }
 
-        if (currentPath !== rootPath) {
-          void this.router.navigateByUrl(fallbackUrl);
-        }
+        void this.router.navigateByUrl(fallbackUrl);
       });
 
       this.destroyRef.onDestroy(() => {

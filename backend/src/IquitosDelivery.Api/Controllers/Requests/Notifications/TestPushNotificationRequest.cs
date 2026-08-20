@@ -7,4 +7,6 @@ public class TestPushNotificationRequest
     public string? Body { get; set; }
 
     public Dictionary<string, string>? Data { get; set; }
+
+    public bool PersistToInbox { get; set; }
 }

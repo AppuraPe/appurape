@@ -24,6 +24,7 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { UnifiedEmptyStateComponent } from '../../shared/components/unified-empty-state.component';
 import { UnifiedLoadingStateComponent } from '../../shared/components/unified-loading-state.component';
+import { LocationMapPickerModalComponent } from '../../shared/components/location-map-picker-modal.component';
 import { LucideAngularModule, MapPin, Navigation, Sparkles, Store, ShieldCheck, Clock, CheckCircle2, ArrowRight } from 'lucide-angular';
 
 export type CommunityMode =
@@ -54,6 +55,7 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
     InternalPageSectionHeaderComponent,
     UnifiedEmptyStateComponent,
     UnifiedLoadingStateComponent,
+    LocationMapPickerModalComponent,
   ],
   template: `
     <app-mobile-page-shell
@@ -213,15 +215,57 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
                       <textarea class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700" rows="3" formControlName="description" placeholder="Detalles de lo que necesitas..."></textarea>
                     </label>
 
-                    <label class="grid gap-2">
-                      <span class="text-sm font-semibold text-slate-700">Origen</span>
-                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" placeholder="Lugar de recojo / compra" />
-                    </label>
+                    <div class="grid gap-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Origen (Recojo / Compra)</span>
+                        <div class="flex items-center gap-2">
+                          <button
+                            type="button"
+                            (click)="openMapPicker('origin')"
+                            class="inline-flex items-center gap-1 text-xs font-bold text-primary-700 hover:underline active:scale-95 transition"
+                          >
+                            <i-lucide [img]="mapPinIcon" class="h-3.5 w-3.5"></i-lucide>
+                            Mapa
+                          </button>
+                          <span class="text-slate-300">|</span>
+                          <button
+                            type="button"
+                            (click)="detectLocation('origin')"
+                            [disabled]="isDetectingLocation()"
+                            class="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:underline active:scale-95 transition"
+                          >
+                            {{ isDetectingLocation() ? 'Detectando...' : 'Mi GPS' }}
+                          </button>
+                        </div>
+                      </div>
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" placeholder="Ej. Mercado Modelo de Belén" />
+                    </div>
 
-                    <label class="grid gap-2">
-                      <span class="text-sm font-semibold text-slate-700">Destino</span>
-                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" placeholder="Lugar de entrega" />
-                    </label>
+                    <div class="grid gap-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-sm font-semibold text-slate-700">Destino (Entrega)</span>
+                        <div class="flex items-center gap-2">
+                          <button
+                            type="button"
+                            (click)="openMapPicker('destination')"
+                            class="inline-flex items-center gap-1 text-xs font-bold text-primary-700 hover:underline active:scale-95 transition"
+                          >
+                            <i-lucide [img]="mapPinIcon" class="h-3.5 w-3.5"></i-lucide>
+                            Mapa
+                          </button>
+                          <span class="text-slate-300">|</span>
+                          <button
+                            type="button"
+                            (click)="detectLocation('destination')"
+                            [disabled]="isDetectingLocation()"
+                            class="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:underline active:scale-95 transition"
+                          >
+                            {{ isDetectingLocation() ? 'Detectando...' : 'Mi GPS' }}
+                          </button>
+                        </div>
+                      </div>
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" placeholder="Ej. Calle Putumayo 450" />
+                    </div>
 
                     <label class="grid gap-2 sm:col-span-2">
                       <span class="text-sm font-semibold text-slate-700">Fecha límite</span>
@@ -304,7 +348,15 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
 
                     <div class="grid gap-1">
                       <span class="text-xs font-semibold text-slate-700">Selfie en vivo</span>
-                      <app-button type="button" variant="secondary" (click)="captureLiveSelfie()">
+                      <input
+                        #selfieFallback
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        class="hidden"
+                        (change)="selectSelfieFile($event)"
+                      />
+                      <app-button type="button" variant="secondary" (click)="captureLiveSelfie(selfieFallback)">
                         {{ verificationSelfieReady() ? '✓ Selfie capturada (repetir)' : 'Abrir cámara para selfie' }}
                       </app-button>
                     </div>
@@ -505,6 +557,16 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
           }
         }
       }
+
+      <app-location-map-picker-modal
+        [isOpen]="isMapPickerOpen()"
+        [target]="mapPickerTarget()"
+        [title]="mapPickerTitle()"
+        [initialLat]="mapPickerInitialLat()"
+        [initialLng]="mapPickerInitialLng()"
+        (selected)="onLocationSelectedFromMap($event)"
+        (closed)="isMapPickerOpen.set(false)"
+      />
     </app-mobile-page-shell>
   `,
 })
@@ -583,6 +645,27 @@ export class CommunityHubPageComponent {
     return 'Solicita ayuda y revisa el estado de tus encargos.';
   });
 
+  readonly mapPinIcon = MapPin;
+  readonly isDetectingLocation = signal(false);
+
+  readonly isMapPickerOpen = signal(false);
+  readonly mapPickerTarget = signal<'origin' | 'destination' | 'both'>('both');
+  readonly mapPickerTitle = signal('Elegir ubicación en el mapa');
+
+  readonly mapPickerInitialLat = computed(() => {
+    const target = this.mapPickerTarget();
+    return target === 'origin'
+      ? this.requestForm.controls.originLatitude.value
+      : this.requestForm.controls.destinationLatitude.value;
+  });
+
+  readonly mapPickerInitialLng = computed(() => {
+    const target = this.mapPickerTarget();
+    return target === 'origin'
+      ? this.requestForm.controls.originLongitude.value
+      : this.requestForm.controls.destinationLongitude.value;
+  });
+
   readonly availabilityForm = this.formBuilder.nonNullable.group({
     availabilityStatus: 'Available',
     availabilityRadiusKm: [5, [Validators.required, Validators.min(1)]],
@@ -593,7 +676,11 @@ export class CommunityHubPageComponent {
     title: ['', Validators.required],
     description: ['', Validators.required],
     originLabel: ['', Validators.required],
+    originLatitude: [null as number | null],
+    originLongitude: [null as number | null],
     destinationLabel: ['', Validators.required],
+    destinationLatitude: [null as number | null],
+    destinationLongitude: [null as number | null],
     compensationAmount: [5, [Validators.required, Validators.min(1)]],
     deadlineUtc: [this.defaultFavorDeadline(), Validators.required],
   });
@@ -719,6 +806,66 @@ export class CommunityHubPageComponent {
     });
   }
 
+  detectLocation(target: 'origin' | 'destination'): void {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.errorMessage.set('Tu dispositivo no soporta geolocalización.');
+      return;
+    }
+
+    this.isDetectingLocation.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.isDetectingLocation.set(false);
+        const lat = Number(position.coords.latitude.toFixed(6));
+        const lng = Number(position.coords.longitude.toFixed(6));
+        if (target === 'origin') {
+          this.requestForm.patchValue({
+            originLatitude: lat,
+            originLongitude: lng,
+          });
+          if (!this.requestForm.controls.originLabel.value) {
+            this.requestForm.patchValue({ originLabel: `Ubicación GPS (${lat}, ${lng})` });
+          }
+        } else {
+          this.requestForm.patchValue({
+            destinationLatitude: lat,
+            destinationLongitude: lng,
+          });
+          if (!this.requestForm.controls.destinationLabel.value) {
+            this.requestForm.patchValue({ destinationLabel: `Ubicación GPS (${lat}, ${lng})` });
+          }
+        }
+      },
+      () => {
+        this.isDetectingLocation.set(false);
+        this.errorMessage.set('No se pudo obtener la ubicación GPS. Verifica los permisos de ubicación.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  }
+
+  openMapPicker(target: 'origin' | 'destination'): void {
+    this.mapPickerTarget.set(target);
+    this.mapPickerTitle.set(target === 'origin' ? 'Elegir punto de recojo en el mapa' : 'Elegir punto de entrega en el mapa');
+    this.isMapPickerOpen.set(true);
+  }
+
+  onLocationSelectedFromMap(event: { lat: number; lng: number; label: string; target: 'origin' | 'destination' }): void {
+    if (event.target === 'origin') {
+      this.requestForm.patchValue({
+        originLatitude: event.lat,
+        originLongitude: event.lng,
+        originLabel: event.label,
+      });
+    } else {
+      this.requestForm.patchValue({
+        destinationLatitude: event.lat,
+        destinationLongitude: event.lng,
+        destinationLabel: event.label,
+      });
+    }
+  }
+
   createRequest(): void {
     if (this.requestForm.invalid) {
       this.errorMessage.set('Por favor completa todos los campos requeridos para publicar el favor.');
@@ -735,7 +882,11 @@ export class CommunityHubPageComponent {
         title: values.title,
         description: values.description,
         originLabel: values.originLabel,
+        originLatitude: values.originLatitude,
+        originLongitude: values.originLongitude,
         destinationLabel: values.destinationLabel,
+        destinationLatitude: values.destinationLatitude,
+        destinationLongitude: values.destinationLongitude,
         compensationAmount: values.compensationAmount,
         deadlineUtc: values.deadlineUtc ? new Date(values.deadlineUtc).toISOString() : null,
       })
@@ -749,7 +900,11 @@ export class CommunityHubPageComponent {
             title: '',
             description: '',
             originLabel: '',
+            originLatitude: null,
+            originLongitude: null,
             destinationLabel: '',
+            destinationLatitude: null,
+            destinationLongitude: null,
             compensationAmount: 5,
             deadlineUtc: this.defaultFavorDeadline(),
           });
@@ -797,26 +952,61 @@ export class CommunityHubPageComponent {
     }
   }
 
-  async captureLiveSelfie(): Promise<void> {
+  async captureLiveSelfie(fileInputFallback?: HTMLInputElement): Promise<void> {
+    this.verificationSubmissionError.set('');
     try {
       const { Camera, CameraDirection, CameraResultType, CameraSource } = await import('@capacitor/camera');
+
+      try {
+        const check = await Camera.checkPermissions();
+        if (check.camera !== 'granted') {
+          await Camera.requestPermissions({ permissions: ['camera'] });
+        }
+      } catch {
+        // Continuar con getPhoto
+      }
+
       const photo = await Camera.getPhoto({
         quality: 85,
         allowEditing: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera,
         direction: CameraDirection.Front,
       });
 
-      if (photo.webPath) {
-        const response = await fetch(photo.webPath);
-        const blob = await response.blob();
-        this.verificationSelfieFile = new File([blob], 'live-selfie.jpg', { type: 'image/jpeg' });
+      if (photo.dataUrl) {
+        this.verificationSelfieFile = this.dataUrlToFile(photo.dataUrl, 'live-selfie.jpg');
         this.verificationSelfieReady.set(true);
+        return;
       }
-    } catch {
-      // User cancelled or platform unsupported
+    } catch (err) {
+      console.warn('Capacitor camera no disponible o cancelado, usando selector de cámara nativo.', err);
+      if (fileInputFallback) {
+        fileInputFallback.click();
+        return;
+      }
     }
+  }
+
+  selectSelfieFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0) ?? null;
+    if (file) {
+      this.verificationSelfieFile = file;
+      this.verificationSelfieReady.set(true);
+    }
+  }
+
+  private dataUrlToFile(dataUrl: string, filename: string): File {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
   }
 
   submitCollaboratorVerification(): void {

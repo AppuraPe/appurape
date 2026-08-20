@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { BadgeCheck, Bike, CircleDollarSign, CreditCard, HeartHandshake, LucideAngularModule, ReceiptText, RefreshCw, Settings, Store, Tags } from 'lucide-angular';
+import { BadgeCheck, Bike, CircleDollarSign, CreditCard, FileText, HeartHandshake, LucideAngularModule, ReceiptText, RefreshCw, Settings, Store, Tags } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../core/services/admin-api.service';
 import { CommunityApiService } from '../../core/services/community-api.service';
@@ -87,7 +87,7 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
 
       <section class="grid gap-3" aria-labelledby="admin-management-title">
         <h2 id="admin-management-title" class="px-1 text-base font-black tracking-tight text-slate-950">Módulos de Gestión</h2>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-8">
           @for (item of managementItems; track item.route) {
             <a [routerLink]="item.route" class="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 no-underline shadow-sm transition hover:border-primary-300 hover:shadow-sm">
               <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-700">
@@ -122,6 +122,7 @@ export class AdminDashboardPageComponent {
     { label: 'Repartidores', route: '/admin/drivers', icon: Bike },
     { label: 'Tipos de negocio', route: '/admin/business-types', icon: Tags },
     { label: 'Marca', route: '/admin/settings/branding', icon: Settings },
+    { label: 'Legal', route: '/admin/legal', icon: FileText },
     { label: 'Favores', route: '/admin/community', icon: HeartHandshake },
   ] as const;
 

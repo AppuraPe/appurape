@@ -12,20 +12,25 @@ export class NotificationInboxApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = buildApiUrl('/api/notifications');
   private readonly unreadCountState = signal(0);
+  private readonly inboxRefreshState = signal(0);
 
   readonly unreadCount = this.unreadCountState.asReadonly();
+  readonly inboxRefresh = this.inboxRefreshState.asReadonly();
 
-  getInbox(page = 1, pageSize = 20): Observable<NotificationInboxResponse> {
+  getInbox(page = 1, pageSize = 20, unreadOnly = false): Observable<NotificationInboxResponse> {
     return this.http
-      .get<NotificationInboxResponse>(this.baseUrl, { params: { page, pageSize } })
+      .get<NotificationInboxResponse>(this.baseUrl, { params: { page, pageSize, unreadOnly } })
       .pipe(tap((response) => this.unreadCountState.set(response.unreadCount)));
   }
 
-  refreshUnreadCount(): void {
+  refreshUnreadCount(refreshInbox = false): void {
     this.http
       .get<NotificationUnreadCountResponse>(`${this.baseUrl}/unread-count`)
       .pipe(catchError(() => of({ unreadCount: 0 })))
-      .subscribe((response) => this.unreadCountState.set(response.unreadCount));
+      .subscribe((response) => {
+        this.unreadCountState.set(response.unreadCount);
+        if (refreshInbox) this.inboxRefreshState.update((version) => version + 1);
+      });
   }
 
   markAsRead(id: string): Observable<void> {
@@ -42,5 +47,6 @@ export class NotificationInboxApiService {
 
   clearLocalState(): void {
     this.unreadCountState.set(0);
+    this.inboxRefreshState.set(0);
   }
 }

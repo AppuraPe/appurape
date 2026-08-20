@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { NotificationInboxApiService } from '../services/notification-inbox-api.service';
 import { PushNotificationService } from './push-notification.service';
 
 const capacitorMocks = vi.hoisted(() => ({
@@ -16,6 +17,7 @@ const capacitorMocks = vi.hoisted(() => ({
   listeners: new Map<string, (payload: unknown) => void>(),
   register: vi.fn(),
   requestPermissions: vi.fn(),
+  refreshUnreadCount: vi.fn(),
 }));
 
 vi.mock('@capacitor/core', () => ({
@@ -74,6 +76,12 @@ describe('PushNotificationService', () => {
           useValue: {
             navigate: vi.fn(),
             navigateByUrl: vi.fn(),
+          },
+        },
+        {
+          provide: NotificationInboxApiService,
+          useValue: {
+            refreshUnreadCount: capacitorMocks.refreshUnreadCount,
           },
         },
       ],
@@ -193,5 +201,66 @@ describe('PushNotificationService', () => {
     await service.enableNotifications();
     expect(capacitorMocks.requestPermissions).toHaveBeenCalledTimes(1);
     expect(capacitorMocks.register).toHaveBeenCalledTimes(1);
+  });
+
+  it('navigates to safe in-app routes when a push notification is opened', async () => {
+    const service = TestBed.inject(PushNotificationService);
+    const router = TestBed.inject(Router);
+    localStorage.setItem('iquitosDelivery.app.token', 'jwt-test');
+
+    await service.initializeForAuthenticatedUser({ authToken: 'jwt-test', userId: 'user-1', role: 'Driver' });
+    capacitorMocks.listeners.get('pushNotificationActionPerformed')?.({
+      notification: { data: { targetRoute: '/driver/active-order' } },
+    });
+
+    await vi.waitFor(() => expect(router.navigateByUrl).toHaveBeenCalledWith('/driver/active-order'));
+    expect(capacitorMocks.refreshUnreadCount).toHaveBeenCalledWith(true);
+  });
+
+  it('refreshes the unread badge when a foreground push is received', async () => {
+    const service = TestBed.inject(PushNotificationService);
+
+    await service.initializeForAuthenticatedUser({ authToken: 'jwt-test', userId: 'user-1', role: 'Restaurant' });
+    capacitorMocks.listeners.get('pushNotificationReceived')?.({
+      title: 'Pedido actualizado',
+      body: 'Tienes un cambio pendiente',
+    });
+
+    expect(capacitorMocks.refreshUnreadCount).toHaveBeenCalledWith(true);
+  });
+
+  it('redirects push deep links to login when there is no stored session', async () => {
+    const service = TestBed.inject(PushNotificationService);
+    const router = TestBed.inject(Router);
+
+    await service.initializeForAuthenticatedUser({ authToken: 'jwt-test', userId: 'user-1', role: 'Customer' });
+    localStorage.removeItem('iquitosDelivery.app.token');
+    capacitorMocks.listeners.get('pushNotificationActionPerformed')?.({
+      notification: { data: { targetRoute: '/account/notifications' } },
+    });
+
+    await vi.waitFor(() =>
+      expect(router.navigate).toHaveBeenCalledWith(['/login'], {
+        queryParams: { redirectTo: '/account/notifications' },
+      }),
+    );
+  });
+
+  it('ignores external or protocol-relative push target routes', async () => {
+    const service = TestBed.inject(PushNotificationService);
+    const router = TestBed.inject(Router);
+    localStorage.setItem('iquitosDelivery.app.token', 'jwt-test');
+
+    await service.initializeForAuthenticatedUser({ authToken: 'jwt-test', userId: 'user-1', role: 'Admin' });
+    capacitorMocks.listeners.get('pushNotificationActionPerformed')?.({
+      notification: { data: { targetRoute: 'https://example.com/admin/dashboard' } },
+    });
+    capacitorMocks.listeners.get('pushNotificationActionPerformed')?.({
+      notification: { data: { targetRoute: '//example.com/admin/dashboard' } },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 });
