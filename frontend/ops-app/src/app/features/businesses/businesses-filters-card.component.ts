@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, input } from '@angular/core';
+import { Component, EventEmitter, Output, effect, input } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LucideAngularModule, FilterX, MapPin, Search } from 'lucide-angular';
 import { BusinessZoneListItemResponse } from '../../core/models/businesses.models';
@@ -32,7 +32,8 @@ import { BusinessZoneListItemResponse } from '../../core/models/businesses.model
             <select
               id="restaurantZone"
               formControlName="zoneId"
-              [disabled]="isSearchMode() || (isLoadingZones() && !zones().length)"
+              [class.text-text-muted]="isZoneFilterDisabled()"
+              [attr.aria-busy]="isLoadingZones() && !zones().length"
               class="min-h-0 min-w-0 w-full border-0 bg-transparent px-0 py-0 text-[14px] text-loreto-carbon shadow-none focus:ring-0 disabled:text-text-muted"
             >
               <option value="">Todas las zonas</option>
@@ -78,4 +79,28 @@ export class BusinessesFiltersCardComponent {
   readonly searchIcon = Search;
   readonly mapPinIcon = MapPin;
   readonly filterXIcon = FilterX;
+
+  constructor() {
+    effect(() => {
+      const zoneControl = this.form().get('zoneId');
+      const shouldDisable = this.isZoneFilterDisabled();
+
+      if (!zoneControl) {
+        return;
+      }
+
+      if (shouldDisable && zoneControl.enabled) {
+        zoneControl.disable({ emitEvent: false });
+        return;
+      }
+
+      if (!shouldDisable && zoneControl.disabled) {
+        zoneControl.enable({ emitEvent: false });
+      }
+    });
+  }
+
+  isZoneFilterDisabled(): boolean {
+    return this.isSearchMode() || (this.isLoadingZones() && !this.zones().length);
+  }
 }

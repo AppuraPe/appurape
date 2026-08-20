@@ -1,4 +1,4 @@
-﻿<div class="hidden lg:block">
+<div class="hidden lg:block">
   <app-businesses-hero-section
     [title]="'Explorar negocios sin perder tiempo'"
     [subtitle]="isDesktopSearchResults() ? searchSummary() : browseSummary()"
@@ -149,11 +149,12 @@
       } @else if (isSearchResults()) {
         @if (!foods().length && !relatedRestaurants().length) {
           <app-state-card
+            class="mx-4 block lg:mx-0 lg:max-w-2xl"
             [title]="errorMessage() ? 'No pudimos completar la búsqueda' : 'Sin resultados'"
             [message]="errorMessage() || searchEmptyMessage()"
-            containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted"
+            containerClass="border-dashed border-[#ead8d2] bg-white text-text-muted !rounded-2xl !p-5 !shadow-sm [&>strong]:text-base [&>p]:mt-1.5 [&>p]:leading-5"
           >
-            <button class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600" type="button" (click)="clearSearch()">Limpiar búsqueda</button>
+            <button class="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary-700 px-5 text-sm font-black text-white shadow-[0_10px_20px_rgba(229,27,35,0.16)] transition duration-200 hover:bg-primary-600 active:scale-95" type="button" (click)="clearSearch()">Limpiar búsqueda</button>
           </app-state-card>
         } @else {
           <div class="px-4 lg:hidden">

@@ -20,7 +20,7 @@ public interface INotificationService
 
     Task<DeviceTokenStatusResponse> GetCurrentUserTokenStatusAsync(CancellationToken cancellationToken = default);
 
-    Task<NotificationInboxResponse> GetInboxAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<NotificationInboxResponse> GetInboxAsync(int page, int pageSize, bool unreadOnly = false, CancellationToken cancellationToken = default);
 
     Task<NotificationUnreadCountResponse> GetUnreadCountAsync(CancellationToken cancellationToken = default);
 

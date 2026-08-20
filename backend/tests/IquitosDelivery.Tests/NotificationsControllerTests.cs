@@ -38,12 +38,19 @@ public class NotificationsControllerTests
         var environment = Mock.Of<IWebHostEnvironment>(x => x.EnvironmentName == Environments.Development);
         var controller = new NotificationsController(deviceTokenService, notificationService.Object, environment);
 
-        var result = await controller.SendTestNotification(new IquitosDelivery.Api.Controllers.Requests.Notifications.TestPushNotificationRequest(), CancellationToken.None);
+        var result = await controller.SendTestNotification(
+            new IquitosDelivery.Api.Controllers.Requests.Notifications.TestPushNotificationRequest
+            {
+                PersistToInbox = true
+            },
+            CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
         notificationService.Verify(
-            x => x.SendTestNotificationToCurrentUserAsync(It.IsAny<IquitosDelivery.Application.DTOs.Notifications.TestPushNotificationRequest>(), It.IsAny<CancellationToken>()),
+            x => x.SendTestNotificationToCurrentUserAsync(
+                It.Is<IquitosDelivery.Application.DTOs.Notifications.TestPushNotificationRequest>(request => request.PersistToInbox),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

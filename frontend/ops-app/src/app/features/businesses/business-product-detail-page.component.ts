@@ -46,6 +46,7 @@ export class BusinessProductDetailPageComponent {
     return product ? this.businessCart.getItemQuantity(product.id) : 0;
   });
   readonly totalQuantityInCart = this.businessCart.totalQuantity;
+  readonly isCheckoutDrawerOpen = this.checkoutDrawerUi.isOpen;
   readonly canPurchase = computed(() => {
     const product = this.product();
 

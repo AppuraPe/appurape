@@ -63,22 +63,13 @@ public class NotificationService : INotificationService
                 return;
             }
 
-            var payload = MergeEventData(request.Data);
+            var payload = SanitizeNotificationPayload(MergeEventData(request.Data));
             var eventType = payload.GetValueOrDefault("event") ?? payload.GetValueOrDefault("type");
             var targetRoute = payload.GetValueOrDefault("targetRoute");
 
             foreach (var userId in targetUserIds)
             {
-                _dbContext.Add(new UserNotification
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    Title = normalizedTitle,
-                    Body = normalizedBody,
-                    EventType = Truncate(eventType, 80),
-                    TargetRoute = Truncate(targetRoute, 500),
-                    DataJson = JsonSerializer.Serialize(payload)
-                });
+                _dbContext.Add(CreateHistoryEntry(userId, normalizedTitle, normalizedBody, eventType, targetRoute, payload));
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -156,6 +147,18 @@ public class NotificationService : INotificationService
         CancellationToken cancellationToken = default)
     {
         var userId = GetCurrentUserId();
+        var title = string.IsNullOrWhiteSpace(request.Title) ? "AppuraPe" : request.Title.Trim();
+        var body = string.IsNullOrWhiteSpace(request.Body) ? "Notificación de prueba" : request.Body.Trim();
+        var payload = SanitizeNotificationPayload(MergeTestData(request.Data));
+
+        if (request.PersistToInbox)
+        {
+            var eventType = payload.GetValueOrDefault("event") ?? payload.GetValueOrDefault("type");
+            var targetRoute = payload.GetValueOrDefault("targetRoute");
+            _dbContext.Add(CreateHistoryEntry(userId, title, body, eventType, targetRoute, payload));
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         var activeTokens = await _dbContext.UserDeviceTokens
             .Where(x => x.UserId == userId && x.IsActive)
             .OrderByDescending(x => x.LastSeenAtUtc)
@@ -177,10 +180,6 @@ public class NotificationService : INotificationService
         {
             throw new AppException(_pushNotificationSender.ConfigurationError ?? "Firebase push no está configurado.");
         }
-
-        var title = string.IsNullOrWhiteSpace(request.Title) ? "AppuraPe" : request.Title.Trim();
-        var body = string.IsNullOrWhiteSpace(request.Body) ? "Notificación de prueba" : request.Body.Trim();
-        var payload = MergeTestData(request.Data);
 
         var sentOk = 0;
         var failed = 0;
@@ -259,6 +258,7 @@ public class NotificationService : INotificationService
     public async Task<NotificationInboxResponse> GetInboxAsync(
         int page,
         int pageSize,
+        bool unreadOnly = false,
         CancellationToken cancellationToken = default)
     {
         var userId = GetCurrentUserId();
@@ -269,6 +269,11 @@ public class NotificationService : INotificationService
             .AsNoTracking()
             .Where(x => x.UserId == userId);
         var unreadCount = await query.CountAsync(x => x.ReadAtUtc == null, cancellationToken);
+        if (unreadOnly)
+        {
+            query = query.Where(x => x.ReadAtUtc == null);
+        }
+
         var rows = await query
             .OrderByDescending(x => x.CreatedAtUtc)
             .ThenByDescending(x => x.Id)
@@ -384,6 +389,48 @@ public class NotificationService : INotificationService
         }
 
         return new Dictionary<string, string>(defaults, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyDictionary<string, string> SanitizeNotificationPayload(IReadOnlyDictionary<string, string> payload)
+    {
+        var sanitized = new Dictionary<string, string>(payload, StringComparer.OrdinalIgnoreCase);
+        if (sanitized.TryGetValue("targetRoute", out var targetRoute) && !IsSafeInternalRoute(targetRoute))
+        {
+            sanitized.Remove("targetRoute");
+        }
+
+        return sanitized;
+    }
+
+    private static bool IsSafeInternalRoute(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = value.Trim();
+        return normalized.StartsWith('/') && !normalized.StartsWith("//", StringComparison.Ordinal);
+    }
+
+    private static UserNotification CreateHistoryEntry(
+        Guid userId,
+        string title,
+        string body,
+        string? eventType,
+        string? targetRoute,
+        IReadOnlyDictionary<string, string> payload)
+    {
+        return new UserNotification
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Title = title,
+            Body = body,
+            EventType = Truncate(eventType, 80),
+            TargetRoute = Truncate(targetRoute, 500),
+            DataJson = JsonSerializer.Serialize(payload)
+        };
     }
 
     private static string? Truncate(string? value, int maxLength)

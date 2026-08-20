@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   --font-sans: "Aptos", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;

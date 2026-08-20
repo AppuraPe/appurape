@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Bell, BellRing, CheckCheck, ChevronRight, Inbox, LucideAngularModule } from 'lucide-angular';
+import { Bell, BellRing, CheckCheck, ChevronRight, Inbox, LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { finalize } from 'rxjs';
 import { NotificationInboxItem } from '../../core/models/notification-inbox.models';
 import { NotificationInboxApiService } from '../../core/services/notification-inbox-api.service';
@@ -25,13 +25,49 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
           <h1 class="mt-1 text-2xl font-black tracking-[-0.035em] text-slate-950">Notificaciones</h1>
           <p class="mt-1 text-sm leading-5 text-slate-500">Cambios importantes de tus pedidos, pagos y favores.</p>
         </div>
-        @if (unreadCount() > 0) {
-          <app-button size="sm" variant="ghost" [loading]="markingAll()" (click)="markAllAsRead()">
-            <lucide-angular class="h-4 w-4" [img]="checkAllIcon" aria-hidden="true" />
-            Leer todo
+        <div class="flex shrink-0 flex-wrap justify-end gap-2">
+          <app-button size="sm" variant="ghost" [loading]="isLoading()" (click)="load(true)">
+            <lucide-angular class="h-4 w-4" [img]="refreshIcon" aria-hidden="true" />
+            Actualizar
           </app-button>
-        }
+          @if (unreadCount() > 0) {
+            <app-button size="sm" variant="ghost" [loading]="markingAll()" (click)="markAllAsRead()">
+              <lucide-angular class="h-4 w-4" [img]="checkAllIcon" aria-hidden="true" />
+              Leer todo
+            </app-button>
+          }
+        </div>
       </header>
+
+      <nav class="grid h-[52px] grid-cols-2 gap-2 rounded-[18px] bg-slate-100 p-1" aria-label="Filtros de notificaciones">
+        <button
+          type="button"
+          class="flex h-11 items-center justify-center rounded-[14px] px-3 text-sm font-black leading-none transition"
+          [class.bg-white]="filter() === 'all'"
+          [class.text-slate-950]="filter() === 'all'"
+          [class.shadow-sm]="filter() === 'all'"
+          [class.text-slate-500]="filter() !== 'all'"
+          [attr.aria-pressed]="filter() === 'all'"
+          (click)="setFilter('all')"
+        >
+          Todas
+        </button>
+        <button
+          type="button"
+          class="flex h-11 items-center justify-center rounded-[14px] px-3 text-sm font-black leading-none transition"
+          [class.bg-white]="filter() === 'unread'"
+          [class.text-slate-950]="filter() === 'unread'"
+          [class.shadow-sm]="filter() === 'unread'"
+          [class.text-slate-500]="filter() !== 'unread'"
+          [attr.aria-pressed]="filter() === 'unread'"
+          (click)="setFilter('unread')"
+        >
+          No leídas
+          @if (unreadCount() > 0) {
+            <span class="ml-1 rounded-full bg-primary-600 px-2 py-0.5 text-[10px] text-white">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
+          }
+        </button>
+      </nav>
 
       @if (isLoading() && items().length === 0) {
         <div class="grid gap-2" aria-label="Cargando notificaciones">
@@ -52,8 +88,8 @@ import { MobilePageShellComponent } from '../../shared/components/mobile-page-sh
           <span class="grid h-12 w-12 place-items-center rounded-2xl bg-primary-50 text-primary-700">
             <lucide-angular class="h-6 w-6" [img]="emptyIcon" aria-hidden="true" />
           </span>
-          <h2 class="text-base font-black text-slate-950">Todo está al día</h2>
-          <p class="max-w-sm text-sm leading-5 text-slate-500">Aquí aparecerán los avisos importantes relacionados con tu actividad.</p>
+          <h2 class="text-base font-black text-slate-950">{{ emptyTitle() }}</h2>
+          <p class="max-w-sm text-sm leading-5 text-slate-500">{{ emptyDescription() }}</p>
         </section>
       } @else {
         <section class="grid gap-2" aria-label="Historial de notificaciones">
@@ -92,21 +128,36 @@ export class NotificationInboxPageComponent {
   private readonly api = inject(NotificationInboxApiService);
   private readonly router = inject(Router);
   private readonly notifications = inject(NotificationService);
+  private observedRefreshVersion = 0;
 
   readonly items = signal<NotificationInboxItem[]>([]);
+  readonly filter = signal<'all' | 'unread'>('all');
   readonly isLoading = signal(false);
   readonly markingAll = signal(false);
   readonly errorMessage = signal('');
   readonly page = signal(0);
   readonly hasMore = signal(false);
-  readonly unreadCount = computed(() => this.items().filter((item) => !item.readAtUtc).length);
+  readonly unreadCount = this.api.unreadCount;
   readonly bellIcon = Bell;
   readonly unreadIcon = BellRing;
   readonly emptyIcon = Inbox;
   readonly checkAllIcon = CheckCheck;
   readonly chevronIcon = ChevronRight;
+  readonly refreshIcon = RefreshCw;
 
   constructor() {
+    this.load(true);
+    effect(() => {
+      const version = this.api.inboxRefresh();
+      if (version === this.observedRefreshVersion) return;
+      this.observedRefreshVersion = version;
+      if (version > 0) queueMicrotask(() => this.load(true));
+    });
+  }
+
+  setFilter(filter: 'all' | 'unread'): void {
+    if (this.filter() === filter) return;
+    this.filter.set(filter);
     this.load(true);
   }
 
@@ -115,7 +166,7 @@ export class NotificationInboxPageComponent {
     const nextPage = reset ? 1 : this.page() + 1;
     this.isLoading.set(true);
     this.errorMessage.set('');
-    this.api.getInbox(nextPage).pipe(finalize(() => this.isLoading.set(false))).subscribe({
+    this.api.getInbox(nextPage, 20, this.filter() === 'unread').pipe(finalize(() => this.isLoading.set(false))).subscribe({
       next: (response) => {
         this.items.set(reset ? response.items : [...this.items(), ...response.items]);
         this.page.set(response.page);
@@ -127,9 +178,9 @@ export class NotificationInboxPageComponent {
 
   open(item: NotificationInboxItem): void {
     const navigate = () => {
-      if (item.targetRoute?.startsWith('/') && !item.targetRoute.startsWith('//')) {
-        void this.router.navigateByUrl(item.targetRoute);
-      }
+      const targetRoute = this.safeTargetRoute(item.targetRoute);
+      if (targetRoute) void this.router.navigateByUrl(targetRoute);
+      else this.notifications.info('Esta notificación no tiene una ruta disponible.');
     };
     if (item.readAtUtc) {
       navigate();
@@ -138,7 +189,10 @@ export class NotificationInboxPageComponent {
 
     this.api.markAsRead(item.id).subscribe({
       next: () => {
-        this.items.update((items) => items.map((entry) => entry.id === item.id ? { ...entry, readAtUtc: new Date().toISOString() } : entry));
+        const readAtUtc = new Date().toISOString();
+        this.items.update((items) => this.filter() === 'unread'
+          ? items.filter((entry) => entry.id !== item.id)
+          : items.map((entry) => entry.id === item.id ? { ...entry, readAtUtc } : entry));
         navigate();
       },
       error: () => this.notifications.error('No pudimos actualizar la notificación.'),
@@ -151,9 +205,26 @@ export class NotificationInboxPageComponent {
     this.api.markAllAsRead().pipe(finalize(() => this.markingAll.set(false))).subscribe({
       next: () => {
         const now = new Date().toISOString();
-        this.items.update((items) => items.map((item) => ({ ...item, readAtUtc: item.readAtUtc || now })));
+        this.items.update((items) => this.filter() === 'unread'
+          ? []
+          : items.map((item) => ({ ...item, readAtUtc: item.readAtUtc || now })));
       },
       error: () => this.notifications.error('No pudimos marcar las notificaciones como leídas.'),
     });
+  }
+
+  emptyTitle(): string {
+    return this.filter() === 'unread' ? 'No tienes no leídas' : 'Todo está al día';
+  }
+
+  emptyDescription(): string {
+    return this.filter() === 'unread'
+      ? 'Cuando tengas avisos pendientes aparecerán aquí.'
+      : 'Aquí aparecerán los avisos importantes relacionados con tu actividad.';
+  }
+
+  private safeTargetRoute(targetRoute?: string | null): string | null {
+    const normalized = targetRoute?.trim();
+    return normalized?.startsWith('/') && !normalized.startsWith('//') ? normalized : null;
   }
 }
