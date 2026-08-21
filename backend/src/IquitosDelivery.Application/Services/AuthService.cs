@@ -68,11 +68,14 @@ public class AuthService : IAuthService
         await _registerRestaurantValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var email = NormalizeEmail(request.Email);
+        var phoneNormalized = IdentityNormalization.NormalizePeruvianMobilePhone(request.Phone);
+        var identityDocumentNumberNormalized = IdentityNormalization.NormalizeIdentityDocumentNumber(request.IdentityDocumentNumber);
         await EnsureEmailIsUniqueAsync(email, cancellationToken);
+        await EnsurePhoneAndIdentityAreUniqueAsync(phoneNormalized, identityDocumentNumberNormalized, cancellationToken);
         await EnsureZoneExistsAsync(request.ZoneId, cancellationToken);
         var businessTypeId = await ResolveRestaurantBusinessTypeIdAsync(request.BusinessTypeId, cancellationToken);
 
-        var user = CreateUser(request.FirstName, request.LastName, request.Phone, email, request.Password, UserRole.Restaurant, UserStatus.Pending);
+        var user = CreateUser(request.FirstName, request.LastName, request.Phone, phoneNormalized, request.IdentityDocumentNumber, identityDocumentNumberNormalized, email, request.Password, UserRole.Restaurant, UserStatus.Pending);
         var restaurant = new Restaurant
         {
             Id = Guid.NewGuid(),
@@ -104,10 +107,13 @@ public class AuthService : IAuthService
         await _registerDriverValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var email = NormalizeEmail(request.Email);
+        var phoneNormalized = IdentityNormalization.NormalizePeruvianMobilePhone(request.Phone);
+        var identityDocumentNumberNormalized = IdentityNormalization.NormalizeIdentityDocumentNumber(request.IdentityDocumentNumber);
         await EnsureEmailIsUniqueAsync(email, cancellationToken);
+        await EnsurePhoneAndIdentityAreUniqueAsync(phoneNormalized, identityDocumentNumberNormalized, cancellationToken);
         await EnsureZoneExistsAsync(request.ZoneId, cancellationToken);
 
-        var user = CreateUser(request.FirstName, request.LastName, request.Phone, email, request.Password, UserRole.Driver, UserStatus.Pending);
+        var user = CreateUser(request.FirstName, request.LastName, request.Phone, phoneNormalized, request.IdentityDocumentNumber, identityDocumentNumberNormalized, email, request.Password, UserRole.Driver, UserStatus.Pending);
         var driverProfile = new DriverProfile
         {
             Id = Guid.NewGuid(),
@@ -199,6 +205,11 @@ public class AuthService : IAuthService
                 FirstName = string.IsNullOrWhiteSpace(googleUser.GivenName) ? googleUser.FullName.Trim() : googleUser.GivenName.Trim(),
                 LastName = string.IsNullOrWhiteSpace(googleUser.FamilyName) ? "-" : googleUser.FamilyName.Trim(),
                 Phone = string.Empty,
+                PhoneNormalized = null,
+                IsPhoneVerified = false,
+                IdentityDocumentType = IdentityNormalization.DefaultIdentityDocumentType,
+                IdentityDocumentNumber = null,
+                IdentityDocumentNumberNormalized = null,
                 Email = normalizedEmail,
                 PasswordHash = string.Empty,
                 GoogleSubject = googleUser.Subject,
@@ -471,6 +482,32 @@ public class AuthService : IAuthService
         await Task.CompletedTask;
     }
 
+    private async Task EnsurePhoneAndIdentityAreUniqueAsync(
+        string phoneNormalized,
+        string identityDocumentNumberNormalized,
+        CancellationToken cancellationToken)
+    {
+        var phoneExists = await _dbContext.Users.AnyAsync(x => x.PhoneNormalized == phoneNormalized, cancellationToken)
+            || await _dbContext.PendingCustomerRegistrations.AnyAsync(x => !x.IsCompleted && x.PhoneNormalized == phoneNormalized, cancellationToken)
+            || await _dbContext.PendingRestaurantRegistrations.AnyAsync(x => !x.IsCompleted && x.PhoneNormalized == phoneNormalized, cancellationToken)
+            || await _dbContext.PendingDriverRegistrations.AnyAsync(x => !x.IsCompleted && x.PhoneNormalized == phoneNormalized, cancellationToken);
+
+        if (phoneExists)
+        {
+            throw new AppException("Ya existe una cuenta o registro pendiente con este celular.");
+        }
+
+        var identityExists = await _dbContext.Users.AnyAsync(x => x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken)
+            || await _dbContext.PendingCustomerRegistrations.AnyAsync(x => !x.IsCompleted && x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken)
+            || await _dbContext.PendingRestaurantRegistrations.AnyAsync(x => !x.IsCompleted && x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken)
+            || await _dbContext.PendingDriverRegistrations.AnyAsync(x => !x.IsCompleted && x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken);
+
+        if (identityExists)
+        {
+            throw new AppException("Ya existe una cuenta o registro pendiente con este DNI.");
+        }
+    }
+
     private async Task EnsureZoneExistsAsync(Guid zoneId, CancellationToken cancellationToken)
     {
         var exists = _dbContext.Zones.Any(x => x.Id == zoneId);
@@ -501,7 +538,17 @@ public class AuthService : IAuthService
         return businessTypeId.Value;
     }
 
-    private User CreateUser(string firstName, string lastName, string phone, string email, string password, UserRole role, UserStatus status)
+    private User CreateUser(
+        string firstName,
+        string lastName,
+        string phone,
+        string phoneNormalized,
+        string identityDocumentNumber,
+        string identityDocumentNumberNormalized,
+        string email,
+        string password,
+        UserRole role,
+        UserStatus status)
     {
         return new User
         {
@@ -509,6 +556,11 @@ public class AuthService : IAuthService
             FirstName = firstName.Trim(),
             LastName = lastName.Trim(),
             Phone = phone.Trim(),
+            PhoneNormalized = phoneNormalized,
+            IsPhoneVerified = false,
+            IdentityDocumentType = IdentityNormalization.DefaultIdentityDocumentType,
+            IdentityDocumentNumber = identityDocumentNumber.Trim(),
+            IdentityDocumentNumberNormalized = identityDocumentNumberNormalized,
             Email = email,
             PasswordHash = _passwordHasher.Hash(password),
             Role = role,

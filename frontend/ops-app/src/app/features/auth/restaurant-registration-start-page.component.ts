@@ -100,7 +100,18 @@ import { setRegistrationState } from './registration-flow.storage';
 
               <div class="field">
                 <label for="phone">Teléfono</label>
-                <input id="phone" type="text" formControlName="phone" />
+                <input id="phone" type="tel" inputmode="tel" placeholder="999999999" formControlName="phone" />
+                @if (form.controls.phone.invalid && form.controls.phone.touched) {
+                  <small class="text-sm font-medium text-danger">Ingresa un celular peruano válido de 9 dígitos.</small>
+                }
+              </div>
+
+              <div class="field">
+                <label for="identityDocumentNumber">DNI del titular</label>
+                <input id="identityDocumentNumber" type="text" inputmode="numeric" maxlength="8" placeholder="12345678" formControlName="identityDocumentNumber" />
+                @if (form.controls.identityDocumentNumber.invalid && form.controls.identityDocumentNumber.touched) {
+                  <small class="text-sm font-medium text-danger">Ingresa un DNI válido de 8 dígitos.</small>
+                }
               </div>
 
               <div class="field">
@@ -234,7 +245,8 @@ export class RestaurantRegistrationStartPageComponent {
   readonly form = this.formBuilder.nonNullable.group({
     firstName: ['', [Validators.required]],
     lastName: ['', [Validators.required]],
-    phone: ['', [Validators.required]],
+    phone: ['', [Validators.required, Validators.pattern(/^(?:\+?51)?9\d{8}$/)]],
+    identityDocumentNumber: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
     email: ['', [Validators.required, Validators.email]],
     restaurantName: ['', [Validators.required]],
     description: ['', [Validators.required]],
@@ -273,6 +285,7 @@ export class RestaurantRegistrationStartPageComponent {
       firstName: raw.firstName.trim(),
       lastName: raw.lastName.trim(),
       phone: raw.phone.trim(),
+      identityDocumentNumber: raw.identityDocumentNumber.trim(),
       email: raw.email.trim(),
       restaurantName: raw.restaurantName.trim(),
       description: raw.description.trim(),
@@ -377,6 +390,7 @@ export class RestaurantRegistrationStartPageComponent {
     formData.append('FirstName', raw.firstName.trim());
     formData.append('LastName', raw.lastName.trim());
     formData.append('Phone', raw.phone.trim());
+    formData.append('IdentityDocumentNumber', raw.identityDocumentNumber.trim());
     formData.append('Email', raw.email.trim());
     formData.append('RestaurantName', raw.restaurantName.trim());
     formData.append('Description', raw.description.trim());

@@ -28,3 +28,18 @@ public class CreateCommunityRequestRequest
 
     public DateTime? DeadlineUtc { get; set; }
 }
+
+public class CommunityRequestQuoteResponse
+{
+    public decimal CompensationAmount { get; set; }
+
+    public decimal EstimatedPurchaseAmount { get; set; }
+
+    public decimal FavorPlatformCommissionAmount { get; set; }
+
+    public decimal CollaboratorEarningAmount { get; set; }
+
+    public decimal TotalClientAmount { get; set; }
+
+    public decimal PlatformRevenueAmount { get; set; }
+}

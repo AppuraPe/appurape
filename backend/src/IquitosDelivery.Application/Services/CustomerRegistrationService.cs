@@ -16,6 +16,7 @@ public class CustomerRegistrationService
     private readonly IValidator<CompleteCustomerRegistrationRequest> _completeValidator;
     private readonly IValidator<ResendCustomerRegistrationCodeRequest> _resendValidator;
     private readonly ILegalService _legalService;
+    private readonly IPhoneOtpService _phoneOtpService;
 
     public CustomerRegistrationService(
         IAppDbContext dbContext,
@@ -26,7 +27,8 @@ public class CustomerRegistrationService
         IValidator<VerifyCustomerRegistrationCodeRequest> verifyValidator,
         IValidator<CompleteCustomerRegistrationRequest> completeValidator,
         IValidator<ResendCustomerRegistrationCodeRequest> resendValidator,
-        ILegalService legalService)
+        ILegalService legalService,
+        IPhoneOtpService phoneOtpService)
         : base(dbContext, emailSender, jwtTokenService, passwordHasher)
     {
         _startValidator = startValidator;
@@ -34,6 +36,7 @@ public class CustomerRegistrationService
         _completeValidator = completeValidator;
         _resendValidator = resendValidator;
         _legalService = legalService;
+        _phoneOtpService = phoneOtpService;
     }
 
     public async Task<VerificationCodeResponse> StartRegistrationAsync(StartCustomerRegistrationRequest request, CancellationToken cancellationToken = default)
@@ -41,7 +44,10 @@ public class CustomerRegistrationService
         await _startValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var email = NormalizeEmail(request.Email);
+        var phoneNormalized = NormalizePhone(request.Phone);
+        var identityDocumentNumberNormalized = NormalizeIdentityDocumentNumber(request.IdentityDocumentNumber);
         await EnsureEmailIsAvailableAsync(email, cancellationToken);
+        await EnsurePhoneAndIdentityAreAvailableAsync(phoneNormalized, identityDocumentNumberNormalized, email, cancellationToken);
 
         var registration = await GetLatestPendingRegistrationAsync(email, cancellationToken);
         if (registration is null)
@@ -58,6 +64,10 @@ public class CustomerRegistrationService
         registration.FirstName = request.FirstName.Trim();
         registration.LastName = request.LastName.Trim();
         registration.Phone = request.Phone.Trim();
+        registration.PhoneNormalized = phoneNormalized;
+        registration.IdentityDocumentType = "DNI";
+        registration.IdentityDocumentNumber = request.IdentityDocumentNumber.Trim();
+        registration.IdentityDocumentNumberNormalized = identityDocumentNumberNormalized;
 
         await SendVerificationCodeAsync(registration, cancellationToken);
 
@@ -82,7 +92,10 @@ public class CustomerRegistrationService
         await EnsureEmailIsAvailableAsync(email, cancellationToken);
 
         var registration = await GetRequiredPendingRegistrationAsync(email, cancellationToken);
+        EnsureRegistrationIdentityIsComplete(registration);
+        await EnsurePhoneAndIdentityAreAvailableAsync(registration.PhoneNormalized, registration.IdentityDocumentNumberNormalized, email, cancellationToken);
         await PrepareCompletionAsync(registration, request.Code, cancellationToken);
+        var isPhoneVerified = await _phoneOtpService.ConsumeVerifiedOtpAsync(registration.PhoneNormalized ?? string.Empty, "Registration", cancellationToken);
 
         var user = new User
         {
@@ -90,6 +103,12 @@ public class CustomerRegistrationService
             FirstName = registration.FirstName,
             LastName = registration.LastName,
             Phone = registration.Phone,
+            PhoneNormalized = registration.PhoneNormalized,
+            IsPhoneVerified = isPhoneVerified,
+            PhoneVerifiedAtUtc = isPhoneVerified ? DateTime.UtcNow : null,
+            IdentityDocumentType = registration.IdentityDocumentType,
+            IdentityDocumentNumber = registration.IdentityDocumentNumber,
+            IdentityDocumentNumberNormalized = registration.IdentityDocumentNumberNormalized,
             Email = registration.Email,
             PasswordHash = PasswordHasher.Hash(request.Password),
             Role = UserRole.Customer,

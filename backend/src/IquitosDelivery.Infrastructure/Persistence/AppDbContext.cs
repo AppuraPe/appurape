@@ -23,6 +23,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
 
+    public DbSet<PhoneOtpChallenge> PhoneOtpChallenges => Set<PhoneOtpChallenge>();
+
     public DbSet<CustomerProfile> Customers => Set<CustomerProfile>();
 
     public DbSet<CollaboratorProfile> CollaboratorProfiles => Set<CollaboratorProfile>();
@@ -100,6 +102,8 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<PendingDriverRegistration> IAppDbContext.PendingDriverRegistrations => PendingDriverRegistrations;
 
     IQueryable<PasswordResetRequest> IAppDbContext.PasswordResetRequests => PasswordResetRequests;
+
+    IQueryable<PhoneOtpChallenge> IAppDbContext.PhoneOtpChallenges => PhoneOtpChallenges;
 
     IQueryable<CustomerProfile> IAppDbContext.Customers => Customers;
 

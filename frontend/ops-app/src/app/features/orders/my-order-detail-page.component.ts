@@ -60,6 +60,7 @@ import { UnifiedLoadingStateComponent } from '../../shared/components/unified-lo
 export class MyOrderDetailPageComponent {
   private static readonly PRODUCT_PLACEHOLDER_IMAGE = '/img/catalog-placeholder.svg';
   private static readonly TRACKING_PLACEHOLDER_IMAGE = '/img/order-status-placeholder.svg';
+  private static readonly MAXIMUM_PICKUP_DURATION_MS = 24 * 60 * 60 * 1000;
   private readonly formBuilder = inject(FormBuilder);
   private readonly addressesApi = inject(CustomerAddressesApiService);
   private readonly trackingStates = [
@@ -140,6 +141,8 @@ export class MyOrderDetailPageComponent {
   readonly isCreatingPickup = signal(false);
   readonly isRequestingDriver = signal(false);
   readonly pickupPanelOpen = signal(false);
+  readonly pickupDeadlineMinimum = signal(this.toLocalInputValue(new Date(Date.now() + 5 * 60 * 1000)));
+  readonly pickupDeadlineMaximum = signal(this.toLocalInputValue(new Date(Date.now() + MyOrderDetailPageComponent.MAXIMUM_PICKUP_DURATION_MS)));
   readonly trackingMode = signal<'current' | 'history'>('current');
   readonly hasText = hasText;
   readonly receiptIcon = ReceiptText;
@@ -233,6 +236,8 @@ export class MyOrderDetailPageComponent {
   readonly pickupForm = this.formBuilder.nonNullable.group({
     compensationAmount: [5, [Validators.required, Validators.min(2)]],
     customerAddressId: ['', Validators.required],
+    driverOfferedDeliveryAmount: [5, [Validators.required, Validators.min(0)]],
+    deadlineUtc: [this.defaultPickupDeadline(), Validators.required],
   });
 
   constructor() {
@@ -257,6 +262,9 @@ export class MyOrderDetailPageComponent {
   openPickupPanel(): void {
     this.pickupPanelOpen.set(true);
     this.pickupQuote.set(null);
+    if (!this.pickupForm.controls.deadlineUtc.value) {
+      this.pickupForm.controls.deadlineUtc.setValue(this.defaultPickupDeadline());
+    }
   }
 
   quotePickup(): void {
@@ -266,7 +274,15 @@ export class MyOrderDetailPageComponent {
       return;
     }
     this.isQuotingPickup.set(true);
-    this.ordersApi.quoteCollaboratorPickup(order.id, this.pickupForm.controls.compensationAmount.value, this.pickupForm.controls.customerAddressId.value)
+    const deadlineUtc = this.pickupForm.controls.deadlineUtc.value
+      ? new Date(this.pickupForm.controls.deadlineUtc.value).toISOString()
+      : null;
+    this.ordersApi.quoteCollaboratorPickup(
+      order.id,
+      this.pickupForm.controls.compensationAmount.value,
+      this.pickupForm.controls.customerAddressId.value,
+      deadlineUtc,
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (quote) => {
@@ -317,8 +333,17 @@ export class MyOrderDetailPageComponent {
       this.notificationService.warning('Selecciona la dirección donde recibirás el pedido.');
       return;
     }
+    if (this.pickupForm.controls.driverOfferedDeliveryAmount.invalid) {
+      this.pickupForm.controls.driverOfferedDeliveryAmount.markAsTouched();
+      this.notificationService.warning('Ingresa una oferta válida para el driver.');
+      return;
+    }
     this.isRequestingDriver.set(true);
-    this.ordersApi.requestDriverDelivery(order.id, this.pickupForm.controls.customerAddressId.value)
+    this.ordersApi.requestDriverDelivery(
+      order.id,
+      this.pickupForm.controls.customerAddressId.value,
+      this.pickupForm.controls.driverOfferedDeliveryAmount.value,
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
@@ -402,6 +427,8 @@ export class MyOrderDetailPageComponent {
     this.ordersApi.getMyOrder(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (order) => {
         this.order.set(order);
+        const driverMinimum = Math.max(order.deliveryMinimumAmount || 0, order.deliveryFee || 0, 5);
+        this.pickupForm.controls.driverOfferedDeliveryAmount.setValue(driverMinimum, { emitEvent: false });
         this.loadFulfillmentOptions(order.id);
         this.loadAddresses();
         if (order.paymentStatus === 'RefundPending' || order.paymentStatus === 'Refunded') this.loadRefund(order.id);
@@ -509,6 +536,19 @@ export class MyOrderDetailPageComponent {
     }
 
     image.src = MyOrderDetailPageComponent.TRACKING_PLACEHOLDER_IMAGE;
+  }
+
+  private defaultPickupDeadline(): string {
+    return this.toLocalInputValue(new Date(Date.now() + 12 * 60 * 60 * 1000));
+  }
+
+  private toLocalInputValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   shortOrderId(id: string): string {

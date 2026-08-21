@@ -16,6 +16,7 @@ public class DriverRegistrationService
     private readonly IValidator<CompleteDriverRegistrationRequest> _completeValidator;
     private readonly IValidator<ResendDriverRegistrationCodeRequest> _resendValidator;
     private readonly ILegalService _legalService;
+    private readonly IPhoneOtpService _phoneOtpService;
 
     public DriverRegistrationService(
         IAppDbContext dbContext,
@@ -26,7 +27,8 @@ public class DriverRegistrationService
         IValidator<VerifyDriverRegistrationCodeRequest> verifyValidator,
         IValidator<CompleteDriverRegistrationRequest> completeValidator,
         IValidator<ResendDriverRegistrationCodeRequest> resendValidator,
-        ILegalService legalService)
+        ILegalService legalService,
+        IPhoneOtpService phoneOtpService)
         : base(dbContext, emailSender, jwtTokenService, passwordHasher)
     {
         _startValidator = startValidator;
@@ -34,6 +36,7 @@ public class DriverRegistrationService
         _completeValidator = completeValidator;
         _resendValidator = resendValidator;
         _legalService = legalService;
+        _phoneOtpService = phoneOtpService;
     }
 
     public async Task<VerificationCodeResponse> StartDriverRegistrationAsync(StartDriverRegistrationRequest request, CancellationToken cancellationToken = default)
@@ -41,7 +44,10 @@ public class DriverRegistrationService
         await _startValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var email = NormalizeEmail(request.Email);
+        var phoneNormalized = NormalizePhone(request.Phone);
+        var identityDocumentNumberNormalized = NormalizeIdentityDocumentNumber(request.IdentityDocumentNumber);
         await EnsureEmailIsAvailableAsync(email, cancellationToken);
+        await EnsurePhoneAndIdentityAreAvailableAsync(phoneNormalized, identityDocumentNumberNormalized, email, cancellationToken);
         await EnsureZoneExistsAsync(request.ZoneId, cancellationToken);
 
         var registration = await GetLatestPendingRegistrationAsync(email, cancellationToken);
@@ -59,6 +65,10 @@ public class DriverRegistrationService
         registration.FirstName = request.FirstName.Trim();
         registration.LastName = request.LastName.Trim();
         registration.Phone = request.Phone.Trim();
+        registration.PhoneNormalized = phoneNormalized;
+        registration.IdentityDocumentType = "DNI";
+        registration.IdentityDocumentNumber = request.IdentityDocumentNumber.Trim();
+        registration.IdentityDocumentNumberNormalized = identityDocumentNumberNormalized;
         registration.VehicleType = request.VehicleType;
         registration.Plate = request.Plate.Trim();
         registration.ZoneId = request.ZoneId;
@@ -89,7 +99,10 @@ public class DriverRegistrationService
 
         var registration = await GetRequiredPendingRegistrationAsync(email, cancellationToken);
         await EnsureZoneExistsAsync(registration.ZoneId, cancellationToken);
+        EnsureRegistrationIdentityIsComplete(registration);
+        await EnsurePhoneAndIdentityAreAvailableAsync(registration.PhoneNormalized, registration.IdentityDocumentNumberNormalized, email, cancellationToken);
         await PrepareCompletionAsync(registration, request.Code, cancellationToken);
+        var isPhoneVerified = await _phoneOtpService.ConsumeVerifiedOtpAsync(registration.PhoneNormalized ?? string.Empty, "Registration", cancellationToken);
 
         var user = new User
         {
@@ -97,6 +110,12 @@ public class DriverRegistrationService
             FirstName = registration.FirstName,
             LastName = registration.LastName,
             Phone = registration.Phone,
+            PhoneNormalized = registration.PhoneNormalized,
+            IsPhoneVerified = isPhoneVerified,
+            PhoneVerifiedAtUtc = isPhoneVerified ? DateTime.UtcNow : null,
+            IdentityDocumentType = registration.IdentityDocumentType,
+            IdentityDocumentNumber = registration.IdentityDocumentNumber,
+            IdentityDocumentNumberNormalized = registration.IdentityDocumentNumberNormalized,
             Email = registration.Email,
             PasswordHash = PasswordHasher.Hash(request.Password),
             Role = UserRole.Driver,

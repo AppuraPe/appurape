@@ -3,12 +3,13 @@ import { Component, DestroyRef, computed, effect, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
+import { catchError, debounceTime, forkJoin, map, of, shareReplay, startWith, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CommunityApiService } from '../../core/services/community-api.service';
 import {
   CommunityCollaboratorResponse,
   CommunityRequestListItemResponse,
+  CommunityRequestQuoteResponse,
   CommunityRouteResponse,
 } from '../../core/models/community.models';
 import { NotificationService } from '../../core/services/notification.service';
@@ -200,19 +201,42 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
                       <span class="text-sm font-semibold text-slate-700">Pago al colaborador</span>
                       <div class="relative min-w-0">
                         <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-500">S/</span>
-                        <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700" type="number" step="0.01" min="0" formControlName="compensationAmount" />
+                        <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700" type="number" step="0.01" min="2" formControlName="compensationAmount" />
                       </div>
-                      <small class="text-xs leading-5 text-slate-500">Recompensa ofrecida a quien te ayude.</small>
+                      <small class="text-xs leading-5 text-slate-500">Mínimo S/ 2.00. Recompensa ofrecida a quien te ayude.</small>
+                      @if (requestForm.controls.compensationAmount.invalid && requestForm.controls.compensationAmount.touched) {
+                        <small class="text-xs font-semibold text-red-600">El pago debe ser como mínimo S/ 2.00.</small>
+                      }
                     </label>
+
+                    @if (isMarketPurchaseRequest()) {
+                      <label class="grid min-w-0 gap-2">
+                        <span class="text-sm font-semibold text-slate-700">Monto estimado de compra</span>
+                        <div class="relative min-w-0">
+                          <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-500">S/</span>
+                          <input class="min-h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700" type="number" step="0.01" min="0" formControlName="estimatedPurchaseAmount" />
+                        </div>
+                        <small class="text-xs leading-5 text-slate-500">Dinero aproximado para comprar los productos solicitados.</small>
+                        @if (requestForm.controls.estimatedPurchaseAmount.invalid && requestForm.controls.estimatedPurchaseAmount.touched) {
+                          <small class="text-xs font-semibold text-red-600">Ingresa un monto válido desde S/ 0.00.</small>
+                        }
+                      </label>
+                    }
 
                     <label class="grid gap-2 sm:col-span-2">
                       <span class="text-sm font-semibold text-slate-700">Título</span>
-                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="title" placeholder="Ej. Comprar medicina en farmacia" />
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" maxlength="150" formControlName="title" placeholder="Ej. Comprar medicina en farmacia" />
+                      @if (requestForm.controls.title.invalid && requestForm.controls.title.touched) {
+                        <small class="text-xs font-semibold text-red-600">Agrega un título de máximo 150 caracteres.</small>
+                      }
                     </label>
 
                     <label class="grid gap-2 sm:col-span-2">
                       <span class="text-sm font-semibold text-slate-700">Descripción</span>
-                      <textarea class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700" rows="3" formControlName="description" placeholder="Detalles de lo que necesitas..."></textarea>
+                      <textarea class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700" rows="3" maxlength="2000" formControlName="description" placeholder="Detalles de lo que necesitas..."></textarea>
+                      @if (requestForm.controls.description.invalid && requestForm.controls.description.touched) {
+                        <small class="text-xs font-semibold text-red-600">Describe el favor sin superar 2000 caracteres.</small>
+                      }
                     </label>
 
                     <div class="grid gap-2">
@@ -238,7 +262,10 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
                           </button>
                         </div>
                       </div>
-                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="originLabel" placeholder="Ej. Mercado Modelo de Belén" />
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" maxlength="200" formControlName="originLabel" placeholder="Ej. Mercado Modelo de Belén" />
+                      @if (requestForm.controls.originLabel.invalid && requestForm.controls.originLabel.touched) {
+                        <small class="text-xs font-semibold text-red-600">Indica el punto de recojo o compra.</small>
+                      }
                     </div>
 
                     <div class="grid gap-2">
@@ -264,7 +291,10 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
                           </button>
                         </div>
                       </div>
-                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" formControlName="destinationLabel" placeholder="Ej. Calle Putumayo 450" />
+                      <input class="min-h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700" type="text" maxlength="200" formControlName="destinationLabel" placeholder="Ej. Calle Putumayo 450" />
+                      @if (requestForm.controls.destinationLabel.invalid && requestForm.controls.destinationLabel.touched) {
+                        <small class="text-xs font-semibold text-red-600">Indica dónde debe entregarse el favor.</small>
+                      }
                     </div>
 
                     <label class="grid gap-2 sm:col-span-2">
@@ -277,8 +307,50 @@ type CollaboratorScope = 'available' | 'taken' | 'history';
                         [max]="deadlineMaximum()"
                       />
                       <small class="text-xs leading-5 text-slate-500">Válido hasta por 24 horas.</small>
+                      @if (requestForm.controls.deadlineUtc.invalid && requestForm.controls.deadlineUtc.touched) {
+                        <small class="text-xs font-semibold text-red-600">Elige una fecha límite válida.</small>
+                      }
                     </label>
                   </div>
+
+                  <app-surface-card variant="soft" extraClass="grid gap-2 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 class="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Resumen estimado</h4>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">Se calcula antes de publicar para evitar sorpresas.</p>
+                      </div>
+                      @if (isQuotingRequest()) {
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">Calculando...</span>
+                      }
+                    </div>
+
+                    @if (requestQuote(); as quote) {
+                      <div class="grid gap-2 text-sm">
+                        @if (quote.estimatedPurchaseAmount > 0) {
+                          <div class="flex justify-between gap-3 text-slate-600">
+                            <span>Compra estimada</span>
+                            <strong class="text-slate-950">{{ quote.estimatedPurchaseAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
+                          </div>
+                        }
+                        <div class="flex justify-between gap-3 text-slate-600">
+                          <span>Recibe el colaborador</span>
+                          <strong class="text-slate-950">{{ quote.collaboratorEarningAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
+                        </div>
+                        <div class="flex justify-between gap-3 text-slate-600">
+                          <span>Servicio AppuraPe</span>
+                          <strong class="text-slate-950">{{ quote.favorPlatformCommissionAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
+                        </div>
+                        <div class="flex justify-between gap-3 border-t border-slate-200 pt-2 text-base">
+                          <span class="font-black text-slate-950">Total estimado</span>
+                          <strong class="text-primary-700">{{ quote.totalClientAmount | currency:'PEN':'S/ ':'1.2-2' }}</strong>
+                        </div>
+                      </div>
+                    } @else if (requestQuoteError()) {
+                      <app-notice tone="warning" [message]="requestQuoteError()" />
+                    } @else {
+                      <p class="text-xs leading-5 text-slate-500">Completa título, descripción, origen, destino y pago para ver el total.</p>
+                    }
+                  </app-surface-card>
 
                   <app-button type="submit" [disabled]="isCreatingRequest()" block>
                     {{ isCreatingRequest() ? 'Publicando solicitud...' : 'Publicar solicitud' }}
@@ -673,17 +745,22 @@ export class CommunityHubPageComponent {
 
   readonly requestForm = this.formBuilder.nonNullable.group({
     type: 'MarketPurchase',
-    title: ['', Validators.required],
-    description: ['', Validators.required],
-    originLabel: ['', Validators.required],
+    title: ['', [Validators.required, Validators.maxLength(150)]],
+    description: ['', [Validators.required, Validators.maxLength(2000)]],
+    originLabel: ['', [Validators.required, Validators.maxLength(200)]],
     originLatitude: [null as number | null],
     originLongitude: [null as number | null],
-    destinationLabel: ['', Validators.required],
+    destinationLabel: ['', [Validators.required, Validators.maxLength(200)]],
     destinationLatitude: [null as number | null],
     destinationLongitude: [null as number | null],
-    compensationAmount: [5, [Validators.required, Validators.min(1)]],
+    compensationAmount: [5, [Validators.required, Validators.min(2)]],
+    estimatedPurchaseAmount: [0, [Validators.required, Validators.min(0)]],
     deadlineUtc: [this.defaultFavorDeadline(), Validators.required],
   });
+
+  readonly requestQuote = signal<CommunityRequestQuoteResponse | null>(null);
+  readonly isQuotingRequest = signal(false);
+  readonly requestQuoteError = signal('');
 
   readonly filteredCustomerRequests = computed(() => {
     const scope = this.customerScope();
@@ -716,6 +793,37 @@ export class CommunityHubPageComponent {
   });
 
   constructor() {
+    this.requestForm.valueChanges
+      .pipe(
+        startWith(this.requestForm.getRawValue()),
+        debounceTime(350),
+        switchMap(() => {
+          if (!this.canQuoteRequest()) {
+            this.requestQuote.set(null);
+            this.requestQuoteError.set('');
+            this.isQuotingRequest.set(false);
+            return of(null);
+          }
+
+          this.isQuotingRequest.set(true);
+          this.requestQuoteError.set('');
+          return this.communityApi.quoteRequest(this.buildRequestPayload()).pipe(
+            catchError((error) => {
+              this.requestQuote.set(null);
+              this.requestQuoteError.set(getErrorMessage(error, 'No pudimos calcular el total del favor.'));
+              return of(null);
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((quote) => {
+        this.isQuotingRequest.set(false);
+        if (quote) {
+          this.requestQuote.set(quote);
+        }
+      });
+
     this.loadHub();
   }
 
@@ -868,28 +976,15 @@ export class CommunityHubPageComponent {
 
   createRequest(): void {
     if (this.requestForm.invalid) {
+      this.requestForm.markAllAsTouched();
       this.errorMessage.set('Por favor completa todos los campos requeridos para publicar el favor.');
       return;
     }
 
     this.isCreatingRequest.set(true);
     this.errorMessage.set('');
-
-    const values = this.requestForm.getRawValue();
     this.communityApi
-      .createRequest({
-        type: values.type,
-        title: values.title,
-        description: values.description,
-        originLabel: values.originLabel,
-        originLatitude: values.originLatitude,
-        originLongitude: values.originLongitude,
-        destinationLabel: values.destinationLabel,
-        destinationLatitude: values.destinationLatitude,
-        destinationLongitude: values.destinationLongitude,
-        compensationAmount: values.compensationAmount,
-        deadlineUtc: values.deadlineUtc ? new Date(values.deadlineUtc).toISOString() : null,
-      })
+      .createRequest(this.buildRequestPayload())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -906,6 +1001,7 @@ export class CommunityHubPageComponent {
             destinationLatitude: null,
             destinationLongitude: null,
             compensationAmount: 5,
+            estimatedPurchaseAmount: 0,
             deadlineUtc: this.defaultFavorDeadline(),
           });
           this.loadHub();
@@ -915,6 +1011,45 @@ export class CommunityHubPageComponent {
           this.errorMessage.set(err.error?.message || 'No se pudo crear el favor.');
         },
       });
+  }
+
+  private canQuoteRequest(): boolean {
+    const controls = this.requestForm.controls;
+    return (
+      controls.title.valid &&
+      controls.description.valid &&
+      controls.originLabel.valid &&
+      controls.destinationLabel.valid &&
+      controls.compensationAmount.valid &&
+      controls.estimatedPurchaseAmount.valid &&
+      controls.deadlineUtc.valid
+    );
+  }
+
+  isMarketPurchaseRequest(): boolean {
+    return this.requestForm.controls.type.value === 'MarketPurchase';
+  }
+
+  private buildRequestPayload() {
+    const values = this.requestForm.getRawValue();
+    const estimatedPurchaseAmount = values.type === 'MarketPurchase'
+      ? Number(values.estimatedPurchaseAmount || 0)
+      : 0;
+
+    return {
+      type: values.type,
+      title: values.title.trim(),
+      description: values.description.trim(),
+      originLabel: values.originLabel.trim(),
+      originLatitude: values.originLatitude,
+      originLongitude: values.originLongitude,
+      destinationLabel: values.destinationLabel.trim(),
+      destinationLatitude: values.destinationLatitude,
+      destinationLongitude: values.destinationLongitude,
+      compensationAmount: Number(values.compensationAmount || 0),
+      estimatedPurchaseAmount,
+      deadlineUtc: values.deadlineUtc ? new Date(values.deadlineUtc).toISOString() : null,
+    };
   }
 
   saveAvailability(): void {

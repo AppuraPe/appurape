@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Auth;
 using IquitosDelivery.Application.Exceptions;
 using IquitosDelivery.Application.Interfaces;
@@ -41,6 +42,49 @@ public abstract class EmailRegistrationServiceBase<TRegistration>
         }
     }
 
+    protected async Task EnsurePhoneAndIdentityAreAvailableAsync(
+        string? phoneNormalized,
+        string? identityDocumentNumberNormalized,
+        string currentEmail,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(phoneNormalized))
+        {
+            var phoneExists = await DbContext.Users.AnyAsync(x => x.PhoneNormalized == phoneNormalized, cancellationToken)
+                || await DbContext.PendingCustomerRegistrations.AnyAsync(x => !x.IsCompleted && x.Email != currentEmail && x.PhoneNormalized == phoneNormalized, cancellationToken)
+                || await DbContext.PendingRestaurantRegistrations.AnyAsync(x => !x.IsCompleted && x.Email != currentEmail && x.PhoneNormalized == phoneNormalized, cancellationToken)
+                || await DbContext.PendingDriverRegistrations.AnyAsync(x => !x.IsCompleted && x.Email != currentEmail && x.PhoneNormalized == phoneNormalized, cancellationToken);
+
+            if (phoneExists)
+            {
+                throw new AppException("Ya existe una cuenta o registro pendiente con este celular.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(identityDocumentNumberNormalized))
+        {
+            var identityExists = await DbContext.Users.AnyAsync(x => x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken)
+                || await DbContext.PendingCustomerRegistrations.AnyAsync(x => !x.IsCompleted && x.Email != currentEmail && x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken)
+                || await DbContext.PendingRestaurantRegistrations.AnyAsync(x => !x.IsCompleted && x.Email != currentEmail && x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken)
+                || await DbContext.PendingDriverRegistrations.AnyAsync(x => !x.IsCompleted && x.Email != currentEmail && x.IdentityDocumentNumberNormalized == identityDocumentNumberNormalized, cancellationToken);
+
+            if (identityExists)
+            {
+                throw new AppException("Ya existe una cuenta o registro pendiente con este DNI.");
+            }
+        }
+    }
+
+    protected static string NormalizePhone(string phone)
+    {
+        return IdentityNormalization.NormalizePeruvianMobilePhone(phone);
+    }
+
+    protected static string NormalizeIdentityDocumentNumber(string identityDocumentNumber)
+    {
+        return IdentityNormalization.NormalizeIdentityDocumentNumber(identityDocumentNumber);
+    }
+
     protected void EnsureRegistrationCanContinue(TRegistration registration)
     {
         if (registration.IsCompleted)
@@ -51,6 +95,15 @@ public abstract class EmailRegistrationServiceBase<TRegistration>
         if (registration.VerifyAttempts >= MaxVerifyAttempts && !registration.IsVerified)
         {
             throw new AppException("Too many verification attempts. Please request a new code.");
+        }
+    }
+
+    protected static void EnsureRegistrationIdentityIsComplete(TRegistration registration)
+    {
+        if (!IdentityNormalization.IsValidPeruvianMobilePhone(registration.PhoneNormalized)
+            || !IdentityNormalization.IsValidPeruvianDni(registration.IdentityDocumentNumberNormalized))
+        {
+            throw new AppException("Actualiza tus datos de registro para incluir DNI y celular válidos.");
         }
     }
 

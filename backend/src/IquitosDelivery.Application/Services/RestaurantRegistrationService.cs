@@ -16,6 +16,7 @@ public class RestaurantRegistrationService
     private readonly IValidator<CompleteRestaurantRegistrationRequest> _completeValidator;
     private readonly IValidator<ResendRestaurantRegistrationCodeRequest> _resendValidator;
     private readonly ILegalService _legalService;
+    private readonly IPhoneOtpService _phoneOtpService;
 
     public RestaurantRegistrationService(
         IAppDbContext dbContext,
@@ -26,7 +27,8 @@ public class RestaurantRegistrationService
         IValidator<VerifyRestaurantRegistrationCodeRequest> verifyValidator,
         IValidator<CompleteRestaurantRegistrationRequest> completeValidator,
         IValidator<ResendRestaurantRegistrationCodeRequest> resendValidator,
-        ILegalService legalService)
+        ILegalService legalService,
+        IPhoneOtpService phoneOtpService)
         : base(dbContext, emailSender, jwtTokenService, passwordHasher)
     {
         _startValidator = startValidator;
@@ -34,6 +36,7 @@ public class RestaurantRegistrationService
         _completeValidator = completeValidator;
         _resendValidator = resendValidator;
         _legalService = legalService;
+        _phoneOtpService = phoneOtpService;
     }
 
     public async Task<VerificationCodeResponse> StartRestaurantRegistrationAsync(StartRestaurantRegistrationRequest request, CancellationToken cancellationToken = default)
@@ -41,7 +44,10 @@ public class RestaurantRegistrationService
         await _startValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var email = NormalizeEmail(request.Email);
+        var phoneNormalized = NormalizePhone(request.Phone);
+        var identityDocumentNumberNormalized = NormalizeIdentityDocumentNumber(request.IdentityDocumentNumber);
         await EnsureEmailIsAvailableAsync(email, cancellationToken);
+        await EnsurePhoneAndIdentityAreAvailableAsync(phoneNormalized, identityDocumentNumberNormalized, email, cancellationToken);
         await EnsureZoneExistsAsync(request.ZoneId, cancellationToken);
         var businessTypeId = await ResolveRestaurantBusinessTypeIdAsync(request.BusinessTypeId, cancellationToken);
 
@@ -60,6 +66,10 @@ public class RestaurantRegistrationService
         registration.FirstName = request.FirstName.Trim();
         registration.LastName = request.LastName.Trim();
         registration.Phone = request.Phone.Trim();
+        registration.PhoneNormalized = phoneNormalized;
+        registration.IdentityDocumentType = "DNI";
+        registration.IdentityDocumentNumber = request.IdentityDocumentNumber.Trim();
+        registration.IdentityDocumentNumberNormalized = identityDocumentNumberNormalized;
         registration.RestaurantName = request.RestaurantName.Trim();
         registration.Description = request.Description.Trim();
         registration.Address = request.Address.Trim();
@@ -94,7 +104,10 @@ public class RestaurantRegistrationService
 
         var registration = await GetRequiredPendingRegistrationAsync(email, cancellationToken);
         await EnsureZoneExistsAsync(registration.ZoneId, cancellationToken);
+        EnsureRegistrationIdentityIsComplete(registration);
+        await EnsurePhoneAndIdentityAreAvailableAsync(registration.PhoneNormalized, registration.IdentityDocumentNumberNormalized, email, cancellationToken);
         await PrepareCompletionAsync(registration, request.Code, cancellationToken);
+        var isPhoneVerified = await _phoneOtpService.ConsumeVerifiedOtpAsync(registration.PhoneNormalized ?? string.Empty, "Registration", cancellationToken);
 
         var user = new User
         {
@@ -102,6 +115,12 @@ public class RestaurantRegistrationService
             FirstName = registration.FirstName,
             LastName = registration.LastName,
             Phone = registration.Phone,
+            PhoneNormalized = registration.PhoneNormalized,
+            IsPhoneVerified = isPhoneVerified,
+            PhoneVerifiedAtUtc = isPhoneVerified ? DateTime.UtcNow : null,
+            IdentityDocumentType = registration.IdentityDocumentType,
+            IdentityDocumentNumber = registration.IdentityDocumentNumber,
+            IdentityDocumentNumberNormalized = registration.IdentityDocumentNumberNormalized,
             Email = registration.Email,
             PasswordHash = PasswordHasher.Hash(request.Password),
             Role = UserRole.Restaurant,

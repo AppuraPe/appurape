@@ -15,6 +15,7 @@ public class AuthController : ControllerBase
     private readonly ICustomerRegistrationService _customerRegistrationService;
     private readonly IRestaurantRegistrationService _restaurantRegistrationService;
     private readonly IDriverRegistrationService _driverRegistrationService;
+    private readonly IPhoneOtpService _phoneOtpService;
     private readonly IFileStorageService _fileStorageService;
 
     public AuthController(
@@ -22,13 +23,35 @@ public class AuthController : ControllerBase
         ICustomerRegistrationService customerRegistrationService,
         IRestaurantRegistrationService restaurantRegistrationService,
         IDriverRegistrationService driverRegistrationService,
+        IPhoneOtpService phoneOtpService,
         IFileStorageService fileStorageService)
     {
         _authService = authService;
         _customerRegistrationService = customerRegistrationService;
         _restaurantRegistrationService = restaurantRegistrationService;
         _driverRegistrationService = driverRegistrationService;
+        _phoneOtpService = phoneOtpService;
         _fileStorageService = fileStorageService;
+    }
+
+    [HttpPost("phone-otp/start")]
+    [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
+    [ProducesResponseType(typeof(PhoneOtpResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PhoneOtpResponse>> StartPhoneOtp([FromBody] StartPhoneOtpRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _phoneOtpService.StartAsync(request, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("phone-otp/verify")]
+    [AllowAnonymous]
+    [EnableRateLimiting("OtpSensitive")]
+    [ProducesResponseType(typeof(PhoneOtpVerificationResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PhoneOtpVerificationResponse>> VerifyPhoneOtp([FromBody] VerifyPhoneOtpRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _phoneOtpService.VerifyAsync(request, cancellationToken);
+        return Ok(response);
     }
 
     [HttpPost("register/customer/start")]
@@ -89,6 +112,7 @@ public class AuthController : ControllerBase
             FirstName = request.FirstName,
             LastName = request.LastName,
             Phone = request.Phone,
+            IdentityDocumentNumber = request.IdentityDocumentNumber,
             Email = request.Email,
             RestaurantName = request.RestaurantName,
             Description = request.Description,
@@ -159,6 +183,7 @@ public class AuthController : ControllerBase
             FirstName = request.FirstName,
             LastName = request.LastName,
             Phone = request.Phone,
+            IdentityDocumentNumber = request.IdentityDocumentNumber,
             Email = request.Email,
             VehicleType = request.VehicleType,
             Plate = request.Plate,

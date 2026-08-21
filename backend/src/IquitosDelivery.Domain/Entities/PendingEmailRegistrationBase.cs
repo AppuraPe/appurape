@@ -10,7 +10,15 @@ public abstract class PendingEmailRegistrationBase : BaseEntity
 
     public string Phone { get; set; } = string.Empty;
 
+    public string? PhoneNormalized { get; set; }
+
     public string Email { get; set; } = string.Empty;
+
+    public string IdentityDocumentType { get; set; } = "DNI";
+
+    public string IdentityDocumentNumber { get; set; } = string.Empty;
+
+    public string? IdentityDocumentNumberNormalized { get; set; }
 
     public string VerificationCodeHash { get; set; } = string.Empty;
 

@@ -51,6 +51,7 @@ export interface StartRestaurantRegistrationRequest {
   firstName: string;
   lastName: string;
   phone: string;
+  identityDocumentNumber: string;
   email: string;
   restaurantName: string;
   description: string;

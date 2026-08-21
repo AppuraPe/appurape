@@ -3,6 +3,7 @@ using System;
 using IquitosDelivery.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IquitosDelivery.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820212714_AddUserIdentityAndPhoneUniqueness")]
+    partial class AddUserIdentityAndPhoneUniqueness
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2009,77 +2012,6 @@ namespace IquitosDelivery.Infrastructure.Persistence.Migrations
                     b.HasIndex("Email", "IsVerified", "IsCompleted");
 
                     b.ToTable("pending_restaurant_registrations", (string)null);
-                });
-
-            modelBuilder.Entity("IquitosDelivery.Domain.Entities.PhoneOtpChallenge", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Channel")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<DateTime>("CodeExpiresAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CodeHash")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastSentAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PhoneNormalized")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("ProviderMessageId")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("Purpose")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("SendCount")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("VerifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("VerifyAttempts")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PhoneNormalized");
-
-                    b.HasIndex("PhoneNormalized", "Purpose", "IsCompleted");
-
-                    b.HasIndex("PhoneNormalized", "Purpose", "IsVerified", "IsCompleted");
-
-                    b.ToTable("phone_otp_challenges", (string)null);
                 });
 
             modelBuilder.Entity("IquitosDelivery.Domain.Entities.PlatformSettings", b =>

@@ -239,6 +239,36 @@ public class CommunityService : ICommunityService
         return MapRequestDetail(request, currentUserId);
     }
 
+    public async Task<CommunityRequestQuoteResponse> QuoteRequestAsync(
+        CreateCommunityRequestRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureAuthenticated();
+        await _createRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        var commissionRules = await GetActiveCommissionRulesAsync(CommissionRuleScope.CommunityRequest, cancellationToken);
+        var minimumFavorAmount = ResolveRuleAmount(commissionRules, FinancialRuleCodes.SimpleFavorMinimum, 2m);
+        if (request.CompensationAmount < minimumFavorAmount)
+        {
+            throw new AppException($"El pago al colaborador debe ser como mínimo S/ {minimumFavorAmount:0.00}.");
+        }
+
+        var financialBreakdown = FinancialCalculator.CalculateCommunityRequest(
+            request.CompensationAmount,
+            request.EstimatedPurchaseAmount,
+            commissionRules);
+
+        return new CommunityRequestQuoteResponse
+        {
+            CompensationAmount = financialBreakdown.CompensationAmount,
+            EstimatedPurchaseAmount = financialBreakdown.EstimatedPurchaseAmount,
+            FavorPlatformCommissionAmount = financialBreakdown.FavorPlatformCommissionAmount,
+            CollaboratorEarningAmount = financialBreakdown.CollaboratorEarningAmount,
+            TotalClientAmount = financialBreakdown.TotalClientAmount,
+            PlatformRevenueAmount = financialBreakdown.PlatformRevenueAmount
+        };
+    }
+
     public async Task<CommunityRequestDetailResponse> CreateRequestAsync(CreateCommunityRequestRequest request, CancellationToken cancellationToken = default)
     {
         await _createRequestValidator.ValidateAndThrowAsync(request, cancellationToken);

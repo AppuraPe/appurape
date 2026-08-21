@@ -25,6 +25,7 @@ type RegisterFlowState = {
   firstName: string;
   lastName: string;
   phone: string;
+  identityDocumentNumber: string;
   email: string;
   code: string;
   isCodeVerified: boolean;
@@ -130,9 +131,22 @@ function confirmPasswordValidator(control: AbstractControl): ValidationErrors | 
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2">
                     <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Teléfono</span>
-                    <input id="phone" type="tel" formControlName="phone" />
+                    <input id="phone" type="tel" formControlName="phone" inputmode="tel" placeholder="999999999" />
+                    @if (startForm.controls.phone.invalid && startForm.controls.phone.touched) {
+                      <span class="text-xs font-semibold text-red-600">Ingresa un celular peruano válido de 9 dígitos.</span>
+                    }
                   </label>
                   <label class="grid gap-2">
+                    <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">DNI</span>
+                    <input id="identityDocumentNumber" type="text" formControlName="identityDocumentNumber" inputmode="numeric" maxlength="8" placeholder="12345678" />
+                    @if (startForm.controls.identityDocumentNumber.invalid && startForm.controls.identityDocumentNumber.touched) {
+                      <span class="text-xs font-semibold text-red-600">Ingresa tu DNI de 8 dígitos.</span>
+                    }
+                  </label>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="grid gap-2 md:col-span-2">
                     <span class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-text-muted">Email</span>
                     <input id="email" type="email" formControlName="email" />
                   </label>
@@ -251,7 +265,8 @@ export class RegisterPageComponent {
   readonly startForm = this.formBuilder.nonNullable.group({
     firstName: ['', [Validators.required]],
     lastName: ['', [Validators.required]],
-    phone: ['', [Validators.required]],
+    phone: ['', [Validators.required, Validators.pattern(/^(?:\+?51)?9\d{8}$/)]],
+    identityDocumentNumber: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
     email: ['', [Validators.required, Validators.email]],
   });
 
@@ -304,6 +319,7 @@ export class RegisterPageComponent {
             firstName: payload.firstName,
             lastName: payload.lastName,
             phone: payload.phone,
+            identityDocumentNumber: payload.identityDocumentNumber,
             email: response.email,
             code: '',
             isCodeVerified: false,
@@ -470,6 +486,7 @@ export class RegisterPageComponent {
       firstName: savedState.firstName,
       lastName: savedState.lastName,
       phone: savedState.phone,
+      identityDocumentNumber: savedState.identityDocumentNumber ?? '',
       email: savedState.email,
     });
     this.verifyForm.patchValue({
@@ -503,6 +520,7 @@ export class RegisterPageComponent {
       firstName: this.startForm.controls.firstName.value.trim(),
       lastName: this.startForm.controls.lastName.value.trim(),
       phone: this.startForm.controls.phone.value.trim(),
+      identityDocumentNumber: this.startForm.controls.identityDocumentNumber.value.trim(),
       email: this.startForm.controls.email.value.trim() || this.verifyForm.getRawValue().email.trim(),
       code: this.verifiedCode() || this.verifyForm.controls.code.value.trim(),
       isCodeVerified: this.currentStep() === 'complete' && !!this.verifiedCode(),
