@@ -91,10 +91,37 @@ export interface VerificationStatusResponse {
   message: string;
 }
 
+export interface StartPhoneOtpRequest {
+  phone: string;
+  purpose?: string;
+}
+
+export interface VerifyPhoneOtpRequest {
+  phone: string;
+  code: string;
+  purpose?: string;
+}
+
+export interface PhoneOtpResponse {
+  phoneMasked: string;
+  purpose: string;
+  channel: string;
+  expiresInMinutes: number;
+  message: string;
+}
+
+export interface PhoneOtpVerificationResponse {
+  phoneMasked: string;
+  purpose: string;
+  isVerified: boolean;
+  message: string;
+}
+
 export interface StartCustomerRegistrationRequest {
   firstName: string;
   lastName: string;
   phone: string;
+  identityDocumentNumber: string;
   email: string;
 }
 
@@ -138,6 +165,7 @@ export interface StartRestaurantRegistrationRequest {
   firstName: string;
   lastName: string;
   phone: string;
+  identityDocumentNumber: string;
   email: string;
   restaurantName: string;
   description: string;
@@ -152,6 +180,7 @@ export interface StartDriverRegistrationRequest {
   firstName: string;
   lastName: string;
   phone: string;
+  identityDocumentNumber: string;
   email: string;
   vehicleType: number;
   plate: string;

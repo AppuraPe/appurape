@@ -73,6 +73,14 @@ public class CommunityController : ControllerBase
         return Ok(await _communityService.CreateRequestAsync(request, cancellationToken));
     }
 
+    [HttpPost("requests/quote")]
+    public async Task<ActionResult<CommunityRequestQuoteResponse>> QuoteRequest(
+        [FromBody] CreateCommunityRequestRequest request,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await _communityService.QuoteRequestAsync(request, cancellationToken));
+    }
+
     [HttpGet("requests/{requestId:guid}")]
     public async Task<ActionResult<CommunityRequestDetailResponse>> GetRequestById(Guid requestId, CancellationToken cancellationToken)
     {

@@ -9,6 +9,7 @@ import {
   CommunityRequestDetailResponse,
   CommunityRequestListItemResponse,
   CommunityRequestMatchResponse,
+  CommunityRequestQuoteResponse,
   CommunityRequestQueryRequest,
   CommunityRouteResponse,
   CreateCommunityRequestRequest,
@@ -95,6 +96,13 @@ export class CommunityApiService {
 
   createRequest(request: CreateCommunityRequestRequest): Observable<CommunityRequestDetailResponse> {
     return this.http.post<CommunityRequestDetailResponse>(`${this.baseUrl}/requests`, {
+      ...request,
+      type: COMMUNITY_REQUEST_TYPE_MAP[request.type] ?? request.type,
+    });
+  }
+
+  quoteRequest(request: CreateCommunityRequestRequest): Observable<CommunityRequestQuoteResponse> {
+    return this.http.post<CommunityRequestQuoteResponse>(`${this.baseUrl}/requests/quote`, {
       ...request,
       type: COMMUNITY_REQUEST_TYPE_MAP[request.type] ?? request.type,
     });

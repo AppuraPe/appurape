@@ -216,6 +216,15 @@ export interface CreateCommunityRequestRequest {
   deadlineUtc?: string | null;
 }
 
+export interface CommunityRequestQuoteResponse {
+  compensationAmount: number;
+  estimatedPurchaseAmount: number;
+  favorPlatformCommissionAmount: number;
+  collaboratorEarningAmount: number;
+  totalClientAmount: number;
+  platformRevenueAmount: number;
+}
+
 export interface CommunityRequestQueryRequest {
   q?: string;
   status?: string;

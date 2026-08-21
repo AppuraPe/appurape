@@ -15,7 +15,11 @@ public class PendingDriverRegistrationConfiguration : IEntityTypeConfiguration<P
         builder.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.LastName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Phone).HasMaxLength(20).IsRequired();
+        builder.Property(x => x.PhoneNormalized).HasMaxLength(20);
         builder.Property(x => x.Email).HasMaxLength(256).IsRequired();
+        builder.Property(x => x.IdentityDocumentType).HasMaxLength(20).HasDefaultValue("DNI").IsRequired();
+        builder.Property(x => x.IdentityDocumentNumber).HasMaxLength(30).IsRequired();
+        builder.Property(x => x.IdentityDocumentNumberNormalized).HasMaxLength(30);
         builder.Property(x => x.VerificationCodeHash).HasMaxLength(500).IsRequired();
         builder.Property(x => x.CodeExpiresAtUtc).IsRequired();
         builder.Property(x => x.IsVerified).IsRequired();
@@ -36,5 +40,7 @@ public class PendingDriverRegistrationConfiguration : IEntityTypeConfiguration<P
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => new { x.Email, x.IsCompleted });
         builder.HasIndex(x => new { x.Email, x.IsVerified, x.IsCompleted });
+        builder.HasIndex(x => new { x.PhoneNormalized, x.IsCompleted });
+        builder.HasIndex(x => new { x.IdentityDocumentNumberNormalized, x.IsCompleted });
     }
 }

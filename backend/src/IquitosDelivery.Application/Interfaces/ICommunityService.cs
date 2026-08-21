@@ -16,6 +16,8 @@ public interface ICommunityService
 
     Task<CommunityRequestDetailResponse> GetRequestByIdAsync(Guid requestId, CancellationToken cancellationToken = default);
 
+    Task<CommunityRequestQuoteResponse> QuoteRequestAsync(CreateCommunityRequestRequest request, CancellationToken cancellationToken = default);
+
     Task<CommunityRequestDetailResponse> CreateRequestAsync(CreateCommunityRequestRequest request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<CommunityRequestMatchResponse>> GetRequestMatchesAsync(Guid requestId, CancellationToken cancellationToken = default);

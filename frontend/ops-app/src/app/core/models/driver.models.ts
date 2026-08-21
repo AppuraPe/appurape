@@ -126,6 +126,7 @@ export interface StartDriverRegistrationRequest {
   firstName: string;
   lastName: string;
   phone: string;
+  identityDocumentNumber: string;
   email: string;
   vehicleType: VehicleType;
   plate: string;

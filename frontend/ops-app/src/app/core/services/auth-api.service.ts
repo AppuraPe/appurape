@@ -10,15 +10,19 @@ import {
   ForgotPasswordRequest,
   GoogleLoginRequest,
   LoginRequest,
+  PhoneOtpResponse,
+  PhoneOtpVerificationResponse,
   ResetPasswordRequest,
   ResendCustomerRegistrationCodeRequest,
   ResendPasswordResetCodeRequest,
   ResendRegistrationCodeRequest,
   StartCustomerRegistrationRequest,
+  StartPhoneOtpRequest,
   SwitchProfileRequest,
   VerificationCodeResponse,
   VerificationStatusResponse,
   VerifyCustomerRegistrationCodeRequest,
+  VerifyPhoneOtpRequest,
   VerifyRegistrationCodeRequest,
 } from '../models/auth.models';
 
@@ -53,6 +57,14 @@ export class AuthApiService {
 
   startCustomerRegistration(request: StartCustomerRegistrationRequest): Observable<VerificationCodeResponse> {
     return this.http.post<VerificationCodeResponse>(`${this.baseUrl}/register/customer/start`, request);
+  }
+
+  startPhoneOtp(request: StartPhoneOtpRequest): Observable<PhoneOtpResponse> {
+    return this.http.post<PhoneOtpResponse>(`${this.baseUrl}/phone-otp/start`, request);
+  }
+
+  verifyPhoneOtp(request: VerifyPhoneOtpRequest): Observable<PhoneOtpVerificationResponse> {
+    return this.http.post<PhoneOtpVerificationResponse>(`${this.baseUrl}/phone-otp/verify`, request);
   }
 
   verifyCustomerRegistrationCode(

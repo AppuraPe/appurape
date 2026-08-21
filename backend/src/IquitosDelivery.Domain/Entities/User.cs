@@ -11,7 +11,19 @@ public class User : BaseEntity
 
     public string Phone { get; set; } = string.Empty;
 
+    public string? PhoneNormalized { get; set; }
+
+    public bool IsPhoneVerified { get; set; }
+
+    public DateTime? PhoneVerifiedAtUtc { get; set; }
+
     public string Email { get; set; } = string.Empty;
+
+    public string IdentityDocumentType { get; set; } = "DNI";
+
+    public string? IdentityDocumentNumber { get; set; }
+
+    public string? IdentityDocumentNumberNormalized { get; set; }
 
     public string PasswordHash { get; set; } = string.Empty;
 

@@ -14,6 +14,8 @@ public interface IAppDbContext
 
     IQueryable<PasswordResetRequest> PasswordResetRequests { get; }
 
+    IQueryable<PhoneOtpChallenge> PhoneOtpChallenges { get; }
+
     IQueryable<CustomerProfile> Customers { get; }
 
     IQueryable<CollaboratorProfile> CollaboratorProfiles { get; }

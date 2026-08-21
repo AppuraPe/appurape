@@ -33,6 +33,7 @@ public class ControllerSmokeTests
             Mock.Of<ICustomerRegistrationService>(),
             Mock.Of<IRestaurantRegistrationService>(),
             Mock.Of<IDriverRegistrationService>(),
+            Mock.Of<IPhoneOtpService>(),
             Mock.Of<IFileStorageService>());
 
         var result = await controller.Login(new LoginRequest { Email = "demo@appurape.com", Password = "secret" }, CancellationToken.None);
@@ -67,6 +68,7 @@ public class ControllerSmokeTests
             customerService,
             restaurantService.Object,
             Mock.Of<IDriverRegistrationService>(),
+            Mock.Of<IPhoneOtpService>(),
             Mock.Of<IFileStorageService>());
 
         var startResult = await controller.StartRestaurantRegistration(new StartRestaurantRegistrationFormRequest(), CancellationToken.None);
@@ -109,6 +111,7 @@ public class ControllerSmokeTests
             customerService,
             Mock.Of<IRestaurantRegistrationService>(),
             driverService.Object,
+            Mock.Of<IPhoneOtpService>(),
             Mock.Of<IFileStorageService>());
 
         var startResult = await controller.StartDriverRegistration(new StartDriverRegistrationFormRequest(), CancellationToken.None);

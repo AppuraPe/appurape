@@ -1,5 +1,6 @@
 using IquitosDelivery.Application.Interfaces;
 using IquitosDelivery.Infrastructure.Email;
+using IquitosDelivery.Infrastructure.Otp;
 using IquitosDelivery.Infrastructure.Persistence;
 using IquitosDelivery.Infrastructure.Push;
 using IquitosDelivery.Infrastructure.Security;
@@ -77,11 +78,38 @@ public static class DependencyInjection
                 CredentialsPath = configuration["Firebase:CredentialsPath"] ?? string.Empty,
                 CredentialsJson = configuration["Firebase:CredentialsJson"] ?? string.Empty
             }));
+        services.AddSingleton<IOptions<PhoneOtpSettings>>(_ =>
+        {
+            var otpSection = configuration.GetSection("PhoneOtp");
+            var whatsAppSection = otpSection.GetSection("WhatsApp");
+
+            return Options.Create(new PhoneOtpSettings
+            {
+                RequireForRegistration = bool.TryParse(otpSection["RequireForRegistration"], out var requireForRegistration) && requireForRegistration,
+                WhatsApp = new WhatsAppOtpSettings
+                {
+                    Enabled = bool.TryParse(whatsAppSection["Enabled"], out var whatsAppEnabled) && whatsAppEnabled,
+                    GraphApiVersion = whatsAppSection["GraphApiVersion"] ?? "v23.0",
+                    PhoneNumberId = whatsAppSection["PhoneNumberId"] ?? string.Empty,
+                    AccessToken = whatsAppSection["AccessToken"] ?? string.Empty,
+                    TemplateName = whatsAppSection["TemplateName"] ?? "appurape_phone_verification",
+                    LanguageCode = whatsAppSection["LanguageCode"] ?? "es_PE",
+                    ButtonSubType = whatsAppSection["ButtonSubType"] ?? "url",
+                    ButtonParameterType = whatsAppSection["ButtonParameterType"] ?? "text",
+                    IncludeButtonCodeParameter = !bool.TryParse(whatsAppSection["IncludeButtonCodeParameter"], out var includeButtonCodeParameter)
+                        || includeButtonCodeParameter
+                }
+            });
+        });
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
         services.AddHttpClient<IPushNotificationSender, FirebasePushNotificationSender>();
+        services.AddHttpClient<IPhoneOtpSender, WhatsAppOtpSender>(client =>
+        {
+            client.BaseAddress = new Uri("https://graph.facebook.com");
+        });
         services.AddScoped<IEmailSender>(provider =>
         {
             var emailSettings = provider.GetRequiredService<IOptions<EmailSettings>>().Value;

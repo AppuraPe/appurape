@@ -1,4 +1,5 @@
 using FluentValidation;
+using IquitosDelivery.Application.Common;
 using IquitosDelivery.Application.DTOs.Auth;
 
 namespace IquitosDelivery.Application.Validators;
@@ -17,7 +18,15 @@ public class StartCustomerRegistrationRequestValidator : AbstractValidator<Start
 
         RuleFor(x => x.Phone)
             .NotEmpty()
-            .MaximumLength(20);
+            .MaximumLength(20)
+            .Must(IdentityNormalization.IsValidPeruvianMobilePhone)
+            .WithMessage("Ingresa un celular peruano válido de 9 dígitos.");
+
+        RuleFor(x => x.IdentityDocumentNumber)
+            .NotEmpty()
+            .MaximumLength(30)
+            .Must(IdentityNormalization.IsValidPeruvianDni)
+            .WithMessage("Ingresa un DNI válido de 8 dígitos.");
 
         RuleFor(x => x.Email)
             .NotEmpty()
